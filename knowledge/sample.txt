@@ -1,0 +1,15 @@
+Rasa is an open-source framework for building conversational AI applications. It includes tools for natural language understanding (NLU) and dialogue management.
+
+Rasa uses intents and entities to interpret user input. Intents describe what the user wants to do, and entities extract key information from the input.
+
+Rasa provides a fallback mechanism, which is triggered when the model has low confidence in the predicted intent. This allows the chatbot to gracefully handle uncertain queries.
+
+Retrieval-Augmented Generation (RAG) combines a retriever and a generator. The retriever fetches relevant documents from a knowledge base, and the generator (usually a language model) uses them to craft a response.
+
+FAISS is a library for efficient similarity search on dense vectors. In RAG, it is used to retrieve the most relevant chunks of knowledge based on a query vector.
+
+HuggingFace Embeddings, such as 'all-MiniLM-L6-v2', are used to convert text into dense vectors for semantic search. These embeddings capture the meaning of sentences and enable similarity comparisons.
+
+RAG pipelines often preprocess documents by splitting them into smaller chunks, typically with some overlap. This improves retrieval granularity and helps avoid losing context.
+
+A typical chatbot pipeline might use Rasa for intent classification and fall back to a RAG pipeline when the intent is unknown or a more detailed answer is needed.
