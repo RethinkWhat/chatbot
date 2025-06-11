@@ -1,5 +1,0 @@
-Rasa is an open-source conversational AI platform.
-RAG stands for Retrieval-Augmented Generation.
-FAISS is a library for efficient similarity search on dense vectors.
-You can use Rasa with vector databases to build smart assistants.
-OpenAI provides powerful LLMs like GPT-4.
