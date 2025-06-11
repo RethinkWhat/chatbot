@@ -1,0 +1,8 @@
+version: "3.1"
+nlu:
+- intent: ask_knowledge
+  examples: |
+    - What is Rasa?
+    - Explain FAISS
+    - Tell me about RAG
+    - How does GPT-4 work?
