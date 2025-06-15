@@ -1,0 +1,16 @@
+intents:
+  - ask_school_info
+  - school_stuff
+
+actions:
+  - answer_school
+
+responses:
+  utter_slu_meaning:
+    - text: "SLU stands for Saint Louis University."
+
+  utter_slu_campuses:
+    - text: "The campuses of SLU include SAMCIS, SEA, and SOL."
+
+  utter_samcis_location:
+    - text: "SAMCIS is located at Maryheights, Bakakeng, Baguio City."

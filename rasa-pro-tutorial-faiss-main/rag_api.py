@@ -1,7 +1,9 @@
 import threading
 import time
+from pydantic import Field
 from flask import Flask, request, jsonify, render_template_string
 from typing import List, Union
+from llama_index.core.llms import LLM
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
 from ollama import chat
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
@@ -13,9 +15,8 @@ llm_ready = False
 query_engine = None
 
 # LLM class
-class OllamaLLM:
-    def __init__(self, model="mistral"):
-        self.model = model
+class OllamaLLM(LLM):
+    model: str = Field(default="mistral")
 
     def complete(self, prompt: Union[str, object], **kwargs):
         prompt = self._ensure_string(prompt)
@@ -23,13 +24,30 @@ class OllamaLLM:
         response = chat(model=self.model, messages=[{"role": "user", "content": prompt}])
         return response["message"]["content"]
 
-
     def predict(self, prompt: Union[str, object], **kwargs):
         return self.complete(prompt, **kwargs)
 
     def chat(self, messages: List[ChatMessage], **kwargs):
         full_prompt = "\n".join([m.content for m in messages])
         return self.complete(full_prompt, **kwargs)
+
+    def stream_chat(self, messages: List[ChatMessage], **kwargs):
+        raise NotImplementedError("stream_chat is not implemented.")
+
+    def stream_complete(self, prompt: str, **kwargs):
+        raise NotImplementedError("stream_complete is not implemented.")
+
+    async def acomplete(self, prompt: Union[str, object], **kwargs):
+        raise NotImplementedError("acomplete is not implemented.")
+
+    async def achat(self, messages: List[ChatMessage], **kwargs):
+        raise NotImplementedError("achat is not implemented.")
+
+    async def astream_chat(self, messages: List[ChatMessage], **kwargs):
+        raise NotImplementedError("astream_chat is not implemented.")
+
+    async def astream_complete(self, prompt: str, **kwargs):
+        raise NotImplementedError("astream_complete is not implemented.")
 
     def _ensure_string(self, prompt):
         if isinstance(prompt, str):
@@ -47,9 +65,9 @@ class OllamaLLM:
             context_window=4096,
             num_output=512,
         )
-
+        
 # Settings config
-Settings.llm = OllamaLLM()
+Settings.llm = OllamaLLM(model="mistral")
 Settings.embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2")
 
 # Flask setup
@@ -94,7 +112,7 @@ def warm_up_llm():
         llm_ready = False
 
 # Threaded safe query with timeout (starts only *after* warm-up)
-def safe_query(question, timeout=25):
+def safe_query(question, timeout=60):
     result = {}
 
     def task():

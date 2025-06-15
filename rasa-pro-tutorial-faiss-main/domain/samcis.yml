@@ -1,0 +1,9 @@
+intents:
+  - ask_samcis_info
+
+responses:
+  utter_samcis_definition:
+    - text: "SAMCIS stands for School of Accounting, Management, Computing, and Information Studies."
+
+  utter_samcis_courses:
+    - text: "SAMCIS offers BS Computer Science, BS Information Technology, and BS Multimedia Arts."

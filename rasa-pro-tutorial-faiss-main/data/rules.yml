@@ -1,0 +1,49 @@
+version: "3.1"
+
+rules:
+- rule: Provide SLU meaning
+  steps:
+    - intent: ask_slu_name
+    - action: utter_slu_name
+
+- rule: Provide SLU campuses
+  steps:
+    - intent: ask_slu_campuses
+    - action: utter_slu_campuses
+
+- rule: Provide SAMCIS location
+  steps:
+    - intent: ask_samcis_location
+    - action: utter_samcis_location
+
+- rule: Provide SAMCIS name
+  steps:
+    - intent: ask_samcis_name
+    - action: utter_samcis_name
+
+- rule: Provide SAMCIS courses
+  steps:
+    - intent: ask_samcis_courses
+    - action: utter_samcis_courses
+
+- rule: Provide SAMCIS info
+  steps:
+    - intent: ask_samcis_info
+    - action: utter_samcis_info
+
+
+# asking user if they want to use RAG, before default fallback action
+- rule: Handle low confidence with prompt
+  steps:
+    - intent: nlu_fallback
+    - action: action_rag_prompt
+
+- rule: User agrees to RAG
+  steps:
+    - intent: affirm
+    - action: action_rag_fallback
+
+- rule: User declines RAG
+  steps:
+    - intent: deny
+    - action: action_rag_cancel

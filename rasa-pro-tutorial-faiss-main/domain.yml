@@ -1,5 +1,79 @@
 version: "3.1"
+responses:
+  utter_slu_name:
+  - text: SLU stands for Saint Louis University.
+  - text: Saint Louis University is often abbreviated as SLU.
+  - text: The full name of SLU is Saint Louis University.
+  utter_slu_campuses:
+  - text: The campuses of SLU include SAMCIS, SEA, and SOL.
+  utter_samcis_location:
+  - text: SAMCIS is located in Maryheights, Bakakeng, Baguio City.
+  - text: It is located at Maryheights, Bakakeng, Baguio City.
+  utter_samcis_name:
+  - text: SAMCIS stands for School of Accounting, Management, Computing, and Information
+      Studies.
+  - text: The full name of SAMCIS is School of Accounting, Management, Computing, and
+      Information Studies.
+  - text: SAMCIS is the School of Accounting, Management, Computing, and Information
+      Studies at SLU.
+  - text: SAMCIS stands for School of Accounting, Management, Computing, and Information
+      Studies.
+  utter_samcis_courses:
+  - text: SAMCIS offers BS Computer Science, BS Information Technology, and BS Multimedia
+      Arts.
+  - text: The courses offered by SAMCIS include BS Computer Science, BS Information
+      Technology, and BS Multimedia Arts.
+  utter_samcis_info:
+  - text: SAMCIS is the School of Accounting, Management, Computing, and Information
+      Studies at SLU.
+  - text: SAMCIS stands for School of Accounting, Management, Computing, and Information
+      Studies, which is part of Saint Louis University.
+  - text: SAMCIS is the School of Accounting, Management, Computing, and Information
+      Studies at SLU, offering programs in computer science, information technology,
+      and multimedia arts.
+      
+
+  # misc
+  utter_ask_use_rag:
+  - text: "I couldn't quite understand that. Would you like me to try retrieving a better answer using external knowledge?"
+  
+  utter_greetback:
+  - text: Hello! How can I assist you today?
+  utter_ty:
+  - text: Thank you for your question! If you have any more, feel free to ask.
+  utter_bye:
+  - text: Goodbye! If you have more questions in the future, feel free to ask.
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true
+
+
 intents:
-  - ask_knowledge
+- ask_slu_name
+- ask_slu_campuses
+- ask_samcis_location
+- ask_samcis_name
+- ask_samcis_courses
+- nlu_fallback
+- affirm
+- deny
+- goodbye
+- thank_you
+- greet
+
+
 actions:
-  - action_rag_fallback
+- action_rag_cancel
+- action_rag_prompt
+- action_rag_fallback
+- utter-samcis_info
+- utter_ty
+- utter_bye
+- utter_greetback
+- utter_slu_name
+- utter_slu_campuses
+- utter_samcis_location
+- utter_samcis_name
+- utter_samcis_courses
+
+

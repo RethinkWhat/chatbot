@@ -1,0 +1,16 @@
+version: "3.1"
+
+intents:
+  - affirm
+  - deny
+
+responses:
+  utter_ask_use_rag:
+    - text: "I'm not completely sure what you meant. Would you like me to try retrieving an up-to-date answer for you? (yes/no)"
+
+  utter_rag_declined:
+    - text: "No problem. Let me know if there's anything else I can help with."
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

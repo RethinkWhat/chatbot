@@ -1,0 +1,77 @@
+version: "3.1"
+nlu:
+- intent: ask_slu_name
+  examples: |
+    - What does SLU stand for?
+    - what is SLU?
+    - Can you tell me the full name of SLU?
+
+- intent: ask_slu_campuses
+  examples: |
+    - how many campuses does SLU have?
+    - What are the campuses of SLU?
+- intent: ask_samcis_location
+  examples: |
+    - Where is SAMCIS located?
+    - What building is SAMCIS in?
+
+- intent: ask_samcis_name
+  examples: |
+    - What does SAMCIS mean?
+    - Tell me what SAMCIS stands for.
+
+- intent: ask_samcis_courses
+  examples: |
+    - What courses does SAMCIS offer?
+    - Tell me the programs under SAMCIS.
+    - What are the courses in SAMCIS?
+
+- intent: affirm
+  examples: |
+    - yes
+    - sure
+    - go ahead
+    - please do
+
+- intent: deny
+  examples: |
+    - no
+    - don't do that
+    - no thanks
+    - not now 
+
+- intent: ask_samcis_info
+  examples: |
+    - What is SAMCIS?
+    - Tell me about SAMCIS
+    - Can you give me info about SAMCIS?
+    - What does SAMCIS stand for? 
+
+- intent: greet
+  examples: |
+    - hi
+    - hello
+    - hey
+    - good morning
+    - good afternoon
+    - good evening
+    - howdy
+
+- intent: goodbye
+  examples: |
+    - bye
+    - goodbye
+    - see you later
+    - talk to you later
+    - catch you later
+    - brb
+
+- intent: thank_you
+  examples: |
+    - thank you
+    - thanks
+    - appreciate it
+    - thanks a lot
+    - many thanks
+    - thanks for your help
+

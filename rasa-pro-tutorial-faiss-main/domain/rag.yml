@@ -1,0 +1,7 @@
+intents:
+  - ask_sample_knowledge  # Or general fallback-type queries
+
+actions:
+  - action_rag_fallback
+  - action_rag_prompt
+  - action_rag_cancel
