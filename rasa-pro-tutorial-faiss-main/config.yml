@@ -1,16 +1,35 @@
 version: "3.1"
 language: en
 policies:
+- name: MemoizationPolicy
 - name: RulePolicy
   core_fallback_action_name: "action_rag_fallback"
-  core_fallback_threshold: 0.7
+  core_fallback_threshold: 0.3
   enable_fallback_prediction: true
+- name: UnexpecTEDIntentPolicy
+  max_history: 5
+  epochs:100
+- name: TEDPolicy
+  max_history: 5
+  epochs: 100
+
 pipeline:
   - name: WhitespaceTokenizer
+  - name: RegexFeaturizer
+    case_sensitive: False
+    use_word_boundaries: True
+
+  - name: RegexEntityExtractor
+    use_lookup_tables: True
+    use_regexes: True
+    use_word_boundaries: True
   - name: CountVectorsFeaturizer
+    OOV_token: "[UNK]"
+    token_pattern: r'(?u)\b\w+\b'
   - name: DIETClassifier
     epochs: 100
     intent_classification_threshold: 0.7
+  - name: EntitySynonymMapper
   - name: FallbackClassifier
     threshold: 0.7
     ambiguity_threshold: 0.1

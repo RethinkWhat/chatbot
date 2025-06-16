@@ -1,5 +1,18 @@
 version: "3.1"
 nlu:
+- lookup: school_terms
+  examples: |
+    - SLU
+    - FAISS
+    - SAMCIS
+    - MIS
+    - CS
+
+- regex: course_code
+  examples: |
+    - [A-Z]{2,4}\d{3}  
+
+
 - intent: ask_slu_name
   examples: |
     - What does SLU stand for?
