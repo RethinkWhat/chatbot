@@ -123,10 +123,15 @@ def safe_query(question, timeout=60):
 
     thread = threading.Thread(target=task)
     thread.start()
-    thread.join(timeout)
+    
+     # Log elapsed time while waiting
+    elapsed = 0
+    while thread.is_alive():
+        print(f"Generating answers through API... Time elapsed: {elapsed} seconds")
+        time.sleep(5)
+        elapsed += 5
 
-    if thread.is_alive():
-        return None, "Query timed out internally"
+    thread.join()
     return result.get("response"), result.get("error")
 
 @app.route("/", methods=["GET"])
@@ -138,20 +143,19 @@ def rag_query():
     if not llm_ready:
         return jsonify({"answer": "LLM is still loading. Please try again shortly."}), 503
 
-    if request.method == "POST":
-        start_time = time.time()
-        question = request.form.get("question") or request.json.get("question")
-        print(f"[RAG API] Received question: {question}")
+    question = request.json.get("question", "").strip()
+    print(f"[RAG API] Received question: {question}")
+    
 
-        response, error = safe_query(question, timeout=25)
-        duration = time.time() - start_time
-        print(f"[RAG API] Responded in {duration:.2f} seconds")
+    # Step 3: Otherwise do vector similarity + RAG
+    start_time = time.time()
+    response, error = safe_query(question, timeout=25)
+    duration = time.time() - start_time
+    print(f"[RAG API] Responded in {duration:.2f} seconds")
 
-        if error:
-            return jsonify({"answer": f"Error: {error}"}), 500
-        return jsonify({"answer": str(response)})
-    else:
-        return render_template_string(form_template, answer=None)
+    if error:
+        return jsonify({"answer": f"Error: {error}"}), 500
+    return jsonify({"answer": str(response)})
 
 if __name__ == "__main__":
     app.run(port=5001)

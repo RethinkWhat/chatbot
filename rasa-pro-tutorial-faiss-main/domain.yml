@@ -1,4 +1,5 @@
 version: "3.1"
+
 responses:
   utter_slu_name:
   - text: SLU stands for Saint Louis University.
@@ -47,6 +48,12 @@ session_config:
   session_expiration_time: 60
   carry_over_slots_to_new_session: true
 
+slots:
+  last_user_question:
+    type: text
+    influence_conversation: false
+    mappings:
+    - type: custom
 
 intents:
 - ask_slu_name
@@ -60,7 +67,6 @@ intents:
 - goodbye
 - thank_you
 - greet
-
 
 actions:
 - action_rag_cancel

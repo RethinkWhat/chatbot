@@ -3,18 +3,17 @@ language: en
 policies:
 - name: RulePolicy
   core_fallback_action_name: "action_rag_fallback"
-  core_fallback_threshold: 0.8
+  core_fallback_threshold: 0.7
   enable_fallback_prediction: true
 pipeline:
   - name: WhitespaceTokenizer
   - name: CountVectorsFeaturizer
   - name: DIETClassifier
-    epochs: 10s0
-  - name: EntitySynonymMapper
-  - name: ResponseSelector
+    epochs: 100
+    intent_classification_threshold: 0.7
   - name: FallbackClassifier
-    threshold: 0.8
-    ambiguity_threshold: 0.2
+    threshold: 0.7
+    ambiguity_threshold: 0.1
 # # No configuration for the NLU pipeline was provided. The following default pipeline was used to train your model.
 # # If you'd like to customize it, uncomment and adjust the pipeline.
 # # See https://rasa.com/docs/rasa/tuning-your-model for more information.

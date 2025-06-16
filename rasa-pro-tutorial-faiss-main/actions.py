@@ -1,5 +1,6 @@
 from typing import Any, Text, Dict, List
 from rasa_sdk import Action, Tracker
+from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 import requests
 
@@ -12,7 +13,7 @@ class ActionRAGFallback(Action):
             tracker: Tracker,
             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
-        user_message = tracker.latest_message.get("text")
+        user_message = tracker.get_slot("last_user_question") or tracker.latest_message.get("text")
         print(f"[DEBUG] User message: {user_message}")
 
         try:
@@ -39,11 +40,13 @@ class ActionRAGPrompt(Action):
     def run(self, dispatcher: CollectingDispatcher,
             tracker: Tracker,
             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-
+        
+        last_question = tracker.latest_message.get("text")
+        print(f"[DEBUG] Setting last_user_question slot to: {last_question}")
         dispatcher.utter_message(
             text="I'm not confident in my answer. Would you like me to search for a better response using external knowledge? (yes/no)"
         )
-        return []
+        return [SlotSet("last_user_question", last_question)]
 
 
 # If User Declines RAG
