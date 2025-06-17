@@ -17,7 +17,10 @@ class BuildVectorIndex:
         loader = DirectoryLoader(
             "knowledge",  # change this to the directory containing your text files
             glob="**/*.txt",  # load all .txt files recursively
-            loader_cls=TextLoader
+            #loader_cls=TextLoader
+            
+            #Christian-JUN17: Use lambda to specify encoding
+            loader_cls=lambda path: TextLoader(path, encoding="utf-8")
         )
         documents = loader.load()
 
