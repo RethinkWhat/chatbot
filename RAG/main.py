@@ -1,8 +1,15 @@
 #RAG SERVER
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from rag_pipeline import RAGPipeline  
 from langchain_community.embeddings import HuggingFaceEmbeddings
+
+# local Imports
+from rag_pipeline import RAGPipeline  
+from build_vector_index import BuildVectorIndex
+
+# Build Knowledge. Can comment out this section if knowledge already built
+build_vector_index = BuildVectorIndex()
+build_vector_index.run()
 
 
 # Initialize FastAPI app
@@ -10,7 +17,6 @@ app = FastAPI()
 
 # Initialize RAG pipeline
 rag_pipeline = RAGPipeline()
-
 
 @app.get('/')
 def read_root():

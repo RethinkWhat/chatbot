@@ -192,3 +192,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+#Rasa
+RASA/.rasa/
+RASA/models/
+.rasa/cache/cache.db

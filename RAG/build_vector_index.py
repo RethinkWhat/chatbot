@@ -10,29 +10,32 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 # Multiple Files
 from langchain_community.document_loaders import DirectoryLoader
-# Load all text files from a directory
-loader = DirectoryLoader(
-    "knowledge",  # change this to the directory containing your text files
-    glob="**/*.txt",  # load all .txt files recursively
-    loader_cls=TextLoader
-)
-documents = loader.load()
 
-# Ensure documents are loaded
-if not documents:
-    raise ValueError("No documents found. Please check the directory and file format.")
+class BuildVectorIndex: 
+    def run(self): 
+        # Load all text files from a directory
+        loader = DirectoryLoader(
+            "knowledge",  # change this to the directory containing your text files
+            glob="**/*.txt",  # load all .txt files recursively
+            loader_cls=TextLoader
+        )
+        documents = loader.load()
 
-# Split into chunks
-splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-chunks = splitter.split_documents(documents)
+        # Ensure documents are loaded
+        if not documents:
+            raise ValueError("No documents found. Please check the directory and file format.")
 
-# Use embeddings
-embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        # Split into chunks
+        splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+        chunks = splitter.split_documents(documents)
 
-# Create vector store
-vector_store = FAISS.from_documents(chunks, embedding_model)
+        # Use embeddings
+        embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-# Save to local directory
-vector_store.save_local("vector_index")
+        # Create vector store
+        vector_store = FAISS.from_documents(chunks, embedding_model)
 
-print("Vector index built and saved to 'vector_index/'")
+        # Save to local directory
+        vector_store.save_local("vector_index")
+
+        print("Vector index built and saved to 'vector_index/'")
