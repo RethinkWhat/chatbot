@@ -1,0 +1,43 @@
+#RAG SERVER
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from rag_pipeline import RAGPipeline  
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+
+# Initialize FastAPI app
+app = FastAPI()
+
+# Initialize RAG pipeline
+rag_pipeline = RAGPipeline()
+
+
+@app.get('/')
+def read_root():
+    return {"message": "Welcome to the RAG API. Use the /query endpoint to ask questions."}    
+
+# Endpoint
+@app.post("/query")
+async def query(request: Request):
+    body = await request.json()
+    print("Received body:", body)  # Optional: Debug
+
+    # Extract query from tracker
+    query = body.get("query", "")
+
+    if not query:
+        return JSONResponse(
+            status_code=200,
+            content={"responses": [{"query": "No query found in message."}], "events": []}
+        )
+
+    # 👇 RAG PIPELINE IMPLE
+    response = rag_pipeline.query(query)
+    print(response)
+    response = JSONResponse(
+        status_code=200,
+        content={"response" : response.get("result", "no answer found.")} 
+        )
+    print(response)
+
+    return response

@@ -1,0 +1,52 @@
+# Types of Dogs
+
+## Working Dogs
+Working dogs are bred to perform tasks such as guarding property, pulling sleds, and performing water rescues. They are intelligent, strong, and loyal.
+
+- **Siberian Husky**: Originally bred for sled pulling. Known for endurance and striking blue eyes.
+- **Rottweiler**: A confident and fearless guardian, commonly used in police and military roles.
+- **Saint Bernard**: Known for alpine rescues, massive size, and gentle temperament.
+- **Doberman Pinscher**: Alert, powerful, and loyal. Often used as guard dogs.
+
+## Herding Dogs
+These dogs were developed to control the movement of other animals. They're intelligent and energetic.
+
+- **Border Collie**: Extremely smart and trainable. Known for agility and herding instinct.
+- **Australian Shepherd**: Highly active and good with children. Requires regular exercise.
+- **German Shepherd**: Versatile working and herding dog, often used in service roles.
+
+## Sporting Dogs
+Sporting dogs are bred to assist hunters in retrieving game. They are active and require regular exercise.
+
+- **Golden Retriever**: Friendly, intelligent, and eager to please. Great for families.
+- **Labrador Retriever**: One of the most popular breeds. Gentle, loyal, and athletic.
+- **Irish Setter**: Elegant and energetic with a red coat and outgoing personality.
+
+## Toy Dogs
+Toy dogs are small breeds bred primarily for companionship. They're suited for apartment living and tend to be affectionate.
+
+- **Chihuahua**: Small but bold. Known for loyalty and feisty nature.
+- **Pomeranian**: Fluffy and extroverted, with a lively temperament.
+- **Yorkshire Terrier**: Small but brave, with a silky coat and a big personality.
+
+## Hound Dogs
+Hound dogs are used for hunting due to their excellent sense of smell or speed.
+
+- **Beagle**: Friendly and curious, known for a strong sense of smell.
+- **Basset Hound**: Recognizable for long ears and a lazy but loving attitude.
+- **Greyhound**: The fastest dog breed, used in racing and known for elegance.
+
+## Non-Sporting Dogs
+This group includes diverse breeds that don’t fit into other categories.
+
+- **Bulldog**: Known for its wrinkled face and laid-back nature.
+- **Dalmatian**: Famous for its spotted coat and history as a carriage dog.
+- **Poodle**: Highly intelligent and hypoallergenic; comes in toy, miniature, and standard sizes.
+
+## Terrier Dogs
+Terriers are feisty and energetic, originally bred to hunt vermin.
+
+- **Jack Russell Terrier**: Small, fearless, and always ready to chase.
+- **Scottish Terrier**: Independent and dignified, with a wiry coat.
+- **West Highland White Terrier (Westie)**: Bold and friendly with a striking white coat.
+
