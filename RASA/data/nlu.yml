@@ -92,20 +92,40 @@ nlu:
 
 - intent: first_day
   examples: |
-    - when is the first day?
-    - when does the semester start?
-    - when do classes start?
-    - when should i go to school?
-    - what day do we start school?
-    - what's the start date for classes?
-    - when do we go back to school?
-    - what day does the new term begin?
-    - when do lessons begin?
-    - on which day does school start?
-    - tell me when the semester kicks off
-    - when is the first day of the academic year?
-    - when are we supposed to show up for the first time?
-    - what’s the official first day of school?
-    - when is the school opening date?
+    - what day does school begin?
+    - when is the first day of school?
+    - on what date do classes begin?
+    - what’s the school start date?
+    - when does the term begin?
+    - when do we return to school?
+    - when do lectures start?
+    - when is the start of the academic year?
+    - what’s the first day of the semester?
+    - when are we expected to be back on campus?
+    - when does the academic calendar start?
+    - what’s the official opening date?
+    - when should I attend my first class?
+    - what’s the start date for this semester?
+    - when is the first lecture?
+
+  
+- intent: out_of_scope
+  examples: |
+    - what’s your favorite movie?
+    - sing me a song
+    - do aliens exist?
+    - tell me something funny
+    - do you like cats or dogs?
+    - what's the weather like on Mars?
+    - can you make me a sandwich?
+    - what's your name?
+    - do you believe in ghosts?
+    - can I eat noodles with a spoon?
+    - how tall is Mount Everest?
+    - why is the sky blue?
+    - who won the last World Cup?
+    - can you beatbox?
+    - how do you fix a flat tire?
+
 
 - intent: nlu_fallback

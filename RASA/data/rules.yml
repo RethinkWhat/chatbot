@@ -22,8 +22,12 @@ rules:
   - intent: first_day
   - action: utter_first_day
 
-# Threshold set to 0.7, if the intent confidence is below this threshold, the fallback action will be triggered.
 - rule: Fallback to RAG
   steps:
   - intent: nlu_fallback
+  - action: action_rag_fallback
+
+- rule: Question falls out of Scope 
+  steps:
+  - intent: out_of_scope
   - action: action_rag_fallback

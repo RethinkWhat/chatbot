@@ -8,8 +8,10 @@ intents:
   - mood_great
   - mood_unhappy
   - bot_challenge
-  - first_day
   - nlu_fallback
+  - first_day
+  - out_of_scope
+  
 
 actions:
   - action_rag_fallback
