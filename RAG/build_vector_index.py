@@ -11,10 +11,10 @@ import os
 from scrapers.web_scraper import run_scraper 
 
 
-DIR = "KNOWLEDGE"
+DIR = "knowledge"  # Directory where text files are stored
 class BuildVectorIndex: 
     # Run Web Scraper 
-    run_scraper(urls_path="urls.txt", output_dir="knowledge", depth=2)
+    run_scraper(urls_path="urls.txt", output_dir=DIR, depth=2)
 
     pdfScraper = PDFScraper()
 
