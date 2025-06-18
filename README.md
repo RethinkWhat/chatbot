@@ -19,6 +19,11 @@ Question -> RASA -> Determine Intent -> If unable to meet threshold, fallback to
 3. To start the chatbot issue the following command:
     - /opt/anaconda3/envs/rasa_venv/bin/rasa shell
 
+
+1. Locally will need to download poppler and tesseract:
+    - brew install poppler (or Windows equivlent)
+    - brew install tesseract
+
 ## Authors
 
 - [@rethinkwhat](https://github.com/RethinkWhat/)
