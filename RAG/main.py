@@ -4,16 +4,9 @@ from fastapi.responses import JSONResponse
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # local Imports
-# Christian-JUN17====
-from webScraper import run_scraper 
-# ===================
 from rag_pipeline import RAGPipeline  
 from build_vector_index import BuildVectorIndex
 
-# Christian-JUN17====
-# Run Web Scraper before vector building 
-run_scraper(urls_path="urls.txt", output_dir="knowledge", depth=2)
-# ===================
 
 # Build Knowledge. Can comment out this section if knowledge already built
 build_vector_index = BuildVectorIndex()

@@ -8,12 +8,17 @@ from langchain_community.document_loaders import DirectoryLoader
 from scrapers.pdf_scraper import PDFScraper
 import glob
 import os
+from scrapers.web_scraper import run_scraper 
+
 
 DIR = "KNOWLEDGE"
 class BuildVectorIndex: 
-    pdfScraper = PDFScraper()
-    def run(self): 
+    # Run Web Scraper 
+    run_scraper(urls_path="urls.txt", output_dir="knowledge", depth=2)
 
+    pdfScraper = PDFScraper()
+
+    def run(self): 
         pdf_files = glob.glob(os.path.join(DIR, "**/*.pdf"), recursive=True)
 
         for pdf in pdf_files:
