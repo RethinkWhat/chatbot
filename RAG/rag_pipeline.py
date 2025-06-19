@@ -4,11 +4,8 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_mistralai import MistralAIEmbeddings, ChatMistralAI
 import os
-# Christian: JUN 19 =============
-# adding imports for different LLMs
 from langchain_community.chat_models import ChatOllama
 from langchain_mistralai import ChatMistralAI
-# ===============================
 
 class RAGPipeline:
     def __init__(self,llm_backend: str = "ollama"):
@@ -20,7 +17,6 @@ class RAGPipeline:
         )
         self.retriever = self.vector_store.as_retriever()
         
-        # Christian: JUN 18 =============
         # choice for one of the LLMs
         if llm_backend.lower() == "mistral":
             print("Using MistralAI as LLM")
@@ -39,28 +35,12 @@ class RAGPipeline:
             raise ValueError(f"Unsupported LLM backend: {llm_backend}")
 
         self.qa_chain = RetrievalQA.from_chain_type(
-<<<<<<< HEAD
-<<<<<<< HEAD
             llm=ChatMistralAI(
                 api_key='WTtgTOjSF3mxJsi2uxDhalwMl7uz2HZI',#os.getenv("MISTRAL_API_KEY"),
                 model="mistral-small"  # or mistral-medium / mistral-large
             ),
-=======
-            llm=llm,
->>>>>>> 9072cec (untested image scanner, model chooser)
-=======
-            llm=llm,
-=======
-            llm=ChatMistralAI(
-                api_key='WTtgTOjSF3mxJsi2uxDhalwMl7uz2HZI',#os.getenv("MISTRAL_API_KEY"),
-                model="mistral-small"  # or mistral-medium / mistral-large
-            ),
->>>>>>> 347d36d (created docker containers)
->>>>>>> e346dcb (second stage of conflicts)
             retriever=self.retriever
         )
-        #================================
 
     def query(self, question: str) -> str:
         return self.qa_chain.invoke(question)
-        # TO ADD CONTEXT from FAISS
