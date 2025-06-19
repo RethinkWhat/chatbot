@@ -51,6 +51,7 @@
         });
 
         const data = await response.json();
+        print(data);
         data.forEach(botMsg => appendMessage('bot', botMsg.text));
       } catch (error) {
         appendMessage('bot', '⚠️ Error: Could not reach Rasa server.');
