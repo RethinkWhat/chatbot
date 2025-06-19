@@ -10,10 +10,8 @@ Second, the RAG architecture was adopted. This section will focus on the generat
 
 Question -> RASA -> Determine Intent -> If unable to meet threshold, fallback to RAG -> Make Chunks and Embed Query (Convert to its Numerical Representation/ Features) -> FAISS (Vector Search to determine the relevant chunks) -> Include Chunks in query -> Pass to LLM -> Get Answer
 
-
-
 1. To start the rag server issue the following command:
-    - /opt/anaconda3/envs/rag_venv/bin/uvicorn 
+    - /opt/anaconda3/envs/rag_venv/bin/uvicorn main:app --reload 
 2. To start the rasa actions server (The pipeline to allow the fallback mechanism to RAG) issue the following command
     - /opt/anaconda3/envs/rasa_venv/bin/rasa run actions
 3. To start the chatbot issue the following command:

@@ -17,7 +17,7 @@ class RAGPipeline:
 
         self.qa_chain = RetrievalQA.from_chain_type(
             llm=ChatMistralAI(
-                api_key='6UcG5oBmAwgGSW7fESb8gfZZgCEitFXJ',#os.getenv("MISTRAL_API_KEY"),
+                api_key='WTtgTOjSF3mxJsi2uxDhalwMl7uz2HZI',#os.getenv("MISTRAL_API_KEY"),
                 model="mistral-small"  # or mistral-medium / mistral-large
             ),
             retriever=self.retriever

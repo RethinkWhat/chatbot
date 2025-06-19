@@ -1,7 +1,6 @@
 #RAG SERVER
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # local Imports
 from rag_pipeline import RAGPipeline  

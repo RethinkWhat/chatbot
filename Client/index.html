@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rasa Client</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    #chat {
+      border: 1px solid #ccc;
+      padding: 10px;
+      max-width: 600px;
+      height: 400px;
+      overflow-y: scroll;
+    }
+    .user, .bot {
+      margin: 5px 0;
+    }
+    .user { color: blue; }
+    .bot { color: green; }
+  </style>
+</head>
+<body>
+  <h1>Rasa Chat Client</h1>
+  <div id="chat"></div>
+  <form id="query-form">
+    <input type="text" id="query" placeholder="Type your message..." required>
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    const chatDiv = document.getElementById('chat');
+    const form = document.getElementById('query-form');
+    const input = document.getElementById('query');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = input.value;
+      appendMessage('user', message);
+      input.value = '';
+
+      try {
+        const response = await fetch('http://localhost:5005/webhooks/rest/webhook', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ "message": message })
+        });
+
+        const data = await response.json();
+        data.forEach(botMsg => appendMessage('bot', botMsg.text));
+      } catch (error) {
+        appendMessage('bot', '⚠️ Error: Could not reach Rasa server.');
+      }
+    });
+
+    function appendMessage(sender, text) {
+      const p = document.createElement('p');
+      p.className = sender;
+      p.textContent = `${sender === 'user' ? 'You' : 'Bot'}: ${text}`;
+      chatDiv.appendChild(p);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+  </script>
+</body>
+</html>
