@@ -40,6 +40,7 @@ class RAGPipeline:
 
         self.qa_chain = RetrievalQA.from_chain_type(
 <<<<<<< HEAD
+<<<<<<< HEAD
             llm=ChatMistralAI(
                 api_key='WTtgTOjSF3mxJsi2uxDhalwMl7uz2HZI',#os.getenv("MISTRAL_API_KEY"),
                 model="mistral-small"  # or mistral-medium / mistral-large
@@ -47,6 +48,15 @@ class RAGPipeline:
 =======
             llm=llm,
 >>>>>>> 9072cec (untested image scanner, model chooser)
+=======
+            llm=llm,
+=======
+            llm=ChatMistralAI(
+                api_key='WTtgTOjSF3mxJsi2uxDhalwMl7uz2HZI',#os.getenv("MISTRAL_API_KEY"),
+                model="mistral-small"  # or mistral-medium / mistral-large
+            ),
+>>>>>>> 347d36d (created docker containers)
+>>>>>>> e346dcb (second stage of conflicts)
             retriever=self.retriever
         )
         #================================

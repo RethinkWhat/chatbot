@@ -2,10 +2,17 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import os # used to get user choice of LLM saved in device environment variable
 >>>>>>> 9072cec (untested image scanner, model chooser)
+=======
+from langchain_community.embeddings import HuggingFaceEmbeddings
+import os # used to get user choice of LLM saved in device environment variable
+=======
+>>>>>>> 347d36d (created docker containers)
+>>>>>>> e346dcb (second stage of conflicts)
 
 # local Imports
 from rag_pipeline import RAGPipeline  

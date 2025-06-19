@@ -22,6 +22,10 @@ services:
       - rasa_actions
     command: rasa run --enable-api --cors "*" --debug
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> e346dcb (second stage of conflicts)
   rasa_actions:
     build:
       context: ./RASA
@@ -30,8 +34,11 @@ services:
       - "5055:5055"
     volumes:
       - ./RASA/actions:/app/actions
+<<<<<<< HEAD
 
   client:
     build: ./client
     ports:
       - "8080:80"
+=======
+>>>>>>> e346dcb (second stage of conflicts)
