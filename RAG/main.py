@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from langchain_community.embeddings import HuggingFaceEmbeddings
+import os # used to get user choice of LLM saved in device environment variable
 
 # local Imports
 from rag_pipeline import RAGPipeline  
@@ -16,8 +17,12 @@ build_vector_index.run()
 # Initialize FastAPI app
 app = FastAPI()
 
-# Initialize RAG pipeline
-rag_pipeline = RAGPipeline()
+# Christian-JUN19====
+# now user can choose between LLMs
+llm_backend = os.getenv("LLM_BACKEND", "ollama") 
+# Initialize RAG pipeline: now RAGPipelines has one argument llm_backend
+rag_pipeline = RAGPipeline(llm_backend=llm_backend)
+
 
 @app.get('/')
 def read_root():
