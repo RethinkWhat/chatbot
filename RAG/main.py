@@ -8,7 +8,6 @@ import os # used to get user choice of LLM saved in device environment variable
 from rag_pipeline import RAGPipeline  
 from build_vector_index import BuildVectorIndex
 
-
 # Build Knowledge. Can comment out this section if knowledge already built
 build_vector_index = BuildVectorIndex()
 build_vector_index.run()
@@ -17,7 +16,6 @@ build_vector_index.run()
 # Initialize FastAPI app
 app = FastAPI()
 
-# Christian-JUN19====
 # now user can choose between LLMs
 llm_backend = os.getenv("LLM_BACKEND", "ollama") 
 # Initialize RAG pipeline: now RAGPipelines has one argument llm_backend
