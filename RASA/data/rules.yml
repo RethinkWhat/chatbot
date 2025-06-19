@@ -26,6 +26,7 @@ rules:
   steps:
   - intent: nlu_fallback
   - action: action_rag_fallback
+  - action: action_listen
 
 - rule: Question falls out of Scope 
   steps:
