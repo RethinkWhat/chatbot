@@ -127,5 +127,144 @@ nlu:
     - can you beatbox?
     - how do you fix a flat tire?
 
+# Christian 19 JUN =======
+# added nlu intents
+- intent: learning_mode
+  examples: | 
+    - how is the class conducted?
+    - what is the mode of learning?
+    - what is the learning modality?
+    - how will the class be conducted?
+    - what is the learning modality?
+    - is the class conducted online or onsite?
+    - is the class face-to-face or online?
+    - Class is f2f or online?
+       
+- intent: inc_nc
+  examples: |
+    - Am I considered a regular student if I have an NC or INC in my grades?
+    - Am I an irregular student if I have an INC or NC?
+    - What does INC or NC mean in my grades?
+    - I don't have a failing mark but I obtained an INC or NC, will that make me an incomplete student?
+
+- intent: failing_gened
+  examples: |
+    - What happens if I fail a General Education subject?
+    - Is it considered irregular if I fail a General Education subject?
+    - What are the implications of failing a General Education subject?
+    - If I fail a GenEd, does it affect my regular status?
+    - I passed all my major subjects but failed a general education subject. Am I considered an irregular student?
+
+- intent: irreg_student_inquiry
+  examples: |
+    - How do I enroll as an irregular student?
+    - Can I enroll as an irregular student online?
+    - What is the process for irregular student enrollment?
+    - Can you guide me on how to enroll as an irregular student?
+    - If I am an irregular student, how do I proceed with enrollment?
+
+- intent: maximum_units_policy
+  examples: |
+    - Can I enroll beyond the allowable maximum units?
+    - Can I get more units than I am allowed to?
+    - Am I allowed to obtain more units than I am allowed to?
+
+- intent: retention_policy
+  examples: |
+    - Why did I receive the message: "Please report to your respective department head/faculty adviser (Retention Policy)"?
+    - What does it mean to "report to your respective department head/faculty advisor (Retention Policy)"?
+    - I found this message "Please report to your respective department head/faculty adviser (Retention Policy)" in my web portal. What does it mean?
+    - what to do if i receive the message "Please report to your respective department head/faculty adviser (Retention Policy)"?
+    - "Please report to your respective department head/faculty adviser (Retention Policy)" What does it mean?
+
+- intent: advanced_subject_policy
+  examples: |
+    - Can I enroll in advanced subjects?
+    - What to do if I want to take advanced subjects?
+    - How do I enroll in advanced subjects?
+    - What is the process for enrolling in advanced subjects?
+
+- intent: tuition_fee
+  examples: |
+    - How much is the tuition fee?
+    - What is the cost of tuition?
+    - Can you tell me about the tuition fees?
+    - What are the tuition fees for this semester?
+
+- intent: payment_time
+  examples: |
+    - I don’t have enough money to pay right now. Can I pay tomorrow?
+    - When is the payment deadline?
+    - What is the deadline for tuition payment?
+    - When do I need to pay my tuition?
+    - Can you tell me the payment schedule?
+
+- intent: online_payment_option
+  examples: |
+    - Can I pay my tuition online?
+    - Is there an option for online payment?
+    - Can I pay my tuition online?
+    - Are there any online payment options available?
+    - Is there an online payment platform?
+
+- intent: program_shifting_option
+  examples: |
+    - Can I shift to a different program?
+    - What is the process for program shifting?
+    - How do I change my program of study?
+    - Are there any requirements for program shifting?  
+
+- intent: web_portal_issue
+  examples: |
+    - I can't check available blocks in my web portal.
+    - My web portal is not showing available blocks.
+    - I am having trouble accessing my web portal for choosing available blocks.
+    - There is no blocks in my web portal
+    - What happened to the available blocks in my web portal?
+    - Why there is no block options in my portal?
+
+- intent: only_block_option
+  examples: |
+    - Why is there only one block available in my web portal?
+    - Why do I only see one block available in the schedule?
+    - I can only see one block option in my web portal.
+    - I see only one block option in my web portal.
+    - My web portal shows only one block available.
+    - Is it normal to have only one block option?
+
+- intent: change_blocking_schedules
+  examples: |
+    - Can I change my blocking or schedules?
+    - Is it possible to modify my blocking or schedules?
+    - Will I be allowed to shift or change blocks or schedules?
+
+- intent: uncertain_block_swap
+  examples: |
+    - Can I swap blocks with another student?
+    - Can I swap blocks with someone else?
+    - Is it possible to exchange blocks with another student?
+    - If I find a student who is willing to swap blocks with me, is that possible?
+
+- intent: petition_course
+  examples: | 
+    - How do I petition for a course that is not offered?
+    - The course I need to take is not offered this term. Is it possible to petition for it to be opened?
+    - Can I request a course that is not available in this semester?
+    - How do I submit a petition for a course?
+
+- intent: readmission_process
+  examples: |
+    - What is the process for readmission?
+    - How do I apply for readmission if i was not enrolled last term?
+    - I was not enrolled last term and I want to continue my studies. How should I proceed?
+    - Can you tell me how to to proceed with the readmission?
+    - I wasn't enrolled last semester and I want to continue my studies. What should I do?
+
+- intent: window_10_clearance
+  examples: |
+    - I am a regular student and I cannot enroll online. A message says I need to report to Window 10. What does this mean?
+    - What does it mean to report to Window 10?
+    - I received a message about Window 10 clearance.
+#===================
 
 - intent: nlu_fallback

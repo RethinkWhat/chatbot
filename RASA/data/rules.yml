@@ -32,3 +32,96 @@ rules:
   steps:
   - intent: out_of_scope
   - action: action_rag_fallback
+
+# Christian 19 JUN =======
+# added rules
+- rule: Say 'Onsite for undergrad progs and Hyflex for graduate students' everytime the user asks about the mode of learning
+  steps:
+  - intent: learning_mode
+  - action: utter_learning_mode
+
+- rule: Say 'Clearance needed for INC/NC' anytime the user asks for INC/NC
+  steps:
+  - intent: inc_nc
+  - action: utter_inc_nc
+
+- rule: Say 'Failing GenEd is considered irregular' anytime the user asks about failing GenEd
+  steps:
+  - intent: failing_gened
+  - action: utter_failing_gened
+
+- rule: Say 'Must inquire on-site' anytime user asks about enrollment as irregular student
+  steps:
+  - intent: irreg_student_inquiry
+  - action: utter_irreg_student_inquiry
+
+- rule: Say 'Maximum units conditions' anytime user asks about maximum units
+  steps:
+  - intent: maximum_units_policy
+  - action: utter_maximum_units_policy
+
+- rule: Say 'Retention policy' anytime user asks about retention policy
+  steps:
+  - intent: retention_policy
+  - action: utter_retention_policy
+
+- rule: Say 'Advanced subject policy' anytime user asks about advanced subject policy
+  steps:
+  - intent: advanced_subject_policy
+  - action: utter_advanced_subject_policy
+
+- rule: Say 'tuition fee' anytime user asks about tuition fee
+  steps:
+  - intent: tuition_fee
+  - action: utter_tuition_fee
+
+- rule: Say 'payment time' anytime user asks about payment deadline
+  steps:
+  - intent: payment_time
+  - action: utter_payment_time
+
+- rule: Say 'online payment option' anytime user asks about online payment
+  steps:
+  - intent: online_payment_option
+  - action: utter_online_payment_option
+
+- rule: Say 'Program shifting option' anytime user asks about program shifting
+  steps:
+  - intent: program_shifting_option
+  - action: utter_program_shifting_option
+
+- rule: Say 'block option issue' anytime user asks about issues on checking available blocks in their web portals
+  steps:
+  - intent: web_portal_issue
+  - action: utter_web_portal_issue
+
+- rule: Say 'only block option available' anytime user notices only one block available in web portal
+  steps:
+  - intent: only_block_option
+  - action: utter_only_block_option
+
+- rule: Say 'changing blocks or schedules' anytime user asks about changing blocking or schedules
+  steps:
+  - intent: change_block_schedule
+  - action: utter_change_block_schedule
+
+- rule: Say 'uncertain block swap' anytime user asks about swapping blocks with another student
+  steps:
+  - intent: uncertain_block_swap
+  - action: utter_uncertain_block_swap
+
+- rule: Say 'petition for course' anytime user asks about petitioning for a course not offered
+  steps:
+  - intent: petition_course
+  - action: utter_petition_course
+
+- rule: Say 'readmission process' anytime user asks about readmission
+  steps:
+  - intent: readmission_process
+  - action: utter_readmission_process
+
+- rule: Say 'Window 10 clearance' anytime user asks about a message mentioning of reporting to Window 10
+  steps:
+  - intent: window_10_clearance
+  - action: utter_window_10_clearance
+# ========================

@@ -39,6 +39,63 @@ responses:
   utter_first_day:
   - text: "The first day of the semester is August 12, 2025."
 
+# Christian 19 JUN =======
+  utter_learning_mode:
+  - text: "For undergraduate programs, classes are conducted purely onsite. For graduate studies, we follow a hyflex learning model."
+
+  utter_inc_nc:
+  - text: "you will be considered an irregular student. Completing the requirements for an INC or NC does not automatically mean you’ve passed the course. You must fulfill the necessary requirements to clear the mark before continuing in your program."
+
+  utter_failing_gened:
+  - text: "you would be considered an irregular student as long as you have a failed general education subject. To track the regular offering of your program and understand the proper course progression, please refer to your curriculum guide..
+
+  utter_irreg_student_inquiry:
+  - text: "You are required to enroll onsite. However, you may designate someone to enroll on your behalf. They will need to present an authorization letter, a copy of your student ID, and their own valid ID"
+
+  utter_maximum_units_policy:
+  - text: "Typically, no. However, if you are a graduating student for the term, you may request an exception, subject to approval from your department head or dean."
+
+  utter_retention_policy:
+  - text: "This message is issued when a student has failed 40% or more of their academic load. You are required to meet with your department head or faculty adviser to discuss your academic standing and potential next steps."
+
+  utter_advanced_subject_policy:
+  - text: "Yes, you may enroll in advanced subjects as long as you have passed the prerequisite courses and have received approval from your department head. Additionally, the total number of units must fall within the allowable maximum units for the term."
+
+  utter_tuition_fee:
+  - text: "For an estimated breakdown of tuition fees, please refer to the program catalog available on the official SLU website: www.slu.edu.ph ."
+  
+  utter_payment_time:
+  - text: "To ensure your enrollment is finalized and you are not removed from your classes, it is important to make the payment as soon as possible. Delayed payment may affect your enrollment status."
+  
+  utter_online_payment_option:
+  - text: "you can make payments online through our official payment portals. Please refer to the payment guidelines on the SLU website for more details"
+
+  utter_program_shifting_option:
+  - text: "To shift programs, you need to follow the university's official process, which typically involves submitting a request to the registrar's office or academic advising office. Make sure to check the specific requirements and deadlines for program shifting."  
+
+  utter_web_portal_issue:
+  - text: "The blocks may either be closed or fully booked. To resolve this, please visit your respective onsite enrollment area for assistance."
+
+  utter_only_block_option:
+  - text: "The block you see is the only one currently available. Additional blocks may open later, so it’s worth checking back periodically."
+
+  utter_change_block_schedule:
+  - text: "Generally, no. You are not allowed to change blocks or schedules. However, schedule changes may occur if an additional subject you wish to take conflicts with your current schedule. In such cases, you may need to coordinate with the enrollment office for further assistance."
+
+  utter_uncertain_block_swap:
+  - text: "While it’s possible for students to coordinate with one another, there’s no guarantee that you will be able to secure the other student’s slot. This is because online and onsite enrollment are happening simultaneously, and slots may be filled quickly."
+
+  utter_petition_course:
+  - text: "You may petition to have the course opened. However, the course will only be offered if a minimum of 35 students petition for it. If the number of petitioners falls short, additional payment may be required, which will depend on the number of students willing to pay and who will be assigned to handle the class. Please contact your department head to submit your petition. This should be done before or on the first day of enrollment. If the petitioned class does not reach 35 students, a letter from your parent (with a valid ID for verification) is required, indicating their understanding of the petition process."
+
+  utter_readmission_process:
+  - text: "Since you were not enrolled last term, you will need to email readmission@slu.edu.ph to request readmission. After receiving approval, please visit your respective enrollment area to complete your enrollment process."  
+
+  utter_window_10_clearance:
+  - text: "This means there is a restriction on your enrollment that needs to be cleared. Please visit the University Registrar’s Window 10 at the Diego Silang Main Campus. Once you’ve been cleared at their office, the restriction will be lifted, allowing you to complete your enrollment."
+
+# ========================
+
 session_config:
   session_expiration_time: 60
   carry_over_slots_to_new_session: true
