@@ -8,23 +8,33 @@ from langchain_community.document_loaders import DirectoryLoader
 from scrapers.pdf_scraper import PDFScraper
 import glob
 import os
+
+#calling scrapers into this pipeline
 from scrapers.web_scraper import run_scraper 
+from scrapers.pdf_scraper import scan_all_pdfs
+from scrapers.image_scraper import scan_images
 
 
 DIR = "knowledge"  # Directory where text files are stored
 class BuildVectorIndex: 
-    # Run Web Scraper 
+    # Web Scraper 
     run_scraper(urls_path="urls.txt", output_dir=DIR, depth=2)
-
-    pdfScraper = PDFScraper()
+    
+    # PDF scraper
+    scan_all_pdfs()  # Scan all PDFs in the knowledge directory
+    
+    # pdfScraper = PDFScraper()
+    # Image scraper 
+    scan_images(folder=DIR, output_file=os.path.join(DIR, "extractedImageTexts.txt"))
 
     def run(self): 
-        pdf_files = glob.glob(os.path.join(DIR, "**/*.pdf"), recursive=True)
+        # pdf_files = glob.glob(os.path.join(DIR, "**/*.pdf"), recursive=True)
 
-        for pdf in pdf_files:
-            content = self.pdfScraper.readPDF(pdf)
-            if not content:
-                self.pdfScraper.readPDFImage(pdf)
+        # for pdf in pdf_files:
+        #     content = self.pdfScraper.readPDF(pdf)
+        #     if not content:
+        #         self.pdfScraper.readPDFImages(pdf)
+        
                 
         # Load all text files from a directory
         loader = DirectoryLoader(
