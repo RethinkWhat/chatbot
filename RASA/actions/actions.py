@@ -23,7 +23,7 @@ class ActionRAGFallback(Action):
 
         # Call the RAG service
         #rag_response 
-        rag_url = "http://127.0.0.1:8000/query"
+        rag_url = "http://rag_server:8000/query"
         try:
             response = requests.post(
                 rag_url, 
