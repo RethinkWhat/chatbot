@@ -9,7 +9,7 @@
 
 from typing import Any, Text, Dict, List
 from rasa_sdk import Action, Tracker
-import requests
+import requests,sseclient
 
 class ActionRAGFallback(Action):
     def name(self) -> str:
@@ -17,28 +17,29 @@ class ActionRAGFallback(Action):
     
     async def run(self, dispatcher: "CollectingDispatcher", 
             tracker: Tracker, 
-            domain: dict):
+             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         
         user_message = tracker.latest_message.get("text")
 
         # Call the RAG service
         #rag_response 
-        rag_url = "http://rag_server:8000/query"
+        rag_url = "http://rag_server:8000/chat/stream"
         try:
             response = requests.post(
                 rag_url, 
-                json={"query": user_message})
-            rag_response = response.json().get("response", "No answer found.")
-            print("RAG response:", rag_response)
-            response.raise_for_status()  # Raise an error for bad responses
+                json={"query": user_message},
+                stream=True)
+            
+            
+            sse_client = sseclient.SSEClient(response)
+            full_answer = ""
+            for event in sse_client.events():
+                if event.data == "[DONE]":
+                    break
+                full_answer += event.data
 
-
-            if response.status_code == 200:
-                print("RAG response:", rag_response)
-
-                rag_response = response.json().get("response", "Sorry I couldn't find an answer.")
-            else: 
-                rag_response = "Sorry, there was an error processing your request."
+            dispatcher.utter_message(text=full_answer)
+            return []
         except requests.exceptions.RequestException as e:
             rag_response = f"Error connecting to RAG service: {str(e)}"
 

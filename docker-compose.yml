@@ -31,10 +31,23 @@ services:
     volumes:
       - ./RASA/actions:/app/actions
 
-
   client:
     build: 
       context: ./client
       dockerfile: Dockerfile.client
     ports:
       - "8080:80"
+
+  
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"  # Ollama API port
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    command: serve
+  
+volumes:
+  ollama_data:
