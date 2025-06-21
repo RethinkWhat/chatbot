@@ -1,6 +1,7 @@
 import os
 from PIL import Image
 from pytesseract import pytesseract
+from pathlib import Path
 
 # Set paths
 path_to_tesseract = r"C:\Program Files\Tesseract-OCR\tesseract.exe"

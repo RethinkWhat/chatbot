@@ -45,10 +45,10 @@ def scan_all_pdfs():
         if filename.lower().endswith(".pdf"):
             file_path = os.path.join(DIR, filename)
             print(f"[PDF Scanner] Scanning: {filename}")
-            text = scraper.readPDFs(file_path)
+            text = scraper.readPDF(file_path)
             if text is None or len(text.strip()) < 50:
                 print(f"[Fallback OCR] {filename} appears flattened — using OCR")
-                scraper.readPDFImages(file_path)
+                scraper.readPDFImage(file_path)
             else:
                 print(f"[Success] Extracted text from: {filename}")
                 
