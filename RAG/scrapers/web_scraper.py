@@ -21,7 +21,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 visited_urls = set()
 visited_lock = threading.Lock()
 #set up unnecessary elements that the scraper will avoid
-unnecessary = ["mp4","mp3", "jpg", "png", "m4v", "upload", "uploads", "download", "downloads", "img", "shopify", "pdf"]
+unnecessary = ["mp4","mp3", "m4v", "upload", "uploads", "download", "downloads", "shopify"]
 
 #methods
 def fetch_html(url):
@@ -83,6 +83,9 @@ def crawl(url, depth=2):
     html = fetch_html(url)
     if not html:
         return []
+    
+    # Download assets like PDFs and images, and save them to the output folder
+    download_assets(html, url, output_folder="knowledge")
 
     page_data = parse_html(html, url)
     sub_links = get_internal_links(html, url)
@@ -94,6 +97,27 @@ def crawl(url, depth=2):
             sub_pages.extend(future.result())
 
     return [page_data] + sub_pages
+
+# Christian-JUN20===============
+#download any seen pdfs and images
+def download_assets(html, base_url, output_folder="knowledge"):
+    os.makedirs(output_folder, exist_ok=True)
+    soup = BeautifulSoup(html, "lxml")
+    
+    for tag in soup.find_all("a", href=True):
+        href = tag["href"]
+        file_url = urljoin(base_url, href)
+        if any(file_url.lower().endswith(ext) for ext in [".pdf", ".png", ".jpg", ".jpeg", ".bmp", ".tiff"]):
+            try:
+                response = requests.get(file_url, headers=HEADERS, timeout=10)
+                response.raise_for_status()
+                filename = os.path.basename(urlparse(file_url).path)
+                with open(os.path.join(output_folder, filename), "wb") as f:
+                    f.write(response.content)
+                logging.info(f"Downloaded: {filename}")
+            except Exception as e:
+                logging.warning(f"Failed to download {file_url}: {e}")
+# ==========================
 
 # Save parsed data to txt
 def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge"):
