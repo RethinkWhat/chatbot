@@ -1,33 +1,20 @@
-    #RAG SERVER
-from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile #for db access
-from fastapi.responses import JSONResponse
-import os # used to get user choice of LLM saved in device environment variable
-from fastapi.responses import StreamingResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware # middleware, allowing connection between client and server
-import pymysql # for db access
-# local Imports
-from rag_pipeline import RAGPipeline  
+#RAG SERVER
+from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile
+from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+import os, bcrypt, subprocess, shutil, pymysql
+from threading import Lock
+from pathlib import Path
+
+# Local Imports
 from build_vector_index import BuildVectorIndex
-import bcrypt, subprocess, shutil
-# Scraper functions
+from rag_pipeline import RAGPipeline
 from scrapers.web_scraper import run_scraper
 from scrapers.pdf_scraper import scan_all_pdfs
 from scrapers.image_scraper import scan_images
 
-from threading import Lock
-
-#signal when to stop RAG response
-stop_signal = {"stop": False}
-stop_lock = Lock()
-
-# Build Knowledge. Can comment out this section if knowledge already built
-build_vector_index = BuildVectorIndex()
-build_vector_index.build_index()
-
-
 # Initialize FastAPI app
 app = FastAPI()
-
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -36,7 +23,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+#signal when to stop RAG response
+stop_signal = {"stop": False}
+stop_lock = Lock()
 
+#make sure that knowledge/cleaned exists
+os.makedirs("knowledge/cleaned", exist_ok=True)
+
+#Build FAISS index if nothing is found 
+if not Path("vector_index/index.faiss").exists():
+    print("[INFO] No FAISS index found. Attempting to build it...")
+    builder = BuildVectorIndex()
+    builder.build_index()
+    
+# Only now initialize RAG pipeline safely
+try:
+    # Rag pipelines deployed here
+    rag_pipeline = RAGPipeline(llm_backend="ollama")
+except Exception as e:
+    print("[ERROR] Failed to initialize RAG pipeline:", e)
+    rag_pipeline = None
 
 # Utility: database connection
 def get_db_connection():
@@ -48,11 +54,6 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
-# now user can choose between LLMs
-llm_backend = os.getenv("LLM_BACKEND", "ollama") 
-# Initialize RAG pipeline: now RAGPipelines has one argument llm_backend
-rag_pipeline = RAGPipeline(llm_backend="ollama")
-os.makedirs("knowledge/cleaned", exist_ok=True)
 
 #scraper: clean the data by paraphrasing?
 @app.post("/upload")
