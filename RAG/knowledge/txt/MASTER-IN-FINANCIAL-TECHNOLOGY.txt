@@ -1,0 +1,46 @@
+SAINT LOUIS UNIVERSITY  
+A. Bonifacio, Baguio City  
+SCHOOL OF ADVANCED STUDIES  
+
+Curriculum Checklist  
+
+ACCOUNTANCY, BUSINESS AND MANAGEMENT PROGRAMS  
+Master in Financial Technology (MFinTech)  
+
+
+Course No.          Descriptive Title                                                                 Semester/Term     Grade     Units  
+
+BASIC COURSES (9 units)  
+MFT 101             Analytics and Programming in Finance                                                  _________         _____     3  
+MFT 102             Money, Banking and Financial Institutions                                             _________         _____     3  
+MFT 103             Innovation, Intrapreneurship and Entrepreneurship in FinTech Context     _________         _____     3  
+
+MAJOR COURSES (minimum of 12 units from the following)  
+MFT 111             Ethics & Professional Standards in Finance                                            _________         _____     3  
+MFT 112             Finance, Artificial Intelligence and Machine Learning                                 _________         _____     3  
+MFT 113             Monetary System and Digital Finance                                                  _________         _____     3  
+MFT 114             Data Mining                                                                           _________         _____     3  
+MFT 115             Blockchain and Applications                                                           _________         _____     3  
+MFT 116             Risk Analysis and Quantitative Asset Allocation                                      _________         _____     ___  
+MFT 117             Financial Entrepreneurship                                                            _________         _____     3  
+MFT 118             Business Analytics and Artificial Intelligence                                        _________         _____     3  
+MFT 119             Advanced Corporate Finance                                                            _________         _____     3  
+MFT 120             Digital & Open Banking                                                                _________         _____     3  
+MFT 121             Any 3 units from the MBA/MSBA program                                                _________         _____     3  
+
+ELECTIVE COURSES (3 units - select one)  
+MFT 131             Financial Econometrics in R/PYTHON                                                   _________         _____     ___  
+MFT 132             Asset Pricing and Portfolio Management                                               _________         _____     ___  
+MFT 133             Business Valuation in FinTech Context                                                 _________         _____     ___  
+MFT 134             Seminars, Current Trends in Financial Technology                                     _________         _____     ___  
+
+COMPREHENSIVE EXAMINATION /  
+REVIEW OF RELATED LITERATURE  
+[To be taken during last term or after completion of academic courses]  
+
+CAPSTONE PROJECTS (6 units)  
+MFT 211             Capstone Project 1                                                                     _________         _____     3  
+MFT 212             Capstone Project 2                                                                     _________         _____     3  
+
+TOTAL NUMBER OF UNITS OF THE PROGRAM: 30
+Master in Financial Technology (MFinTech)  

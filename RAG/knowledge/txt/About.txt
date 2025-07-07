@@ -11,3 +11,10 @@ Sharing updates on department events, seminars, and announcements
 As a chatbot companion, Navi’s role is to make student life at SLU more accessible, organized, and engaging. It serves as a first point of contact for academic assistance and helps guide students toward the right resources or people when needed.
 
 The goal is to enhance the overall experience within the Department of Computer Science and ensure students have the support they need to succeed.
+
+
+The four core values of Saint Louis University are:
+    1. Competence
+    2. Christian Spirit
+    3. Compassion
+    4. Innovation
