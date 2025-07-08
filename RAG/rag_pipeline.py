@@ -40,98 +40,99 @@ class RAGPipeline:
         except KeyError:
             raise ValueError("Please set POSTHOG_API_KEY and POSTHOG_HOST environment variables")
         
+        # comment out the section if it is already run once.
       #--------------------------------  START ------------------------------------------------------
-        client = weaviate.connect_to_custom(
-            http_host="weaviate",         # your Docker service name or localhost
-            http_port=8080,
-            http_secure=False,
-            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
-            grpc_port=50051,
-            grpc_secure=False
-        )
-        questions = client.collections.create(
-            name="NaviBot40",
-            vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
-                api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
-                model="nomic-embed-text",                               # The model to use
-            ),
-            generative_config=Configure.Generative.ollama(              # Configure the Ollama generative integration
-                api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
-                model="llama3.2",                                       # The model to use
-            )
-        )
-        client.close()  # Free up resources
+        # client = weaviate.connect_to_custom(
+        #     http_host="weaviate",         # your Docker service name or localhost
+        #     http_port=8080,
+        #     http_secure=False,
+        #     grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+        #     grpc_port=50051,
+        #     grpc_secure=False
+        # )
+        # questions = client.collections.create(
+        #     name="NaviBot",
+        #     vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
+        #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
+        #         model="nomic-embed-text",                               # The model to use
+        #     ),
+        #     generative_config=Configure.Generative.ollama(              # Configure the Ollama generative integration
+        #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
+        #         model="llama3.2",                                       # The model to use
+        #     )
+        # )
+        # client.close()  # Free up resources
 
-        client = weaviate.connect_to_custom(
-            http_host="weaviate",         # your Docker service name or localhost
-            http_port=8080,
-            http_secure=False,
-            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
-            grpc_port=50051,
-            grpc_secure=False
-        )
+        # client = weaviate.connect_to_custom(
+        #     http_host="weaviate",         # your Docker service name or localhost
+        #     http_port=8080,
+        #     http_secure=False,
+        #     grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+        #     grpc_port=50051,
+        #     grpc_secure=False
+        # )
 
-        navibot = client.collections.get("NaviBot40")
-        # Step 4: Read and parse all JSON files
-        data = []
-        for filename in os.listdir("knowledge/json"):
-            if filename.endswith(".json"):
-                filepath = os.path.join("knowledge/json", filename)
-                try:
-                    with open(filepath, "r", encoding="utf-8") as f:
-                        json_data = json.load(f)
+        # navibot = client.collections.get("NaviBot")
+        # # Step 4: Read and parse all JSON files
+        # data = []
+        # for filename in os.listdir("knowledge/json"):
+        #     if filename.endswith(".json"):
+        #         filepath = os.path.join("knowledge/json", filename)
+        #         try:
+        #             with open(filepath, "r", encoding="utf-8") as f:
+        #                 json_data = json.load(f)
 
-                        if isinstance(json_data, dict):
-                            title = json_data.get("title", filename)
-                            for key, value in json_data.items():
-                                if key == "title":
-                                    continue  # Already stored as 'title'
+        #                 if isinstance(json_data, dict):
+        #                     title = json_data.get("title", filename)
+        #                     for key, value in json_data.items():
+        #                         if key == "title":
+        #                             continue  # Already stored as 'title'
 
-                                # Skip empty content
-                                if not value:
-                                    continue
+        #                         # Skip empty content
+        #                         if not value:
+        #                             continue
 
-                                chunk = {
-                                    "title": f"{title} - {key}".strip(),
-                                    "answer": json.dumps(value, indent=2),
-                                    "category": filename
-                                }
-                                data.append(chunk)
-                        else:
-                            print(f"Skipping {filename}: not a valid JSON object.")
+        #                         chunk = {
+        #                             "title": f"{title} - {key}".strip(),
+        #                             "answer": json.dumps(value, indent=2),
+        #                             "category": filename
+        #                         }
+        #                         data.append(chunk)
+        #                 else:
+        #                     print(f"Skipping {filename}: not a valid JSON object.")
 
-                except json.JSONDecodeError as e:
-                    print(f"Failed to decode {filename}: {e}")
+        #         except json.JSONDecodeError as e:
+        #             print(f"Failed to decode {filename}: {e}")
 
-        # Insert chunks in batches
-        with navibot.batch.fixed_size(batch_size=200) as batch:
-            for item in data:
-                batch.add_object({
-                    "title": item["title"][:300],
-                    "answer": item["answer"],
-                    "category": item["category"]
-                })
-                if batch.number_errors > 10:
-                    print("Batch import stopped due to excessive errors.")
-                    break
+        # # Insert chunks in batches
+        # with navibot.batch.fixed_size(batch_size=200) as batch:
+        #     for item in data:
+        #         batch.add_object({
+        #             "title": item["title"][:300],
+        #             "answer": item["answer"],
+        #             "category": item["category"]
+        #         })
+        #         if batch.number_errors > 10:
+        #             print("Batch import stopped due to excessive errors.")
+        #             break
 
-                failed_objects = navibot.batch.failed_objects
-                if failed_objects:
-                    print(f"Number of failed imports: {len(failed_objects)}")
-                    print(f"First failed object: {failed_objects[0]}")
+        #         failed_objects = navibot.batch.failed_objects
+        #         if failed_objects:
+        #             print(f"Number of failed imports: {len(failed_objects)}")
+        #             print(f"First failed object: {failed_objects[0]}")
 
-                # Fetch and print all objects
-                questions = client.collections.get("NaviBot40")  # You can increase the limit as needed
+        #         # Fetch and print all objects
+        #         questions = client.collections.get("NaviBot")  # You can increase the limit as needed
 
-                # Print nicely
-                results = questions.query.fetch_objects(limit=100)
+        #         # Print nicely
+        #         results = questions.query.fetch_objects(limit=100)
 
-                # for obj in results.objects:
-                #     print("UUID:", obj.uuid)
-                #     print("Properties:", obj.properties)
-                #     print("-" * 40)
+        #         # for obj in results.objects:
+        #         #     print("UUID:", obj.uuid)
+        #         #     print("Properties:", obj.properties)
+        #         #     print("-" * 40)
 
-        client.close()  # Free up resources
+        # client.close()  # Free up resources
 
         #--------------------------------  END ------------------------------------------------------
 
@@ -203,7 +204,7 @@ class RAGPipeline:
             grpc_secure=False
         )
 
-        questions = client.collections.get("NaviBot40")
+        questions = client.collections.get("NaviBot")
 
         response = questions.query.near_text(
                     query=question,
@@ -212,7 +213,7 @@ class RAGPipeline:
                     return_metadata=["distance"]  
         )
 
-        questions = client.collections.get("NaviBot40")  # This should be the collection where you ingested the data
+        questions = client.collections.get("NaviBot")  # This should be the collection where you ingested the data
 
 
         client.close()
@@ -238,3 +239,36 @@ Only use the documents to answer. Be concise and only return the most relevant i
         response = self.chain.predict(input=prompt)
         print("LLM RESPONSE: ", response )
         return response
+    
+    def jsonifyTxt(self, text: str) -> dict:
+        system_prompt = (
+            "You are a document-to-JSON converter. Given an academic document, "
+            "extract structured JSON with balanced depth. Use flat keys for scalar fields, "
+            "but group similar items (e.g., objectives, learning outcomes) under common prefixes."
+        )
+        prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
+
+        response = self.get_ollama_completion(prompt)
+        
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError:
+            print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
+            return {"raw_output": response}
+
+    def get_ollama_completion(self, prompt: str) -> str:
+        if not self.llmModel:
+            raise RuntimeError("LLM is not initialized.")
+
+        try:
+            non_streaming_llm = ChatOllama(
+                model="llama3:8b",
+                base_url="http://ollama:11434",
+                temperature=0.4,
+                streaming=False  # Force non-streaming
+            )
+            response = non_streaming_llm.invoke(prompt)
+            return response.content if hasattr(response, "content") else str(response)
+        except Exception as e:
+            print(f"[ERROR] Failed to get Ollama completion: {e}")
+            return ""

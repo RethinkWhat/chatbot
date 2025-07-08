@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#1e40af">
-    <link rel="stylesheet" href="admin.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1e40af" />
+    <link rel="stylesheet" href="admin.css" />
     <title>Ask Navi Admin</title>
 </head>
 <body>
@@ -16,7 +16,8 @@
                 <a href="index.html" class="back-link">← Back to Chatbot</a>
             </div>
         </div>
-        
+
+        <div class="status-message" id="statusMessage"></div>
         <!-- Login form -->
         <div class="login-section" id="loginSection">
             <div class="login-card">
@@ -24,17 +25,18 @@
                 <form id="loginForm">
                     <div class="form-group">
                         <label for="username">Username:</label>
-                        <input type="text" id="username" required>
+                        <input type="text" id="username" name="username" required />
                     </div>
                     <div class="form-group">
                         <label for="password">Password:</label>
-                        <input type="password" id="password" required>
+                        <input type="password" id="password" name="password" required />
                     </div>
                     <button type="submit" class="login-btn">Login</button>
                 </form>
+                <!-- <div class="status-message" id="statusMessage"></div> -->
             </div>
         </div>
-        
+
         <!-- Toolbar buttons -->
         <div class="admin-content" id="adminContent" style="display: none;">
             <div class="toolbar">
@@ -47,18 +49,19 @@
                 <button id="resetBtn" class="toolbar-btn danger">
                     <span>🔄</span> Reset to Default
                 </button>
-                <button id="logoutBtn" class="toolbar-btn">
+                <button id="logoutBtn" class="toolbar-btn logout">
                     <span>🚪</span> Logout
                 </button>
-                <a href="/scrape" class="toolbar-btn">
-                    <span>🧹</span>Scrape Data / Edit Knowledge Base</a>
+                <button id="scrapeBtn" class="toolbar-btn scrape">
+                    <span>🧹</span> Scrape
+                </button>
             </div>
-            
+
             <div class="menu-list" id="menuList">
                 <!-- Menu items will be dynamically loaded here -->
             </div>
         </div>
-        
+
         <!-- Add/Edit Menu Popup -->
         <div class="window" id="menuWindow">
             <div class="window-content">
@@ -69,24 +72,33 @@
                 <form id="menuForm">
                     <div class="form-group">
                         <label for="menuTitle">Menu Title:</label>
-                        <input type="text" id="menuTitle" required maxlength="50">
+                        <input type="text" id="menuTitle" required maxlength="50" />
                     </div>
                     <div class="form-group">
                         <label for="menuEmoji">Emoji:</label>
-                        <input type="text" id="menuEmoji" required maxlength="2" placeholder="📋">
+                        <select id="menuEmoji" required>
+                            <!-- Options populated dynamically -->
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="menuContent">Content:</label>
-                        <textarea id="menuContent" required rows="10" placeholder="Enter the response content here..."></textarea>
+                        <textarea
+                            id="menuContent"
+                            required
+                            rows="10"
+                            placeholder="Enter the response content here..."
+                        ></textarea>
                     </div>
                     <div class="form-actions">
-                        <button type="button" id="cancelBtn" class="btn secondary">Cancel</button>
+                        <button type="button" id="cancelBtn" class="btn secondary">
+                            Cancel
+                        </button>
                         <button type="submit" class="btn primary">Save Menu Item</button>
                     </div>
                 </form>
             </div>
         </div>
-        
+
         <!-- Confirmation Popup -->
         <div class="window" id="confirmWindow">
             <div class="window-content small">
@@ -94,17 +106,22 @@
                     <h3>Confirm Action</h3>
                 </div>
                 <div class="window-body">
-                    <p id="confirmMessage">Are you sure you want to perform this action?</p>
+                    <p id="confirmMessage">
+                        Are you sure you want to perform this action?
+                    </p>
                 </div>
                 <div class="form-actions">
-                    <button type="button" id="confirmCancel" class="btn secondary">Cancel</button>
-                    <button type="button" id="confirmOk" class="btn danger">Confirm</button>
+                    <button type="button" id="confirmCancel" class="btn secondary">
+                        Cancel
+                    </button>
+                    <button type="button" id="confirmOk" class="btn danger">
+                        Confirm
+                    </button>
                 </div>
             </div>
         </div>
-        <div class="status-message" id="statusMessage"></div>
     </div>
-    
+
     <script src="admin.js"></script>
 </body>
 </html>

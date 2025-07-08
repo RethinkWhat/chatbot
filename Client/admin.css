@@ -405,9 +405,11 @@ body {
     padding: 12px 20px;
     border-radius: 8px;
     font-weight: 500;
-    z-index: 1001;
+    z-index: 9999;
+    display:none;
     transform: translateX(400px);
     transition: transform 0.3s ease;
+    pointer-events: none;         /* So it doesn’t block clicks */
 }
 
 .status-message.show {

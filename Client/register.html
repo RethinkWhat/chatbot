@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Register</title>
+</head>
+<body>
+  <h2>Register</h2>
+  <form id="registerForm">
+    <label>Name:<br /><input type="text" name="name" required /></label><br />
+    <label>Email:<br /><input type="email" name="email" required /></label><br />
+    <label>Username:<br /><input type="text" name="username" required /></label><br />
+    <label>Password:<br /><input type="password" name="password" required /></label><br />
+    <button type="submit">Register</button>
+  </form>
+
+  <div id="message"></div>
+
+  <script>
+    const form = document.getElementById('registerForm');
+    const msgDiv = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      const resp = await fetch('admin_controller.php?action=register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await resp.json();
+      if (result.status === 'success') {
+        msgDiv.style.color = 'green';
+        msgDiv.textContent = result.message + ' You can now log in.';
+        form.reset();
+      } else {
+        msgDiv.style.color = 'red';
+        msgDiv.textContent = result.message || 'Registration failed';
+      }
+    });
+  </script>
+</body>
+</html>

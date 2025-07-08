@@ -1,110 +1,206 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Scraping Panel</title>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e40af" />
+  <title>Ask Navi Scraping Panel</title>
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
   <div class="admin-container">
-    <h2>Scrape Knowledge Base</h2>
+    <div class="admin-header">
+      <div class="header-content">
+        <h1>Ask Navi Scraper Panel</h1>
+        <p>Manage Knowledge Base via Scraping, Uploading, and Indexing</p>
+        <a href="admin.html" class="back-link">← Back to Admin</a>
+      </div>
+    </div>
 
-    <form id="scrapeForm">
-      <label for="depth">Crawl Depth:</label>
-      <input type="number" id="depth" name="depth" value="2" min="1" max="5">
-      <br><br>
-      <button type="submit">Run Scraper</button>
-    </form>
+    <div class="admin-content">
+      <div class="section">
+        <h2>🌐 Run Web Scraper</h2>
+        <form id="scrapeForm">
+          <label for="depth">Crawl Depth:</label>
+          <input type="number" id="depth" name="depth" value="2" min="1" max="5">
+          <button type="submit" class="toolbar-btn">Run Scraper</button>
+        </form>
+        <pre id="scrapeOutput" class="output-box"></pre>
+      </div>
+      <div class="section">
+        <h2>📄 Scan PDF and Image Files</h2>
+        <button id="scanPdfBtn" class="toolbar-btn">📄 Scan PDFs</button>
+        <button id="scanImageBtn" class="toolbar-btn">🖼️ Scan Images</button>
+        <pre id="scanOutput" class="output-box"></pre>
+      </div>
 
-    <pre id="scrapeOutput" style="background:#eee;padding:1rem;overflow:auto;height:300px;"></pre>
+
+      <div class="section">
+        <h2>📁 Upload Files (.pdf, .png, .jpg, .txt)</h2>
+        <form id="uploadForm">
+          <input type="file" id="uploadInput" name="files" multiple accept=".pdf,.png,.jpg,.jpeg,.txt">
+          <button type="submit" class="toolbar-btn">Upload</button>
+        </form>
+        <pre id="uploadOutput" class="output-box"></pre>
+      </div>
+
+      <div class="section">
+        <h3>Edit Existing JSON Knowledge Files</h3>
+        <input type="text" id="jsonSearch" placeholder="🔍 Search JSON files..." style="width: 300px; padding: 5px; margin-bottom: 10px;"><br>
+        <select id="jsonFileList" style="width: 300px;"></select>
+        <textarea id="jsonFileEditor" rows="15" cols="80" placeholder="Raw JSON will appear here..."></textarea>
+        <button id="saveJsonBtn">Save JSON Changes</button>
+        <pre id="jsonSaveStatus"></pre>
+      </div>
+
+      <div class="section">
+        <h2>📦 Deploy AI knowledge base</h2>
+        <button id="knowledgeDeployBtn" class="toolbar-btn primary">📦 PROCEED</button>
+        <pre id="deployStatus" class="output-box"></pre>
+      </div>
+    </div>
   </div>
-  
-  <h3>Upload Files (.pdf, .png, .jpg, .txt)</h3>
-  <form id="uploadForm">
-    <input type="file" id="uploadInput" name="files" multiple accept=".pdf,.png,.jpg,.jpeg,.txt">
-    <button type="submit">Upload</button>
-  </form>
-  <pre id="uploadOutput"></pre>
-
-  <h3>Edit Existing Knowledge Files</h3>
-  <select id="fileList"></select>
-  <textarea id="fileEditor" rows="15" cols="80"></textarea>
-  <button id="saveFileBtn">Save Changes</button>
-  <pre id="saveStatus"></pre>
-
-  <h3>Vector Indexing</h3>
-  <button id="buildVectorBtn">📦 Build Vector Index</button>
-  <pre id="vectorStatus"></pre>
-
 
   <script>
-    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const input = document.getElementById("uploadInput");
-        const formData = new FormData();
-        for (const file of input.files) {
-            formData.append("files", file);
-        }
-
-        const res = await fetch("http://localhost:8000/upload", {
-            method: "POST",
-            body: formData
+    document.getElementById("scrapeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const depth = document.getElementById("depth").value;
+      const output = document.getElementById("scrapeOutput");
+      output.textContent = "⏳ Running web scraper...";
+      try {
+        const res = await fetch("http://localhost:8000/trigger/scrape", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ depth: parseInt(depth) })
         });
-
         const data = await res.json();
-        document.getElementById("uploadOutput").textContent = JSON.stringify(data.uploaded, null, 2);
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = "❌ Error during scraping.";
+        console.error(err);
+      }
     });
 
-    async function loadFileList() {
-        const res = await fetch("http://localhost:8000/knowledge");
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const input = document.getElementById("uploadInput");
+      const formData = new FormData();
+      for (const file of input.files) {
+        formData.append("files", file);
+      }
+      const res = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      document.getElementById("uploadOutput").textContent = JSON.stringify(data.uploaded, null, 2);
+    });
+
+    let allJsonFiles = [];  // Holds all filenames for searching
+
+    async function loadJsonFileList() {
+        const res = await fetch("http://localhost:8000/knowledge/json");
         const data = await res.json();
-        const list = document.getElementById("fileList");
+        allJsonFiles = data.files;
+        renderJsonFileOptions(allJsonFiles);
+    }
+
+    function renderJsonFileOptions(fileArray) {
+        const list = document.getElementById("jsonFileList");
         list.innerHTML = '';
-        data.files.forEach(f => {
+        fileArray.forEach(f => {
             const option = document.createElement("option");
             option.value = f;
             option.textContent = f;
             list.appendChild(option);
         });
+
+        if (fileArray.length > 0) {
+            list.dispatchEvent(new Event("change"));  // Auto-load first file
         }
-
-    document.getElementById("fileList").addEventListener("change", async () => {
-        const filename = document.getElementById("fileList").value;
-        const res = await fetch(`http://localhost:8000/knowledge/${filename}`);
-        const data = await res.json();
-        document.getElementById("fileEditor").value = data.content;
-    });
-
-    document.getElementById("saveFileBtn").addEventListener("click", async () => {
-        const filename = document.getElementById("fileList").value;
-        const content = document.getElementById("fileEditor").value;
-        const res = await fetch(`http://localhost:8000/knowledge/${filename}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content })
+    }
+    // Scan PDFs
+    document.getElementById("scanPdfBtn").addEventListener("click", async () => {
+      const output = document.getElementById("scanOutput");
+      output.textContent = "⏳ Scanning PDFs...";
+      try {
+        const res = await fetch("http://localhost:8000/trigger/pdf", {
+          method: "POST"
         });
         const data = await res.json();
-        document.getElementById("saveStatus").textContent = "Saved: " + data.status;
+        output.textContent = "✅ " + data.status;
+      } catch (err) {
+        output.textContent = "❌ Failed to scan PDFs.";
+        console.error(err);
+      }
     });
 
-    document.getElementById("buildVectorBtn").addEventListener("click", async () => {
-        const statusEl = document.getElementById("vectorStatus");
-        statusEl.textContent = "⏳ Building vector index...";
+    // Scan Images
+    document.getElementById("scanImageBtn").addEventListener("click", async () => {
+      const output = document.getElementById("scanOutput");
+      output.textContent = "⏳ Scanning images...";
+      try {
+        const res = await fetch("http://localhost:8000/trigger/image", {
+          method: "POST"
+        });
+        const data = await res.json();
+        output.textContent = "✅ " + data.status;
+      } catch (err) {
+        output.textContent = "❌ Failed to scan images.";
+        console.error(err);
+      }
+    });
+
+    document.getElementById("jsonSearch").addEventListener("input", () => {
+        const keyword = document.getElementById("jsonSearch").value.toLowerCase();
+        const filtered = allJsonFiles.filter(name => name.toLowerCase().includes(keyword));
+        renderJsonFileOptions(filtered);
+    });
+    document.getElementById("jsonFileList").addEventListener("change", async () => {
+        const filename = document.getElementById("jsonFileList").value;
+        if (!filename) return;
+        const res = await fetch(`http://localhost:8000/knowledge/json/${filename}`);
+        const data = await res.json();
+        document.getElementById("jsonFileEditor").value = JSON.stringify(data.content, null, 2);
+    });
+
+    document.getElementById("saveJsonBtn").addEventListener("click", async () => {
+        const filename = document.getElementById("jsonFileList").value;
+        const rawContent = document.getElementById("jsonFileEditor").value;
 
         try {
-            const res = await fetch("http://localhost:8000/trigger/index", {
-            method: "POST"
+            const parsed = JSON.parse(rawContent);
+            const res = await fetch(`http://localhost:8000/knowledge/json/${filename}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: parsed })
             });
-            const data = await res.json();
-            statusEl.textContent = `✅ Vector index built. Total chunks: ${data.chunks || "unknown"}`;
+            const result = await res.json();
+            document.getElementById("jsonSaveStatus").textContent = "✅ JSON Saved: " + result.status;
         } catch (err) {
-            statusEl.textContent = "❌ Failed to build vector index.";
-            console.error(err);
+            document.getElementById("jsonSaveStatus").textContent = "❌ Invalid JSON format.";
+            console.error("JSON parse error:", err);
         }
     });
 
+    <!-- subject to changes -->
+    document.getElementById("knowledgeDeployBtn").addEventListener("click", async () => {
+      const statusEl = document.getElementById("deployStatus");
+      statusEl.textContent = "⏳ converting json to AI knowledge base...";
+      try {
+        const res = await fetch("http://localhost:8000/trigger/jsonify", {
+          method: "POST"
+        });
+        const data = await res.json();
+        statusEl.textContent = `✅ Done. Total chunks: ${data.chunks || "unknown"}`;
+      } catch (err) {
+        statusEl.textContent = "❌ Failed to deploy.";
+        console.error(err);
+      }
+    });
 
-    loadFileList();
+    loadJsonFileList();
+
   </script>
 </body>
 </html>
