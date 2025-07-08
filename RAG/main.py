@@ -20,6 +20,7 @@ from threading import Lock
 import weaviate
 from weaviate import WeaviateClient
 from weaviate.classes.config import Configure
+from constants import apologyMsg
 
 #signal when to stop RAG response
 stop_signal = {"stop": False}
@@ -28,7 +29,6 @@ stop_lock = Lock()
 # Build Knowledge. Can comment out this section if knowledge already built
 #build_vector_index = BuildVectorIndex()
 #build_vector_index.run()
-
 
 
 # Initialize FastAPI app
@@ -112,47 +112,28 @@ async def get_menu():
 def read_root():
     return {"message": "Welcome to the RAG API. Use the /query endpoint to ask questions."}    
 
+@app.post("/predict")
+async def predict_endpoint(request: Request):
 
-@app.post("/chat/stream")
-async def stream_response(request: Request):
-    body = await request.json()
-    print("Received body:", body)  
-
-    # Extract query from tracker
-    query = body.get("query", "")
-    previousQuestion = body.get("prevQuestion", "")
-
-    if not query:
-        return JSONResponse(
-            status_code=200,
-            content={"responses": [{"query": "No query found in message."}], "events": []}
-        )
-        
-     # Reset stop flag before each new generation
+    # Reset stop flag before each new generation
     with stop_lock:
         stop_signal["stop"] = False
         
-    
-    # 👇 RAG PIPELINE IMPLE
-    response = rag_pipeline.get_ollama_stream(query)
-    if ("I don't know" in response):
-        with open("knowledge/unknown.txt", "a") as file:
-            file.write(query + "\n")
-    response = JSONResponse(
-        status_code=200,
-        content={"response" : response} 
-        )
-    print(response)
-
-@app.post("/predict")
-async def predict_endpoint(request: Request):
     body = await request.json()
     print("reached /predict with the ff body: ", body)
+    query = body.get("message")
     reply = rag_pipeline.predict( 
         message=body.get("message", ""), 
         distinct_id=body.get("distinct_id",""), 
-        session_id=body.get("session_id", "")
+        session_id=body.get("session_id", ""),
+        query = query
     )
+
+    if (apologyMsg in reply):
+        with open("knowledge/unknown.txt", "a") as file:
+            file.write(query + "\n")
+
+
     return {"response": reply}
 
 

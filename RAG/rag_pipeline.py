@@ -2,7 +2,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_ollama import ChatOllama
 from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.output_parsers import StrOutputParser
 import torch
 import uuid
@@ -16,24 +16,15 @@ from weaviate.classes.config import Configure
 import time
 import textwrap # for paraphrasing the knowledge base
 
+from constants import apologyMsg
+
+
 
 llmModel = None  # Initialize llmModel to be used later in the class
 
+
 class RAGPipeline:
     def __init__(self, llm_backend: str = "ollama"):
-        # Load embeddings and vector store
-        self.embedding = HuggingFaceEmbeddings(
-             model_name="BAAI/bge-base-en-v1.5",
-             encode_kwargs={"normalize_embeddings": True},
-            # If you have a GPU, set device to "cuda", otherwise use "cpu"
-             model_kwargs={"device": "cuda" if torch.cuda.is_available() else "cpu"} 
-             )
-        self.vector_store = FAISS.load_local(
-            "vector_index",
-            self.embedding,
-            allow_dangerous_deserialization=True
-        )
-        self.retriever = self.vector_store.as_retriever(search_kwargs = {"k" : 5})
         try:
             posthog.api_key = "phc_eZjTrWqsuZNwwsm6hURdjgrFeRMSdSD1Rjx8i3uHZFu" #"phx_hNGq3WucDTsZWAlzpj2WdJV2H5hFGbHroGnyuaQG7fGq25C" #os.environ["POSTHOG_API_KEY"]
             posthog.host = "https://app.posthog.com" #os.environ['POSTHOG_HOST'] 
@@ -41,97 +32,97 @@ class RAGPipeline:
             raise ValueError("Please set POSTHOG_API_KEY and POSTHOG_HOST environment variables")
         
       #--------------------------------  START ------------------------------------------------------
-        client = weaviate.connect_to_custom(
-            http_host="weaviate",         # your Docker service name or localhost
-            http_port=8080,
-            http_secure=False,
-            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
-            grpc_port=50051,
-            grpc_secure=False
-        )
-        questions = client.collections.create(
-            name="NaviBot40",
-            vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
-                api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
-                model="nomic-embed-text",                               # The model to use
-            ),
-            generative_config=Configure.Generative.ollama(              # Configure the Ollama generative integration
-                api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
-                model="llama3.2",                                       # The model to use
-            )
-        )
-        client.close()  # Free up resources
+        # client = weaviate.connect_to_custom(
+        #     http_host="weaviate",         # your Docker service name or localhost
+        #     http_port=8080,
+        #     http_secure=False,
+        #     grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+        #     grpc_port=50051,
+        #     grpc_secure=False
+        # )
+        # questions = client.collections.create(
+        #     name="NaviBot40",
+        #     vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
+        #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
+        #         model="nomic-embed-text",                               # The model to use
+        #     ),
+        #     generative_config=Configure.Generative.ollama(              # Configure the Ollama generative integration
+        #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
+        #         model="llama3.2",                                       # The model to use
+        #     )
+        # )
+        # client.close()  # Free up resources
 
-        client = weaviate.connect_to_custom(
-            http_host="weaviate",         # your Docker service name or localhost
-            http_port=8080,
-            http_secure=False,
-            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
-            grpc_port=50051,
-            grpc_secure=False
-        )
+        # client = weaviate.connect_to_custom(
+        #     http_host="weaviate",         # your Docker service name or localhost
+        #     http_port=8080,
+        #     http_secure=False,
+        #     grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+        #     grpc_port=50051,
+        #     grpc_secure=False
+        # )
 
-        navibot = client.collections.get("NaviBot40")
-        # Step 4: Read and parse all JSON files
-        data = []
-        for filename in os.listdir("knowledge/json"):
-            if filename.endswith(".json"):
-                filepath = os.path.join("knowledge/json", filename)
-                try:
-                    with open(filepath, "r", encoding="utf-8") as f:
-                        json_data = json.load(f)
+        # navibot = client.collections.get("NaviBot40")
+        # # Step 4: Read and parse all JSON files
+        # data = []
+        # for filename in os.listdir("knowledge/json"):
+        #     if filename.endswith(".json"):
+        #         filepath = os.path.join("knowledge/json", filename)
+        #         try:
+        #             with open(filepath, "r", encoding="utf-8") as f:
+        #                 json_data = json.load(f)
 
-                        if isinstance(json_data, dict):
-                            title = json_data.get("title", filename)
-                            for key, value in json_data.items():
-                                if key == "title":
-                                    continue  # Already stored as 'title'
+        #                 if isinstance(json_data, dict):
+        #                     title = json_data.get("title", filename)
+        #                     for key, value in json_data.items():
+        #                         if key == "title":
+        #                             continue  # Already stored as 'title'
 
-                                # Skip empty content
-                                if not value:
-                                    continue
+        #                         # Skip empty content
+        #                         if not value:
+        #                             continue
 
-                                chunk = {
-                                    "title": f"{title} - {key}".strip(),
-                                    "answer": json.dumps(value, indent=2),
-                                    "category": filename
-                                }
-                                data.append(chunk)
-                        else:
-                            print(f"Skipping {filename}: not a valid JSON object.")
+        #                         chunk = {
+        #                             "title": f"{title} - {key}".strip(),
+        #                             "answer": json.dumps(value, indent=2),
+        #                             "category": filename
+        #                         }
+        #                         data.append(chunk)
+        #                 else:
+        #                     print(f"Skipping {filename}: not a valid JSON object.")
 
-                except json.JSONDecodeError as e:
-                    print(f"Failed to decode {filename}: {e}")
+        #         except json.JSONDecodeError as e:
+        #             print(f"Failed to decode {filename}: {e}")
 
-        # Insert chunks in batches
-        with navibot.batch.fixed_size(batch_size=200) as batch:
-            for item in data:
-                batch.add_object({
-                    "title": item["title"][:300],
-                    "answer": item["answer"],
-                    "category": item["category"]
-                })
-                if batch.number_errors > 10:
-                    print("Batch import stopped due to excessive errors.")
-                    break
+        # # Insert chunks in batches
+        # with navibot.batch.fixed_size(batch_size=200) as batch:
+        #     for item in data:
+        #         batch.add_object({
+        #             "title": item["title"][:300],
+        #             "answer": item["answer"],
+        #             "category": item["category"]
+        #         })
+        #         if batch.number_errors > 10:
+        #             print("Batch import stopped due to excessive errors.")
+        #             break
 
-                failed_objects = navibot.batch.failed_objects
-                if failed_objects:
-                    print(f"Number of failed imports: {len(failed_objects)}")
-                    print(f"First failed object: {failed_objects[0]}")
+        #         failed_objects = navibot.batch.failed_objects
+        #         if failed_objects:
+        #             print(f"Number of failed imports: {len(failed_objects)}")
+        #             print(f"First failed object: {failed_objects[0]}")
 
-                # Fetch and print all objects
-                questions = client.collections.get("NaviBot40")  # You can increase the limit as needed
+        #         # Fetch and print all objects
+        #         questions = client.collections.get("NaviBot40")  # You can increase the limit as needed
 
-                # Print nicely
-                results = questions.query.fetch_objects(limit=100)
+        #         # Print nicely
+        #         results = questions.query.fetch_objects(limit=100)
 
-                # for obj in results.objects:
-                #     print("UUID:", obj.uuid)
-                #     print("Properties:", obj.properties)
-                #     print("-" * 40)
+        #         # for obj in results.objects:
+        #         #     print("UUID:", obj.uuid)
+        #         #     print("Properties:", obj.properties)
+        #         #     print("-" * 40)
 
-        client.close()  # Free up resources
+        # client.close()  # Free up resources
 
         #--------------------------------  END ------------------------------------------------------
 
@@ -144,8 +135,15 @@ class RAGPipeline:
                 temperature=0.4,
                 streaming=True  # Enable streaming
                 )
-            self.memory = ConversationBufferMemory()
-            self.chain = ConversationChain(llm=self.llmModel, memory=self.memory, verbose=True)
+            self.memory = ConversationBufferWindowMemory(k=2)
+            self.chain = ConversationChain(
+                llm=self.llmModel,
+                memory=self.memory,
+                verbose=True,
+                input_key="input",     # This matches what the default prompt expects
+                output_key="answer"
+            )
+
             
             print("Connecting to Ollama at:", self.llmModel.base_url)
         except Exception as e:
@@ -165,7 +163,7 @@ class RAGPipeline:
         )
 
     
-    def predict(self, message: str, distinct_id: str, session_id: str) -> str:
+    def predict(self, message: str, distinct_id: str, session_id: str, query: str) -> str:
         # 1. Call Rasa
         try:
             # 2. Extract Rasa response
@@ -173,7 +171,6 @@ class RAGPipeline:
         except Exception as e:
             print(f"Error calling Rasa: {e}")
             return "Sorry, I couldn't reach the assistant."
-
 
         # 3. Track in PostHog
         try:
@@ -191,7 +188,7 @@ class RAGPipeline:
     
 
 
-    def get_ollama_stream(self, question: str, prevQuestion: str = ""):
+    def get_ollama_stream(self, question: str):
         start = time.time()
 
         client = weaviate.connect_to_custom(
@@ -233,7 +230,7 @@ QUESTION:
 DOCUMENTS:
 {context}
 
-Only use the documents to answer. Be concise and only return the most relevant information. If the answer is not found, say "I apologize, but as of now I cannot respond to your question. But I will be looking into why.".
+Only use the documents to answer. If the answer is not found, say {apologyMsg}
 """
         response = self.chain.predict(input=prompt)
         print("LLM RESPONSE: ", response )
