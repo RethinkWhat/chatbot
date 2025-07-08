@@ -1,90 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#1e40af">
-    <link rel="stylesheet" href="styles.css">
-    <!-- img from slu.navi on ig -->
-    <link rel="icon" href="navi-icon.png" type="image/x-icon">
-    <title>Ask Navi - SLU Enrollment Assistant</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1e40af" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="navi-icon.png" type="image/x-icon" />
+  <title>Ask Navi - SLU Enrollment Assistant</title>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <div class="header-content">
-                <div class="bot-avatar">
-                    <!-- img from slu.navi on ig -->
-                    <img src="navi-img.png" alt="Navi img" class="bot-img" />
-                </div>
-                <div class="header-text">
-                    <h1>Ask Navi</h1>
-                    <p>SLU Enrollment Assistant</p>
-                </div>
-            </div>
-        </div>
-        <div class="chat-messages" id="chatMessages">
-            <div class="message bot-message">
-                <div class="message-content">
-                    <p>Hello! Welcome to the SLU Enrollment Assistant.</p>
-                    <p>How can I assist you today?</p>
-                </div>
-                <div class="message-time" id="initialTime"></div>
-            </div>
-        </div>
-        
-        <div class="typing-indicator" id="typingIndicator">
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <span>Navi is typing...</span>
-        </div>
 
-        <div class="menu-options" id="menuOptions">
-                <div class="menu-grid">
-                    <button class="menu-btn" data-option="1">
-                        <span class="menu-emoji">📋</span>
-                        <span class="menu-text">Admission Requirements</span>
-                    </button>
-                    <button class="menu-btn" data-option="2">
-                        <span class="menu-emoji">📚</span>
-                        <span class="menu-text">Program Catalog</span>
-                    </button>
-                    <button class="menu-btn" data-option="3">
-                        <span class="menu-emoji">💰</span>
-                        <span class="menu-text">Tuition & Fees</span>
-                    </button>
-                    <button class="menu-btn" data-option="4">
-                        <span class="menu-emoji">🎓</span>
-                        <span class="menu-text">Scholarships & Financial Aid</span>
-                    </button>
-                    <button class="menu-btn" data-option="5">
-                        <span class="menu-emoji">📝</span>
-                        <span class="menu-text">Enrollment Process</span>
-                    </button>
-                    <button class="menu-btn" data-option="6">
-                        <span class="menu-emoji">📞</span>
-                        <span class="menu-text">Contact Admissions</span>
-                    </button>
-                </div>
-            </div>
-        
-        <div class="chat-input-container">
-            <div class="input-wrapper">
-                <input type="text" id="chatInput" placeholder="Type your message here..." autocomplete="off">
-                <button id="sendBtn" class="send-btn">➤</button>
-                <button id="stopBtn" class="stop-btn" style="display: none;">🛑</button>
-            </div>
-            <div class="quick-actions">
-                <button class="quick-btn" data-quick="menu">Show Menu</button>
-                <button class="quick-btn" data-quick="help">Help</button>
-            </div>
-        </div>
+  <!-- Header -->
+  <div class="top-header">
+    <div class="university-branding">
+      <img src="slu-logo.png" alt="SLU Logo" class="slu-logo" />
+      <span class="university-name">SAINT LOUIS UNIVERSITY</span>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
-    <script src="script.js"></script>
-    
+    <div class="header-links">
+      <a href="https://www.slu.edu.ph/" target="_blank" class="header-link">SLU Website</a>
+      <a href="https://webportal.slu.edu.ph/" target="_blank" class="header-link">SLU Portal</a>
+    </div>
+  </div>
+
+  <!-- Chat Container -->
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="header-content">
+        <div class="bot-avatar">
+          <img src="navi-img.png" alt="Navi img" class="bot-img" />
+        </div>
+        <div class="header-text">
+          <h1>Ask Navi</h1>
+          <p>Guiding the Louisians with spirit and wisdom!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-messages" id="chatMessages">
+      <!-- JS will inject bot/user messages here -->
+    </div>
+
+    <!-- Typing Indicator -->
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <span>Navi is typing...</span>
+    </div>
+
+    <!-- Menu Options (injected dynamically) -->
+    <div class="menu-options" id="menuOptions">
+      <div class="menu-grid"></div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-container">
+      <div class="input-wrapper">
+        <input type="text" id="chatInput" placeholder="Type your message here..." autocomplete="off" />
+        <button id="sendBtn" class="send-btn"><span>➤</span></button>
+        <button id="stopBtn" class="stop-btn" style="display: none;"><span>🛑</span></button>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-btn" data-quick="menu">Show Menu</button>
+        <button class="quick-btn" data-quick="help">Help</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

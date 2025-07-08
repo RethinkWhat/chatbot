@@ -31,6 +31,7 @@ class RAGPipeline:
         except KeyError:
             raise ValueError("Please set POSTHOG_API_KEY and POSTHOG_HOST environment variables")
         
+        # comment out the section if it is already run once.
       #--------------------------------  START ------------------------------------------------------
         # client = weaviate.connect_to_custom(
         #     http_host="weaviate",         # your Docker service name or localhost
@@ -113,7 +114,6 @@ class RAGPipeline:
 
         #         # Fetch and print all objects
         #         questions = client.collections.get("NaviBot40")  # You can increase the limit as needed
-
         #         # Print nicely
         #         results = questions.query.fetch_objects(limit=100)
 
@@ -200,7 +200,7 @@ class RAGPipeline:
             grpc_secure=False
         )
 
-        questions = client.collections.get("NaviBot40")
+        questions = client.collections.get("NaviBot")
 
         response = questions.query.near_text(
                     query=question,
@@ -209,7 +209,7 @@ class RAGPipeline:
                     return_metadata=["distance"]  
         )
 
-        questions = client.collections.get("NaviBot40")  # This should be the collection where you ingested the data
+        questions = client.collections.get("NaviBot")  # This should be the collection where you ingested the data
 
 
         client.close()
@@ -235,3 +235,36 @@ Only use the documents to answer. If the answer is not found, say {apologyMsg}
         response = self.chain.predict(input=prompt)
         print("LLM RESPONSE: ", response )
         return response
+    
+    def jsonifyTxt(self, text: str) -> dict:
+        system_prompt = (
+            "You are a document-to-JSON converter. Given an academic document, "
+            "extract structured JSON with balanced depth. Use flat keys for scalar fields, "
+            "but group similar items (e.g., objectives, learning outcomes) under common prefixes."
+        )
+        prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
+
+        response = self.get_ollama_completion(prompt)
+        
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError:
+            print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
+            return {"raw_output": response}
+
+    def get_ollama_completion(self, prompt: str) -> str:
+        if not self.llmModel:
+            raise RuntimeError("LLM is not initialized.")
+
+        try:
+            non_streaming_llm = ChatOllama(
+                model="llama3:8b",
+                base_url="http://ollama:11434",
+                temperature=0.4,
+                streaming=False  # Force non-streaming
+            )
+            response = non_streaming_llm.invoke(prompt)
+            return response.content if hasattr(response, "content") else str(response)
+        except Exception as e:
+            print(f"[ERROR] Failed to get Ollama completion: {e}")
+            return ""

@@ -17,44 +17,88 @@
     box-sizing: border-box;
 }
 
-.admin-login-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        padding: 6px 12px;
-        background-color: #444;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    .admin-login-btn:hover {
-        background-color: #222;
-    }
-
+/* added changes to body */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, var(--blue) 0%, var(--dark-blue) 100%);
     min-height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
 }
+
+.top-header {
+    background: var(--white);
+    border-bottom: 2px solid var(--gray-200);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.university-branding {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.slu-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.university-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: 0.5px;
+}
+
+.header-links {
+    display: flex;
+    gap: 15px;
+}
+
+.header-link {
+    text-decoration: none;
+    color: var(--blue);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border: 1px solid var(--blue);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.header-link:hover {
+    background: var(--blue);
+    color: var(--white);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+}
+/* end added of changes */
 
 .chat-container {
     width: 100%;
     max-width: 1300px;
     height: 90vh;
-    background: var(--white);
+    background: #ffffff;
     border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 5px #fbbf24, 0 20px 40px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    margin: 20px auto 0;
 }
+
 
 .chat-header {
     background: linear-gradient(135deg, var(--blue), var(--light-blue));
@@ -258,8 +302,7 @@ body {
     border-color: var(--blue);
 }
 
-.send-btn, 
-.stop-btn {
+.send-btn {
     width: 45px;
     height: 45px;
     background: var(--blue);
@@ -274,8 +317,7 @@ body {
     transition: all 0.3s ease;
 }
 
-.send-btn:hover,
-.stop-btn:hover{
+.send-btn:hover {
     background: var(--dark-blue);
     transform: scale(1.05);
 }
@@ -404,19 +446,4 @@ body {
 
 .bot-message .message-content strong {
     color: var(--dark-blue);
-}
-
-.blink-cursor::after {
-  content: "▌";
-  animation: blink 1s steps(2, start) infinite;
-}
-
-@keyframes blink {
-  to {
-    visibility: hidden;
-  }
-}
-
-.message-content {
-  transition: opacity 0.3s ease;
 }
