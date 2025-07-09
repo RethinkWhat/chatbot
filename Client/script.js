@@ -147,31 +147,18 @@ class SLUChatbot {
         });
 
         const data = await response.json();
-        const fixList = (raw) => {
-            // Ensure each course starts on a new line with "- "
-            //use a bunch of ifs to encapsulate  
-            return raw
-                .split('-')
-                .map(line => line.trim())
-                .filter(line => line.length > 0)
-                .map(line => `- ${line}`)
-                .join('\n');
-        };
+        console.log(data)
+        console.log("data.text", data)
 
-        for (const item of data) {
-            if (item.text) {
-                const rawMarkdown = item.text.includes("-") ?  fixList(item.text.trim()) : item.text.trim();
-               // await this.addBotMessage(item.text);
-               const parsed = marked.parse(rawMarkdown)
-               await this.addBotMessage(parsed);
-            }
+        for (let i = 0; i < data.length; i++) {
+          await this.addBotMessage(data[i].text);
         }
 
         this.toggleButtons(false);
         this.isTyping = false;
     } catch (error) {
         console.error("Error contacting Rasa:", error);
-        //await this.addBotMessage("Sorry, something went wrong.");
+        await this.addBotMessage("Sorry, something went wrong. " + error);
         this.toggleButtons(false);
         this.isTyping = false;
     }

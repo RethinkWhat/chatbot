@@ -125,9 +125,9 @@ async def predict_endpoint(request: Request):
         
     body = await request.json()
     print("reached /predict with the ff body: ", body)
-    query = body.get("message")
+    query = body.get("query")
     reply = rag_pipeline.predict( 
-        message=body.get("message", ""), 
+        message=body.get("query", ""), 
         distinct_id=body.get("distinct_id",""), 
         session_id=body.get("session_id", ""),
         query = query
@@ -137,8 +137,8 @@ async def predict_endpoint(request: Request):
         with open("knowledge/unknown.txt", "a") as file:
             file.write(query + "\n")
 
-
-    return {"response": reply}
+    print("SENDING THIS REPLY: ", reply)
+    return {"text": reply}
 
 
 #when user clicks on stop button, stop RAG respose

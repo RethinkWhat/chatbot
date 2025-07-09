@@ -47,6 +47,8 @@ services:
       - "3000:80"
     networks:
       - chatbot_network
+    volumes:
+      - ./client:/usr/share/nginx/html
 
   ollama:
     image: ollama/ollama

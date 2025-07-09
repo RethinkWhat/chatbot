@@ -31,8 +31,8 @@ class RAGPipeline:
         except KeyError:
             raise ValueError("Please set POSTHOG_API_KEY and POSTHOG_HOST environment variables")
         
-        # comment out the section if it is already run once.
-      #--------------------------------  START ------------------------------------------------------
+    #     comment out the section if it is already run once.
+    #   --------------------------------  START ------------------------------------------------------
         # client = weaviate.connect_to_custom(
         #     http_host="weaviate",         # your Docker service name or localhost
         #     http_port=8080,
@@ -42,7 +42,7 @@ class RAGPipeline:
         #     grpc_secure=False
         # )
         # questions = client.collections.create(
-        #     name="NaviBot40",
+        #     name="NaviBot",
         #     vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
         #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
         #         model="nomic-embed-text",                               # The model to use
@@ -63,7 +63,7 @@ class RAGPipeline:
         #     grpc_secure=False
         # )
 
-        # navibot = client.collections.get("NaviBot40")
+        # navibot = client.collections.get("NaviBot")
         # # Step 4: Read and parse all JSON files
         # data = []
         # for filename in os.listdir("knowledge/json"):
@@ -113,7 +113,7 @@ class RAGPipeline:
         #             print(f"First failed object: {failed_objects[0]}")
 
         #         # Fetch and print all objects
-        #         questions = client.collections.get("NaviBot40")  # You can increase the limit as needed
+        #         questions = client.collections.get("NaviBot")  # You can increase the limit as needed
         #         # Print nicely
         #         results = questions.query.fetch_objects(limit=100)
 
@@ -135,7 +135,7 @@ class RAGPipeline:
                 temperature=0.4,
                 streaming=True  # Enable streaming
                 )
-            self.memory = ConversationBufferWindowMemory(k=2)
+            self.memory = ConversationBufferWindowMemory(k=0)
             self.chain = ConversationChain(
                 llm=self.llmModel,
                 memory=self.memory,
