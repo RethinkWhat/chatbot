@@ -302,7 +302,7 @@ body {
     border-color: var(--blue);
 }
 
-.send-btn {
+.send-btn, .stop-btn {
     width: 45px;
     height: 45px;
     background: var(--blue);
@@ -317,12 +317,12 @@ body {
     transition: all 0.3s ease;
 }
 
-.send-btn:hover {
+.send-btn:hover, .stop-btn:hover {
     background: var(--dark-blue);
     transform: scale(1.05);
 }
 
-.send-btn:disabled {
+.send-btn:disabled, .stop-btn:disabled{
     background: var(--gray-300);
     cursor: not-allowed;
     transform: none;

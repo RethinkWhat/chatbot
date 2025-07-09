@@ -70,6 +70,7 @@ class SLUChatbot {
   }
   initializeEventListeners() {
     this.sendBtn.addEventListener('click', () => this.handleSend());
+    this.stopBtn.addEventListener('click', () => this.handleStop());
     this.chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -103,6 +104,7 @@ class SLUChatbot {
     this.addUserMessage(msg);
     this.chatInput.value = '';
     this.chatInput.style.height = 'auto';
+    this.showTypingIndicator();
     this.toggleButtons(true); //set the stop button frontend
     await this.processMessage(msg);
   }
@@ -147,18 +149,27 @@ class SLUChatbot {
         });
 
         const data = await response.json();
-        console.log(data)
-        console.log("data.text", data)
+        console.log(data);
+        console.log("data.text", data);
 
         for (let i = 0; i < data.length; i++) {
           await this.addBotMessage(data[i].text);
         }
 
+        // for (const item of data) {
+        //     if (item.text) {
+        //         const rawMarkdown = item.text.includes("-") ?  fixList(item.text.trim()) : item.text.trim();
+        //        // await this.addBotMessage(item.text);
+        //        const parsed = marked.parse(rawMarkdown)
+        //        await this.addBotMessage(parsed);
+        //     }
+        // }
+
         this.toggleButtons(false);
         this.isTyping = false;
     } catch (error) {
         console.error("Error contacting Rasa:", error);
-        await this.addBotMessage("Sorry, something went wrong. " + error);
+        await this.addBotMessage("Sorry, something went wrong.");
         this.toggleButtons(false);
         this.isTyping = false;
     }
@@ -273,14 +284,15 @@ class SLUChatbot {
             this.abortController.abort();  // Immediately cancel any ongoing fetch
             this.abortController = null;   // Reset
         }
+        // Immediately hide typing animation
+        this.hideTypingIndicator();
+        this.toggleButtons(false);  // Restore send button
         fetch(`${this.ragServer}/stop`, {
             method: "POST"
         })
         .then(res => res.json())
         .then(data => {
             console.log("Stop requested:", data);
-            this.hideTypingIndicator();
-            this.toggleButtons(false);
         })
         .catch(err => {
             console.error("Stop request failed:", err);

@@ -146,7 +146,7 @@ def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge"):
                 answer = faq["answer"].strip()
                 f.write(f"{question}\n{answer}\n\n")
 
-def run_scraper(urls_path="urls.txt", output_dir="knowledge", depth=2):
+def run_scraper(urls_path="urls.txt", output_dir="knowledge/raw", depth=2):
     from urllib.parse import urlparse
 
     with open(urls_path, "r", encoding="utf-8") as f:
