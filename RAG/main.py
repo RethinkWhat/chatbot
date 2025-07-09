@@ -133,7 +133,7 @@ async def predict_endpoint(request: Request):
         query = query
     )
 
-    if (apologyMsg in reply):
+    if ("I apologize" in reply):
         with open("knowledge/unknown.txt", "a") as file:
             file.write(query + "\n")
 

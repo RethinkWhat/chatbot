@@ -49,6 +49,6 @@ policies:
    - name: MemoizationPolicy
    - name: RulePolicy
      core_fallback_action_name: "action_default_fallback"
-     nlu_threshold: 0.3
+     nlu_threshold: 0.01
      fallback_action_name: "action_rag_fallback"
      enable_fallback_prediction: true

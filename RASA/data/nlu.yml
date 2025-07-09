@@ -15,7 +15,6 @@ nlu:
     - hey dude
     - goodmorning
     - goodevening
-    - good afternoon
 
 - intent: goodbye
   examples: |
@@ -29,6 +28,8 @@ nlu:
     - see you around
     - bye bye
     - see you later
+    - take care
+    - farewell
 
 - intent: affirm
   examples: |
@@ -38,6 +39,12 @@ nlu:
     - of course
     - that sounds good
     - correct
+    - absolutely
+    - sure
+    - definitely
+    - yep
+    - okay
+    - totally
 
 - intent: deny
   examples: |
@@ -48,6 +55,11 @@ nlu:
     - don't like that
     - no way
     - not really
+    - nope
+    - absolutely not
+    - not at all
+    - I disagree
+    - not interested
 
 - intent: mood_great
   examples: |
@@ -63,8 +75,6 @@ nlu:
     - super stoked
     - extremely good
     - so so perfect
-    - so good
-    - so perfect
 
 - intent: mood_unhappy
   examples: |
@@ -79,9 +89,7 @@ nlu:
     - unhappy
     - not good
     - not very good
-    - extremly sad
-    - so saad
-    - so sad
+    - extremely sad
 
 - intent: bot_challenge
   examples: |
@@ -89,6 +97,14 @@ nlu:
     - are you a human?
     - am I talking to a bot?
     - am I talking to a human?
+    - is this an AI?
+    - are you real?
+    - are you a robot?
+    - is this machine learning?
+    - do you have feelings?
+    - can you think like a human?
+    - do you have emotions?
+    - can you think for yourself?
 
 - intent: first_day
   examples: |
@@ -104,11 +120,7 @@ nlu:
     - when are we expected to be back on campus?
     - when does the academic calendar start?
     - what’s the official opening date?
-    - when should I attend my first class?
-    - what’s the start date for this semester?
-    - when is the first lecture?
 
-  
 - intent: out_of_scope
   examples: |
     - what’s your favorite movie?
@@ -123,9 +135,6 @@ nlu:
     - can I eat noodles with a spoon?
     - how tall is Mount Everest?
     - why is the sky blue?
-    - who won the last World Cup?
-    - can you beatbox?
-    - how do you fix a flat tire?
 
 - intent: learning_mode
   examples: | 
@@ -133,17 +142,29 @@ nlu:
     - what is the mode of learning?
     - what is the learning modality?
     - how will the class be conducted?
-    - what is the learning modality?
     - is the class conducted online or onsite?
     - is the class face-to-face or online?
     - Class is f2f or online?
-       
+    - how do we learn in this class?
+    - is the class hybrid?
+    - can I take this course online?
+    - do we have in-person meetings?
+    - will the class be streamed online?
+
 - intent: inc_nc
   examples: |
     - Am I considered a regular student if I have an NC or INC in my grades?
     - Am I an irregular student if I have an INC or NC?
     - What does INC or NC mean in my grades?
     - I don't have a failing mark but I obtained an INC or NC, will that make me an incomplete student?
+    - Will an INC affect my enrollment status?
+    - Does an NC make me an irregular student?
+    - How do INC and NC affect my regularity?
+    - Can I still enroll if I have an INC?
+    - Is having an NC a bad thing?
+    - Do I need to fix an INC before next semester?
+    - Will I be penalized for an INC or NC mark?
+    - Can I remove an INC or NC?
 
 - intent: failing_gened
   examples: |
@@ -152,6 +173,13 @@ nlu:
     - What are the implications of failing a General Education subject?
     - If I fail a GenEd, does it affect my regular status?
     - I passed all my major subjects but failed a general education subject. Am I considered an irregular student?
+    - What should I do if I fail a GenEd?
+    - Will I be expelled for failing a GenEd subject?
+    - Can I retake a failed GenEd?
+    - Does failing GenEd impact my GPA?
+    - How many times can I fail a GenEd subject?
+    - Is there a limit to how many GenEd subjects I can fail?
+    - What happens to my schedule if I fail a GenEd?
 
 - intent: irreg_student_inquiry
   examples: |
@@ -160,20 +188,43 @@ nlu:
     - What is the process for irregular student enrollment?
     - Can you guide me on how to enroll as an irregular student?
     - If I am an irregular student, how do I proceed with enrollment?
+    - Where do I go to enroll as an irregular student?
+    - Is there a special process for irregular students?
+    - Can I take any subjects as an irregular student?
+    - Do I need to submit additional documents as an irregular student?
+    - How do I get approved as an irregular student?
+    - What is the difference between a regular and irregular student?
+    - Can I take a leave as an irregular student?
 
 - intent: maximum_units_policy
   examples: |
     - Can I enroll beyond the allowable maximum units?
     - Can I get more units than I am allowed to?
     - Am I allowed to obtain more units than I am allowed to?
+    - How many units am I allowed to take each semester?
+    - What happens if I exceed the maximum units?
+    - Is there a penalty for exceeding my unit limit?
+    - How do I get approval to take more units?
+    - Can I request more units if I have special circumstances?
+    - What is the maximum number of units I can take?
+    - How can I request to exceed my unit limit?
+    - Is there a limit on how many units I can take in a semester?
+    - How do I know if I’m exceeding the maximum units?
 
 - intent: retention_policy
   examples: |
     - Why did I receive the message: "Please report to your respective department head/faculty adviser (Retention Policy)"?
     - What does it mean to "report to your respective department head/faculty advisor (Retention Policy)"?
     - I found this message "Please report to your respective department head/faculty adviser (Retention Policy)" in my web portal. What does it mean?
-    - what to do if i receive the message "Please report to your respective department head/faculty adviser (Retention Policy)"?
+    - What to do if I receive the message "Please report to your respective department head/faculty adviser (Retention Policy)"?
     - "Please report to your respective department head/faculty adviser (Retention Policy)" What does it mean?
+    - What are the requirements for the retention policy?
+    - Will I be removed if I don’t meet retention requirements?
+    - Can I appeal my retention status?
+    - How can I improve my retention status?
+    - What is the retention policy for students with low grades?
+    - How do I know if I am in danger of being dropped under the retention policy?
+    - How do I meet retention requirements?
 
 - intent: advanced_subject_policy
   examples: |
@@ -181,6 +232,14 @@ nlu:
     - What to do if I want to take advanced subjects?
     - How do I enroll in advanced subjects?
     - What is the process for enrolling in advanced subjects?
+    - Can I take advanced subjects in my second year?
+    - Do I need approval to take advanced subjects?
+    - Are there prerequisites for advanced subjects?
+    - Can I skip prerequisites for advanced subjects?
+    - What is the procedure to apply for advanced subjects?
+    - Are there any restrictions for advanced subject enrollment?
+    - How do I know if I am eligible for advanced subjects?
+    - Can I take advanced subjects if I fail a GenEd?
 
 - intent: tuition_fee
   examples: |
@@ -188,6 +247,14 @@ nlu:
     - What is the cost of tuition?
     - Can you tell me about the tuition fees?
     - What are the tuition fees for this semester?
+    - Is there a fee schedule available?
+    - How do I pay my tuition fee?
+    - Do I need to pay the full tuition upfront?
+    - Are there discounts for tuition fees?
+    - When do I need to pay my tuition fee?
+    - Is tuition fee payment split into installments?
+    - Can I get a refund for my tuition fee?
+    - How do I check my tuition balance?
 
 - intent: payment_time
   examples: |
@@ -196,6 +263,13 @@ nlu:
     - What is the deadline for tuition payment?
     - When do I need to pay my tuition?
     - Can you tell me the payment schedule?
+    - Can I pay late for my tuition?
+    - What happens if I miss the payment deadline?
+    - Is there a grace period for tuition payment?
+    - Can I get an extension for tuition payment?
+    - Can I delay my payment for tuition?
+    - When is the last day to pay tuition?
+    - What are the consequences of late payment?
 
 - intent: online_payment_option
   examples: |
@@ -204,13 +278,28 @@ nlu:
     - Can I pay my tuition online?
     - Are there any online payment options available?
     - Is there an online payment platform?
+    - Can I use a credit card to pay online?
+    - How do I make an online payment for tuition?
+    - Are online payments accepted for tuition fees?
+    - Do you offer online payment for tuition?
+    - What payment methods are available online?
+    - Is there a transaction fee for online payments?
+    - Can I pay in installments online?
 
 - intent: program_shifting_option
   examples: |
     - Can I shift to a different program?
     - What is the process for program shifting?
     - How do I change my program of study?
-    - Are there any requirements for program shifting?  
+    - Are there any requirements for program shifting?
+    - What is the deadline for program shifting?
+    - Can I shift my program during the semester?
+    - Is there a fee for shifting programs?
+    - Can I shift programs after my first year?
+    - What documents do I need for program shifting?
+    - Are there restrictions when shifting programs?
+    - How do I submit a program shift request?
+    - Can I shift to a different program within the same department?
 
 - intent: web_portal_issue
   examples: |
@@ -220,6 +309,12 @@ nlu:
     - There is no blocks in my web portal
     - What happened to the available blocks in my web portal?
     - Why there is no block options in my portal?
+    - My portal is not displaying the right blocks.
+    - I can’t see the class blocks in my portal.
+    - Why can’t I choose a block in my portal?
+    - The web portal is malfunctioning.
+    - I can’t enroll in blocks through the portal.
+    - Is there an issue with the web portal today?
 
 - intent: only_block_option
   examples: |
@@ -229,12 +324,27 @@ nlu:
     - I see only one block option in my web portal.
     - My web portal shows only one block available.
     - Is it normal to have only one block option?
+    - Why is there no variety in block options?
+    - Can I choose from multiple blocks?
+    - Will more blocks be available later?
+    - Why is the selection so limited?
+    - Can I enroll in a different block?
+    - Will more blocks show up soon?
 
 - intent: change_blocking_schedules
   examples: |
     - Can I change my blocking or schedules?
     - Is it possible to modify my blocking or schedules?
     - Will I be allowed to shift or change blocks or schedules?
+    - Can I change my schedule after enrolling?
+    - Can I adjust my blocks if I want to?
+    - How do I modify my schedule?
+    - Can I switch to a different block after registration?
+    - Is it possible to update my blocking?
+    - What do I need to do to change my schedule?
+    - How do I request schedule changes?
+    - Can I change my block after I enroll?
+    - Are there any restrictions for changing schedules?
 
 - intent: uncertain_block_swap
   examples: |
@@ -242,6 +352,14 @@ nlu:
     - Can I swap blocks with someone else?
     - Is it possible to exchange blocks with another student?
     - If I find a student who is willing to swap blocks with me, is that possible?
+    - Can I change my block after registration with another person?
+    - Is it allowed to trade blocks with someone?
+    - Can I switch blocks with a peer?
+    - Can students swap their blocks between themselves?
+    - Is there a process to swap blocks with someone else?
+    - Are block swaps allowed between students?
+    - How do I arrange a block swap with another student?
+    - Are there any conditions for swapping blocks?
 
 - intent: petition_course
   examples: | 
@@ -249,19 +367,44 @@ nlu:
     - The course I need to take is not offered this term. Is it possible to petition for it to be opened?
     - Can I request a course that is not available in this semester?
     - How do I submit a petition for a course?
+    - Can I petition for a subject not listed this semester?
+    - How do I apply for a course that's not offered?
+    - What is the process to petition for a course?
+    - Can I petition for a missing course?
+    - How can I request a specific course be opened?
+    - What steps should I take to petition for a course?
+    - What documents are required to petition a course?
+    - Who do I contact to petition for a course?
 
 - intent: readmission_process
   examples: |
     - What is the process for readmission?
-    - How do I apply for readmission if i was not enrolled last term?
+    - How do I apply for readmission if I was not enrolled last term?
     - I was not enrolled last term and I want to continue my studies. How should I proceed?
     - Can you tell me how to to proceed with the readmission?
     - I wasn't enrolled last semester and I want to continue my studies. What should I do?
+    - How can I return to school after a semester off?
+    - What documents do I need for readmission?
+    - Is there a deadline for readmission?
+    - Can I apply for readmission online?
+    - What is the first step for readmission?
+    - Will my previous credits be counted for readmission?
+    - What happens if I am denied readmission?
 
 - intent: window_10_clearance
   examples: |
     - I am a regular student and I cannot enroll online. A message says I need to report to Window 10. What does this mean?
     - What does it mean to report to Window 10?
     - I received a message about Window 10 clearance.
+    - Why do I need to go to Window 10?
+    - What happens if I don’t report to Window 10?
+    - Can I ignore the Window 10 clearance message?
+    - Is reporting to Window 10 mandatory?
+    - Why am I being asked to report to Window 10?
+    - What is the purpose of Window 10 clearance?
+    - Where is Window 10 located?
+    - How can I resolve the Window 10 issue?
+    - Do I need to report to Window 10 every semester?
 
 - intent: nlu_fallback
+  examples: |
