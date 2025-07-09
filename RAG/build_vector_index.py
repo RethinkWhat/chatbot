@@ -4,7 +4,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from scrapers.web_scraper import run_scraper
-from scrapers.pdf_scraper import scan_all_pdfs
+#from scrapers.pdf_scraper import scan_all_pdfs
 from scrapers.image_scraper import scan_images
 
 from rag_pipeline import RAGPipeline
@@ -30,7 +30,7 @@ class BuildVectorIndex:
         
         # 4. Load all .txt files and build vector index
         loader = DirectoryLoader(
-            DIR,
+            CLEAN_DIR,
             glob="**/*.txt",
             loader_cls=lambda path: TextLoader(path, encoding="utf-8")
         )
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             run_scraper(urls_path="urls.txt", output_dir=RAW_DIR, depth=2)
             print("✅ Web scraping completed.")
         if run_pdf:
-            scan_all_pdfs()
+            #scan_all_pdfs()
             print("✅ PDF scanning completed.")
         if run_img:
             scan_images(folder=RAW_DIR)

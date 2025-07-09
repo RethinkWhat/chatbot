@@ -239,11 +239,11 @@ Only use the documents to answer. If the answer is not found, say {apologyMsg}
     def jsonifyTxt(self, text: str) -> dict:
         system_prompt = (
             "You are a document-to-JSON converter.\n"
-            "You must extract structured information from the document and return only a valid, compact JSON object.\n"
-            "Do NOT include explanations, markdown, or any text like 'Here is the JSON'.\n"
-            "Only output valid JSON.\n"
-            "Preserve all important details. Group similar items into arrays or sub-objects.\n"
-            "Ensure your output is immediately parseable by Python's json.loads()."
+            "You will be given academic documents which may include poorly formatted or OCR-scanned text.\n"
+            "Fix noisy artifacts like excessively spaced headings (e.g. 'C O M P U T I N G') and decode them properly.\n"
+            "Group related information under logical JSON keys such as title, program, job_opportunities, contact_info, etc.\n"
+            "Only return a valid, compact JSON object — do not include markdown, triple backticks, or extra explanations.\n"
+            "Preserve all meaningful details. List items as arrays if applicable."
         )
 
         prompt = (

@@ -13,7 +13,7 @@ from build_vector_index import BuildVectorIndex
 import bcrypt, subprocess, shutil,json
 # Scraper functions
 from scrapers.web_scraper import run_scraper
-from scrapers.pdf_scraper import scan_all_pdfs
+from scrapers.pdf_scraper import PDFScraper
 from scrapers.image_scraper import scan_images
 
 from threading import Lock
@@ -312,7 +312,7 @@ def list_txt_files():
 
 @app.get("/knowledge/txt/{filename}")
 def get_txt_content(filename: str):
-    path = os.path.join("knowledge/raw", filename)
+    path = os.path.join("knowledge/txt", filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="File not found")
     with open(path, "r", encoding="utf-8") as f:
@@ -354,7 +354,8 @@ async def trigger_web_scraper():
 
 @app.post("/trigger/pdf")
 async def trigger_pdf_scanner():
-    scan_all_pdfs()
+    scraper=PDFScraper()
+    scraper.scan_all_pdfs()
     return {"status": "pdf scan done"}
 
 @app.post("/trigger/image")
