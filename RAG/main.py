@@ -6,6 +6,7 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware # middleware, allowing connection between client and server
 import pymysql # for db access
 from pathlib import Path
+from typing import Dict,List
 # local Imports
 from rag_pipeline import RAGPipeline  
 from build_vector_index import BuildVectorIndex
@@ -78,15 +79,6 @@ async def upload_files(files: list[UploadFile] = File(...)):
                 shutil.copyfileobj(file.file, f)
             saved.append(file.filename)
 
-            # # Optional: If it's a .txt, immediately clean it
-            # if ext == "txt":
-            #     with open(save_path, "r", encoding="utf-8") as f:
-            #         raw = f.read()
-
-            #     cleaned = rag_pipeline.paraphrase_with_ollama(raw, file.filename)
-            #     clean_path = os.path.join("knowledge/cleaned", file.filename)
-            #     with open(clean_path, "w", encoding="utf-8") as cf:
-            #         cf.write(cleaned)
         else:
             continue
 
@@ -96,7 +88,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
 async def health_check():
     return {"status": "ok"}
 
-# The menu route
+# The menu route for admin page
 @app.get("/menu")
 async def get_menu():
     try:
@@ -111,7 +103,8 @@ async def get_menu():
         print("DB Error:", e)  # This will print to your console
         raise HTTPException(status_code=500, detail="Failed to fetch menu data")
 
-
+@app.get("/menu")
+# =======end of admin menu queries==========
 @app.get('/')
 def read_root():
     return {"message": "Welcome to the RAG API. Use the /query endpoint to ask questions."}    
@@ -264,6 +257,31 @@ async def run_scraper_endpoint(data: dict = Body(...)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"message": str(e)})
     
+# URLS.txt
+URLS_FILE = os.path.join(os.path.dirname(__file__), "urls.txt")
+
+@app.get("/urls")
+def get_urls() -> Dict[str, List[str]]:
+    """Read urls.txt and return as JSON list."""
+    if not os.path.exists(URLS_FILE):
+        return {"urls": []}
+    with open(URLS_FILE, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+    return {"urls": lines}
+
+
+@app.post("/urls")
+async def save_urls(request: Request) -> Dict[str, str]:
+    """Save a JSON list of URLs into urls.txt."""
+    try:
+        data = await request.json()
+        urls = data.get("urls", [])
+        with open(URLS_FILE, "w", encoding="utf-8") as f:
+            f.write("\n".join(urls) + "\n")
+        return {"status": "URLs updated."}
+    except Exception as e:
+        return {"status": f"Failed to update URLs: {str(e)}"}
+    
 #populate all json in /knowledge/json
 @app.get("/knowledge/json")
 async def list_json_files():
@@ -287,6 +305,28 @@ async def save_json_file(filename: str, data: dict = Body(...)):
         json.dump(data["content"], f, indent=2, ensure_ascii=False)
     return {"status": "saved"}
 
+@app.get("/knowledge/txt")
+def list_txt_files():
+    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt")]
+    return {"files": files}
+
+@app.get("/knowledge/txt/{filename}")
+def get_txt_content(filename: str):
+    path = os.path.join("knowledge/raw", filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    with open(path, "r", encoding="utf-8") as f:
+        return {"content": f.read()}
+
+@app.post("/trigger/jsonify/{filename}")
+def jsonify_txt_file(filename: str):
+    path = os.path.join("knowledge/raw", filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    with open(path, "r", encoding="utf-8") as f:
+        text = f.read()
+    result = rag.jsonifyTxt(text)
+    return {"filename": filename, "json": result}
 
 #upload files
 @app.post("/upload")
@@ -309,7 +349,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
 
 @app.post("/trigger/scrape")
 async def trigger_web_scraper():
-    run_scraper(urls_path="urls.txt", output_dir="knowledge/txt", depth=2)
+    run_scraper(urls_path="urls.txt", output_dir="knowledge/raw", depth=2)
     return {"status": "web scrape done"}
 
 @app.post("/trigger/pdf")

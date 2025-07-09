@@ -7,7 +7,7 @@ from langchain_core.output_parsers import StrOutputParser
 import torch
 import uuid
 import posthog
-import requests, json, time, os
+import requests, json, time, os, re
 
 
 import weaviate
@@ -238,33 +238,65 @@ Only use the documents to answer. If the answer is not found, say {apologyMsg}
     
     def jsonifyTxt(self, text: str) -> dict:
         system_prompt = (
-            "You are a document-to-JSON converter. Given an academic document, "
-            "extract structured JSON with balanced depth. Use flat keys for scalar fields, "
-            "but group similar items (e.g., objectives, learning outcomes) under common prefixes."
+            "You are a document-to-JSON converter.\n"
+            "You must extract structured information from the document and return only a valid, compact JSON object.\n"
+            "Do NOT include explanations, markdown, or any text like 'Here is the JSON'.\n"
+            "Only output valid JSON.\n"
+            "Preserve all important details. Group similar items into arrays or sub-objects.\n"
+            "Ensure your output is immediately parseable by Python's json.loads()."
         )
-        prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
 
-        response = self.get_ollama_completion(prompt)
-        
+        prompt = (
+            f"{system_prompt}\n\n"
+            f"Document:\n{text.strip()}\n\n"
+            "Output JSON:"
+        )
+
+        raw_output = self.get_ollama_completion(prompt)
+        clean_output = self.extract_json_block(raw_output)
+
         try:
-            return json.loads(response)
+            return json.loads(clean_output)
         except json.JSONDecodeError:
             print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
-            return {"raw_output": response}
+            return {"raw_output": raw_output}
 
-    def get_ollama_completion(self, prompt: str) -> str:
+    def extract_json_block(self, text: str) -> str:
+        """Extract a valid JSON object from LLM response (cleaning markdown wrappers, etc.)."""
+        # Prefer block inside triple-backtick markdown if present
+        match = re.search(r"```(?:json)?\s*({.*?})\s*```", text, re.DOTALL)
+        if match:
+            return match.group(1)
+
+        # Otherwise, find first JSON-like block in the response
+        match = re.search(r"({.*})", text, re.DOTALL)
+        return match.group(1) if match else text
+    def get_ollama_completion(self, prompt: str, retries: int = 3, delay: float = 2.0) -> str:
         if not self.llmModel:
             raise RuntimeError("LLM is not initialized.")
 
         try:
-            non_streaming_llm = ChatOllama(
+            llm = ChatOllama(
                 model="llama3:8b",
                 base_url="http://ollama:11434",
                 temperature=0.4,
-                streaming=False  # Force non-streaming
+                streaming=False
             )
-            response = non_streaming_llm.invoke(prompt)
-            return response.content if hasattr(response, "content") else str(response)
+            response = llm.invoke(prompt)
+
+            # Try multiple common formats safely
+            if isinstance(response, str):
+                return response.strip()
+
+            if hasattr(response, "content"):
+                return response.content.strip()
+
+            if isinstance(response, dict) and "content" in response:
+                return response["content"].strip()
+
+            # Fallback: best guess
+            return str(response).strip()
+
         except Exception as e:
             print(f"[ERROR] Failed to get Ollama completion: {e}")
             return ""

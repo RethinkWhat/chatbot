@@ -1,28 +1,26 @@
-from PyPDF2 import PdfReader, errors
+
 from pdf2image import convert_from_path
+from pdfminer.high_level import extract_text
 import pytesseract
 from scrapers.cleaner import Cleaner
-import os
+import os, logging
 from pathlib import Path
 
-INPUT_DIR = "knowledge/raw"
-OUTPUT_DIR = "knowledge/txt"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
 class PDFScraper:
-    def readPDF(self, file):
-        text = ""
+    def __init__(self, input_dir="knowledge/raw", output_dir="knowledge/txt"):
+        self.input_dir = input_dir
+        self.output_dir = output_dir
+        os.makedirs(self.output_dir, exist_ok=True)
+    
+    def readPDF(self, file_path):
         try:
-            reader = PdfReader(file)
-            for page in reader.pages:
-                extracted = page.extract_text()
-                if extracted:
-                    text += extracted
-        except errors.PdfReadError as e:
-            print(f"[Error] Cannot read {file} using PdfReader — {e}")
+            text = extract_text(file_path)
+            return text.strip() if text and len(text.strip()) > 0 else None
+        except Exception as e:
+            print(f"[Error] PDFMiner failed to read {file_path}: {e}")
             return None
-
-        return text if text.strip() else None
 
     def readPDFImage(self, file):
         try:
@@ -32,44 +30,49 @@ class PDFScraper:
             print(f"[Error] OCR failed for {file} — {e}")
             return ""
 
-        return Cleaner.runOCRCleaner(text)
 
-def scan_all_pdfs():
-    scraper = PDFScraper()
+    def scan_all_pdfs(self, use_ocr_fallback=True):
+        txt_removed = 0
+        for f in os.listdir(self.input_dir):
+            if f.endswith(".txt"):
+                try:
+                    os.remove(os.path.join(self.input_dir, f))
+                    txt_removed += 1
+                except Exception as e:
+                    logging.warning(f"[Cleanup] Could not remove {f}: {e}")
+        if txt_removed:
+            logging.info(f"[Cleanup] Removed {txt_removed} leftover .txt files.")
 
-    # Step 1: Clean up leftover .txt files in raw directory
-    for f in os.listdir(INPUT_DIR):
-        if f.endswith(".txt"):
-            try:
-                os.remove(os.path.join(INPUT_DIR, f))
-                print(f"[Cleanup] Removed leftover TXT: {f}")
-            except Exception as e:
-                print(f"[Cleanup Error] Couldn't remove {f}: {e}")
-
-    found = False
-    for filename in os.listdir(INPUT_DIR):
-        if filename.lower().endswith(".pdf"):
+        found = False
+        for filename in os.listdir(self.input_dir):
+            if not filename.lower().endswith(".pdf"):
+                continue
             found = True
-            file_path = os.path.join(INPUT_DIR, filename)
+            file_path = os.path.join(self.input_dir, filename)
             base_name = Path(filename).stem
-            output_path = os.path.join(OUTPUT_DIR, base_name + ".txt")
+            output_path = os.path.join(self.output_dir, base_name + ".txt")
 
-            print(f"[PDF Scanner] Scanning: {filename}")
-            text = scraper.readPDF(file_path)
+            if os.path.exists(output_path):
+                logging.info(f"[Skip] Already exists: {output_path}")
+                continue
 
-            if text is None or len(text.strip()) < 50:
-                print(f"[Fallback OCR] {filename} appears flattened or unreadable — using OCR")
-                text = scraper.readPDFImage(file_path)
+            logging.info(f"[PDF] Processing: {filename}")
+            text = self.readPDF(file_path)
+
+            if (not text or len(text) < 50) and use_ocr_fallback:
+                logging.warning(f"[Fallback OCR] {filename} appears unreadable — using OCR")
+                text = self.readPDFImage(file_path)
 
             if text and len(text.strip()) > 0:
                 with open(output_path, "w", encoding="utf-8") as out:
                     out.write(text)
-                print(f"[Saved] Text written to: {output_path}")
+                logging.info(f"[Saved] → {output_path}")
             else:
-                print(f"[Failed] Could not extract any text from: {filename}")
+                logging.error(f"[Failed] No extractable text from: {filename}")
 
-    if not found:
-        print(f"[PDF Scanner] No PDF files found in {INPUT_DIR}")
+        if not found:
+            logging.warning(f"[PDF Scanner] No PDF files found in {self.input_dir}")
 
 if __name__ == "__main__":
-    scan_all_pdfs()
+    scraper = PDFScraper()
+    scraper.scan_all_pdfs()

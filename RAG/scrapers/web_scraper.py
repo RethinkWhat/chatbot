@@ -71,7 +71,7 @@ def get_internal_links(html, base_url):
 
     return links
 
-def crawl(url, depth=2):
+def crawl(url, depth=2,output_dir="knowledge/raw"):
     with visited_lock:
         if url in visited_urls or depth == 0:
             return []
@@ -84,7 +84,7 @@ def crawl(url, depth=2):
         return []
     
     # Download assets like PDFs and images, and save them to the output folder
-    download_assets(html, url, output_folder="knowledge")
+    download_assets(html, url, output_folder=output_dir)
 
     page_data = parse_html(html, url)
     sub_links = get_internal_links(html, url)
@@ -98,7 +98,7 @@ def crawl(url, depth=2):
     return [page_data] + sub_pages
 
 #download any seen pdfs and images
-def download_assets(html, base_url, output_folder="knowledge"):
+def download_assets(html, base_url, output_folder="knowledge/raw"):
     os.makedirs(output_folder, exist_ok=True)
     soup = BeautifulSoup(html, "lxml")
     
@@ -117,9 +117,9 @@ def download_assets(html, base_url, output_folder="knowledge"):
                 logging.warning(f"Failed to download {file_url}: {e}")
 
 # Save parsed data to txt
-def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge"):
+def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge/raw"):
     
-    output_dir = os.path.join("knowledge")
+    output_dir = os.path.join("knowledge/raw")
     os.makedirs(output_dir, exist_ok=True)
 
     filepath = os.path.join(output_dir, f"{domain_name}.txt")
@@ -146,7 +146,7 @@ def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge"):
                 answer = faq["answer"].strip()
                 f.write(f"{question}\n{answer}\n\n")
 
-def run_scraper(urls_path="urls.txt", output_dir="knowledge", depth=2):
+def run_scraper(urls_path="urls.txt", output_dir="knowledge/raw", depth=2):
     from urllib.parse import urlparse
 
     with open(urls_path, "r", encoding="utf-8") as f:
@@ -154,7 +154,7 @@ def run_scraper(urls_path="urls.txt", output_dir="knowledge", depth=2):
 
     for url in urls:
         logging.info(f"[Start] Scraping: {url}")
-        scraped_data = crawl(url, depth=depth)
+        scraped_data = crawl(url, depth=depth,output_dir=output_dir)
         domain = urlparse(url).netloc.replace("www.", "")
         save_to_txt(scraped_data, domain, output_dir=output_dir)
         logging.info(f"[Success] Data from {url} saved to {output_dir}/{domain}.txt")
@@ -166,7 +166,7 @@ def main():
 
     for url in urls:
         print(f"\n[Start] Scraping: {url}")
-        scraped_data = crawl(url, depth=2)  # Depth can be tuned
+        scraped_data = crawl(url, depth=2,output_dir="knowledge/raw")  # Depth can be tuned
         # Replace prints like this:
         logging.info("Starting scraper")
         logging.debug("Fetched HTML from %s", url)
