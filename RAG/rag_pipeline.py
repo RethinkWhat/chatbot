@@ -189,32 +189,19 @@ class RAGPipeline:
 
 
     def get_ollama_stream(self, question: str):
-        start = time.time()
-
+        start=time.time()
+        
         client = weaviate.connect_to_custom(
-            http_host="weaviate",         # your Docker service name or localhost
+            http_host="weaviate",
             http_port=8080,
             http_secure=False,
-            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+            grpc_host="weaviate",
             grpc_port=50051,
             grpc_secure=False
         )
-
         questions = client.collections.get("NaviBot")
-
-        response = questions.query.near_text(
-                    query=question,
-                    limit=10,
-                 #   distance=0.50,
-                    return_metadata=["distance"]  
-        )
-
-        questions = client.collections.get("NaviBot")  # This should be the collection where you ingested the data
-
-
+        response = questions.query.near_text(query=question, limit=10, return_metadata=["distance"])
         client.close()
-        print("response: ", response)
-
 
         context = "\n\n".join([
             f"{obj.properties['title'].split(' _ ')[-1]} - Document {i+1}:\n{obj.properties['answer']}  (Distance: {obj.metadata.distance:.4f}):"
@@ -233,44 +220,106 @@ DOCUMENTS:
 Only use the documents to answer. If the answer is not found, say {apologyMsg}
 """
         response = self.chain.predict(input=prompt)
-        print("LLM RESPONSE: ", response )
+        print("LLM RESPONSE:", response)
         return response
-    
-    def jsonifyTxt(self, text: str) -> dict:
+
+    def jsonifyTxt(self, raw_text: str) -> dict:
+        """
+        Clean the input text and use LLM to convert it to structured JSON output.
+        """
+        cleaned_text = self._clean_text_for_jsonification(raw_text)
+
         system_prompt = (
             "You are a document-to-JSON converter.\n"
-            "You will be given academic documents which may include poorly formatted or OCR-scanned text.\n"
-            "Fix noisy artifacts like excessively spaced headings (e.g. 'C O M P U T I N G') and decode them properly.\n"
-            "Group related information under logical JSON keys such as title, program, job_opportunities, contact_info, etc.\n"
-            "Only return a valid, compact JSON object — do not include markdown, triple backticks, or extra explanations.\n"
-            "Preserve all meaningful details. List items as arrays if applicable."
+            "You must extract structured information from the document and return only a valid JSON object.\n"
+            "Make sure to retain full names (even if split across lines) and roles like Dean, Professor, Justice, etc.\n"
+            "Do NOT drop prefixes like 'DR.', 'PROF.', 'CA JUSTICE', or 'ATTY.'.\n"
+            "Do NOT include explanations, formatting hints, or markdown.\n"
+            "Do NOT wrap the output in triple backticks or say 'Here is the JSON'.\n"
+            "Avoid returning empty arrays or fields unless they are clearly needed.\n"
+            "Preserve factual details, and group items logically.\n"
+            "Only return valid JSON parseable by `json.loads()` in Python.\n"
         )
 
-        prompt = (
-            f"{system_prompt}\n\n"
-            f"Document:\n{text.strip()}\n\n"
-            "Output JSON:"
-        )
+        instruction = f"""
+    {system_prompt}
 
-        raw_output = self.get_ollama_completion(prompt)
-        clean_output = self.extract_json_block(raw_output)
+    Text:
+    \"\"\"
+    {cleaned_text}
+    \"\"\"
 
+    Output Format Example:
+    {{
+    "program": "Program Name",
+    "description": "Short description of the program",
+    "program_outcomes":[],
+    "job_opportunities": ["Job A", "Job B"],
+    "contact": {{
+        "name": "Full Name",
+        "position": "Position Title",
+        "email": "email@example.com"
+    }}
+    }}
+
+    Return only the JSON. No commentary, no markdown.
+        """
+
+        response = self.get_ollama_completion(instruction)
+        cleaned = self.extract_json_block(response)
+
+        # Try to extract valid JSON content
         try:
-            return json.loads(clean_output)
-        except json.JSONDecodeError:
+            parsed = json.loads(cleaned)
+            return parsed
+        except Exception as e:
             print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
-            return {"raw_output": raw_output}
+            return {"raw_output": response, "error": str(e)}
 
     def extract_json_block(self, text: str) -> str:
-        """Extract a valid JSON object from LLM response (cleaning markdown wrappers, etc.)."""
-        # Prefer block inside triple-backtick markdown if present
-        match = re.search(r"```(?:json)?\s*({.*?})\s*```", text, re.DOTALL)
-        if match:
-            return match.group(1)
+        """
+        Try to extract a clean JSON block from a possibly messy LLM output.
+        """
+        # Remove triple backticks and preambles
+        text = re.sub(r"```(?:json)?", "", text)
+        text = re.sub(r"```", "", text)
+        text = text.strip()
 
-        # Otherwise, find first JSON-like block in the response
-        match = re.search(r"({.*})", text, re.DOTALL)
-        return match.group(1) if match else text
+        # Try to locate a JSON object
+        match = re.search(r"{[\s\S]*}", text)
+        if match:
+            return match.group(0)
+
+        # Fallback: just return the full text
+        return text
+
+
+
+    def _clean_text_for_jsonification(self, text: str) -> str:
+        text = re.sub(r'[\x0c\f]+', '', text)  # Remove form feeds
+        text = re.sub(r'-\n', '', text)        # Join hyphenated breaks
+        text = re.sub(r'\s+\n', '\n', text)    # Clean trailing whitespace
+        text = re.sub(r'[^\S\r\n]{2,}', ' ', text)  # Collapse extra spaces
+        text = re.sub(r'\n{2,}', '\n\n', text)      # Normalize spacing
+
+        # Join numbered lists split on separate lines (e.g., "1.\n" to "1. ")
+        text = re.sub(r'\n(\d+)\.\s*\n', r'\n\1. ', text)
+
+        # Fix broken bullet-style lines without numbers
+        text = re.sub(r'(?<=[a-zA-Z0-9,;])\n(?=[a-zA-Z])', ' ', text)
+
+        # Remove fake spaced-out headings
+        text = re.sub(r'\b(?:[A-Z] ?){3,}\b', '', text)
+
+        return text.strip()
+
+
+    def _clean_llm_json_output(self, output: str) -> str:
+        output = re.sub(r"^```(?:json)?\\s*", "", output.strip(), flags=re.IGNORECASE)
+        output = re.sub(r"\\s*```$", "", output.strip())
+        output = re.sub(r"(?i)^here is.*json.*?:", "", output.strip())
+        return output.strip()
+
     def get_ollama_completion(self, prompt: str, retries: int = 3, delay: float = 2.0) -> str:
         if not self.llmModel:
             raise RuntimeError("LLM is not initialized.")
@@ -283,20 +332,13 @@ Only use the documents to answer. If the answer is not found, say {apologyMsg}
                 streaming=False
             )
             response = llm.invoke(prompt)
-
-            # Try multiple common formats safely
             if isinstance(response, str):
                 return response.strip()
-
             if hasattr(response, "content"):
                 return response.content.strip()
-
             if isinstance(response, dict) and "content" in response:
                 return response["content"].strip()
-
-            # Fallback: best guess
             return str(response).strip()
-
         except Exception as e:
             print(f"[ERROR] Failed to get Ollama completion: {e}")
             return ""

@@ -307,7 +307,7 @@ async def save_json_file(filename: str, data: dict = Body(...)):
 
 @app.get("/knowledge/txt")
 def list_txt_files():
-    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt")]
+    files = [f for f in os.listdir("knowledge/txt") if f.endswith(".txt")]
     return {"files": files}
 
 @app.get("/knowledge/txt/{filename}")
@@ -320,7 +320,8 @@ def get_txt_content(filename: str):
 
 @app.post("/trigger/jsonify/{filename}")
 def jsonify_txt_file(filename: str):
-    path = os.path.join("knowledge/raw", filename)
+    rag = RAGPipeline()
+    path = os.path.join("knowledge/txt", filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="File not found")
     with open(path, "r", encoding="utf-8") as f:

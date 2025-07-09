@@ -73,7 +73,7 @@
       </div>
 
       <div class="section">
-        <h2>📦 Deploy AI knowledge base</h2>
+        <h2>📦 JSON-ify all text files</h2>
         <button id="knowledgeDeployBtn" class="toolbar-btn primary">📦 PROCEED</button>
         <pre id="deployStatus" class="output-box"></pre>
       </div>
@@ -243,15 +243,14 @@
     <!-- subject to changes -->
     document.getElementById("knowledgeDeployBtn").addEventListener("click", async () => {
       const statusEl = document.getElementById("deployStatus");
-      statusEl.textContent = "⏳ converting json to AI knowledge base...";
+      statusEl.textContent = "⏳ converting .txts to .jsons...";
       try {
         const res = await fetch("http://localhost:8000/trigger/jsonify", {
           method: "POST"
         });
-        const data = await res.json();
-        statusEl.textContent = `✅ Done. Total chunks: ${data.chunks || "unknown"}`;
+        statusEl.textContent = "✅ Done.";
       } catch (err) {
-        statusEl.textContent = "❌ Failed to deploy.";
+        statusEl.textContent = "❌ Failed to JSON-ify.";
         console.error(err);
       }
     });
