@@ -73,7 +73,7 @@ class ActionRAGFallback(Action):
 
         try:
 
-            rag_url = "http://rag_server:8000/chat/stream"
+            rag_url = "http://rag_server:8000/predict"
             response = requests.post(
                 rag_url,
                 json={"query": user_message, 
@@ -83,7 +83,7 @@ class ActionRAGFallback(Action):
             # Get the full answer from the response as a JSON object
             if response.status_code == 200:  # Check if the request was successful
                 response_json = response.json()
-                full_answer = response_json.get("message", "") 
+                full_answer = response_json.get("text", "") 
 
                 # Send the full answer as a message
                 dispatcher.utter_message(text=full_answer)
