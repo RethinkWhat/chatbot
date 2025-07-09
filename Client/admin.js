@@ -19,7 +19,8 @@ class AdminPanel {
     this.statusMessage = document.getElementById('statusMessage');
 
     this.currentEditingId = null;
-    this.menuData = {};
+    this.menuData = {};//edits that is applied on DB
+    this.draftMenuData = {};//edits yet to be saved
     this.pendingDeleteId = null;
     this.pendingAction = null;
 
@@ -38,7 +39,11 @@ class AdminPanel {
     this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
     document.getElementById('addMenuBtn').addEventListener('click', () => this.showAddMenuWindow());
     document.getElementById('saveAllBtn').addEventListener('click', () => this.saveAllChanges());
-    document.getElementById('resetBtn').addEventListener('click', () => this.showResetConfirmation());
+    document.getElementById('resetBtn').addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      if (btn.disabled) return;
+      this.showResetConfirmation();
+    });
     document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
     document.getElementById("scrapeBtn").addEventListener("click", () => {
       window.location.href = "scrape.html"; // or any correct path to scrape interface
@@ -184,12 +189,14 @@ class AdminPanel {
 
                 const data = await res.json();
 
-                if (res.ok && data.status === "success") {
-                    sessionStorage.setItem('slu_admin_auth', 'true');
-                    this.showAdminPanel();
-                    this.showStatus('Login successful!', 'success');
+                if (res.status === 401) {
+                  this.showStatus("Invalid username or password.", 'error');
+                } else if (!res.ok) {
+                  this.showStatus("Server error occurred.", 'error');
                 } else {
-                    this.showStatus(data.detail || 'Login failed.', 'error');
+                  sessionStorage.setItem('slu_admin_auth', 'true');
+                  this.showAdminPanel();
+                  this.showStatus('Login successful!', 'success');
                 }
             } catch (err) {
                 this.showStatus('Server error during login.', 'error');
@@ -202,6 +209,7 @@ class AdminPanel {
             this.loginSection.style.display = 'none';
             this.adminContent.style.display = 'block';
             this.loadMenuData().then(() => this.renderMenuList());
+            this.markAsSaved();
   }
 
         
@@ -218,44 +226,72 @@ class AdminPanel {
   }
         
   async loadMenuData() {
-            try {
-                const res = await fetch("http://localhost:8000/admin/menu");
-                const data = await res.json();
-                this.menuData = {};
-                for (const item of data.menu) {
-                    this.menuData[item.id] = item;
-                }
-                console.log("[ADMIN] Loaded menu data from DB:", this.menuData);
-            } catch (error) {
-                console.error("[ADMIN] Failed to fetch menu items:", error);
-                this.menuData = {};
-            }
+    try {
+      const res = await fetch("http://localhost:8000/admin/menu");
+      const data = await res.json();
+      this.menuData = {};
+      for (const item of data.menu) {
+        this.menuData[item.id] = item;
+      }
+      this.draftMenuData = JSON.parse(JSON.stringify(this.menuData)); // clone for staging
+      this.renderMenuList();
+      this.markAsSaved();
+      console.log("[ADMIN] Menu loaded and saved state reset.");
+    } catch (error) {
+      console.error("[ADMIN] Failed to fetch menu items:", error);
+      this.menuData = {};
+      this.draftMenuData = {};
+    }
   }
+
   renderMenuList() {
     this.menuList.innerHTML = '';
-    if (Object.keys(this.menuData).length === 0) {
+
+    if (!this.draftMenuData || Object.keys(this.draftMenuData).length === 0) {
       this.menuList.innerHTML = '<p>No menu items found.</p>';
       return;
     }
-    Object.entries(this.menuData).forEach(([id, item]) => {
+
+    Object.entries(this.draftMenuData).forEach(([id, draftItem]) => {
+      const savedItem = this.menuData[id];
+      const isNew = draftItem.isNew;
+      const isEdited = !isNew && savedItem && (
+        draftItem.title !== savedItem.title ||
+        draftItem.emoji !== savedItem.emoji ||
+        draftItem.content !== savedItem.content
+      );
+      const isDeleted = draftItem.isDeleted;
+
       const menuItem = document.createElement('div');
       menuItem.className = 'menu-item';
+
+      if (isNew) menuItem.classList.add('new');
+      if (isEdited) menuItem.classList.add('edited');
+      if (isDeleted) menuItem.classList.add('deleted');
+
       menuItem.innerHTML = `
         <div class="menu-item-header">
           <div class="menu-item-title">
-            <span class="emoji">${item.emoji}</span>
-            <h3>${this.escapeHtml(item.title)}</h3>
+            <span class="emoji">${draftItem.emoji}</span>
+            <h3>${this.escapeHtml(draftItem.title)}</h3>
+            ${isNew ? '<span class="tag new-tag">New</span>' : ''}
+            ${isEdited ? '<span class="tag edited-tag">Edited</span>' : ''}
+            ${isDeleted ? '<span class="tag deleted-tag">To Delete</span>' : ''}
           </div>
           <div class="menu-item-actions">
-            <button class="action-btn edit" onclick="adminPanel.editMenuItem('${id}')">✏️ Edit</button>
-            <button class="action-btn delete" onclick="adminPanel.deleteMenuItem('${id}')">🗑️ Delete</button>
+            ${isDeleted
+              ? `<button class="action-btn restore" onclick="adminPanel.undoDeleteItem('${id}')">↩️ Undo</button>`
+              : `<button class="action-btn edit" onclick="adminPanel.editMenuItem('${id}')">✏️ Edit</button>
+                <button class="action-btn delete" onclick="adminPanel.deleteMenuItem('${id}')">🗑️ Delete</button>`}
           </div>
         </div>
-        <div class="menu-item-content">${this.formatContentPreview(item.content)}</div>
+        <div class="menu-item-content">${this.formatContentPreview(draftItem.content)}</div>
       `;
+
       this.menuList.appendChild(menuItem);
     });
   }
+
 
   formatContentPreview(content) {
     const textOnly = content.replace(/<[^>]*>/g, '');
@@ -272,7 +308,7 @@ class AdminPanel {
 
   editMenuItem(id) {
     this.currentEditingId = id;
-    const item = this.menuData[id];
+    const item = this.draftMenuData[id];
     if (!item) return;
     document.getElementById('windowTitle').textContent = 'Edit Menu Item';
     document.getElementById('menuTitle').value = item.title;
@@ -305,44 +341,64 @@ class AdminPanel {
 
     const menuItem = { title, emoji, content };
 
-            if (this.currentEditingId) {
-                // Editing
-                this.menuData[this.currentEditingId] = {
-                    ...this.menuData[this.currentEditingId], // retain ID or any other keys
-                    ...menuItem
-                };
-                delete this.menuData[this.currentEditingId].isNew; // ensure it's treated as existing
-                console.log(`[ADMIN] Edited item ${this.currentEditingId}:`, this.menuData[this.currentEditingId]);
-            } else {
-                // Adding new item
-                const newId = this.generateNewId();
-                menuItem.isNew = true;
-                this.menuData[newId] = menuItem;
-                console.log(`[ADMIN] Added new item ${newId}:`, menuItem);
-            }
+    if (this.currentEditingId) {
+      // Editing existing item in draft (not menuData!)
+      this.draftMenuData[this.currentEditingId] = {
+        ...this.draftMenuData[this.currentEditingId], // preserve existing flags like isDeleted
+        ...menuItem
+      };
+      console.log(`[ADMIN] Staged edit for item ${this.currentEditingId}:`, this.draftMenuData[this.currentEditingId]);
+    } else {
+      // Adding a new item to draft
+      const newId = this.generateNewId();
+      menuItem.isNew = true;
+      this.draftMenuData[newId] = menuItem;
+      console.log(`[ADMIN] Staged new item ${newId}:`, menuItem);
+    }
 
-            this.renderMenuList();
-            this.closeMenuWindow();
-            this.markAsUnsaved();
+    this.renderMenuList();
+    this.closeMenuWindow();
+    this.markAsUnsaved();
   }
+
   generateNewId() {
     const existingIds = Object.keys(this.menuData).map(id => parseInt(id));
     return (Math.max(...existingIds, 0) + 1).toString();
   }
 
   deleteMenuItem(id) {
-    this.pendingDeleteId = id;
-    const item = this.menuData[id];
-    console.log(`Delete requested for item ID ${id}:`, item);
-    document.getElementById('confirmMessage').textContent = 
-      `Are you sure you want to delete "${item.title}"? This action cannot be undone.`;
-    this.confirmWindow.classList.add('active');
-    this.pendingAction = 'delete';
-    console.log(`Confirmed deletion of item ${this.pendingDeleteId}`);
+    const item = this.draftMenuData[id];
+    if (!item || item.isDeleted) return; // prevent redundant action
+
+    // Stage as deleted
+    this.draftMenuData[id] = {
+      ...item,
+      isDeleted: true
+    };
+
+    this.renderMenuList();
+    this.markAsUnsaved();
+    this.showStatus(`Marked "${item.title}" for deletion.`, 'info');
   }
+
+
+  undoDeleteItem(id) {
+    const item = this.draftMenuData[id];
+    if (!item || !item.isDeleted) return;
+
+    // Unmark as deleted
+    delete item.isDeleted;
+
+    this.renderMenuList();
+    this.markAsUnsaved();
+    this.showStatus(`Restored "${item.title}".`, 'success');
+  }
+
+
 
   async executeConfirmedAction() {
     if (this.pendingAction === 'delete' && this.pendingDeleteId) {
+      this.confirmWindow.classList.remove('active');
       try {
         const res = await fetch(`http://localhost:8000/admin/menu/${this.pendingDeleteId}`, {
           method: "DELETE"
@@ -351,7 +407,7 @@ class AdminPanel {
       } catch (err) {
         console.error(`[ADMIN] Failed to delete item ${this.pendingDeleteId}`, err);
       }
-      delete this.menuData[this.pendingDeleteId];
+      delete this.draftMenuData[this.pendingDeleteId];
       this.renderMenuList();
       this.showStatus('Menu item deleted successfully!', 'success');
       this.markAsUnsaved();
@@ -392,40 +448,41 @@ class AdminPanel {
     }, 3000);
   }
 
-
   showResetConfirmation() {
-    this.pendingAction = 'reset';
-    this.showConfirmWindow('Are you sure you want to reset all menu items to default? This cannot be undone.');
-  }
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn.disabled) return; // prevent accidental click
+    const isUnsaved = document.getElementById('saveAllBtn').classList.contains('unsaved');
 
-  async resetMenu() {
-    try {
-      const resp = await fetch('admin_controller.php?action=reset', {
-        method: 'POST',
-        credentials: 'same-origin',
-      });
-      const json = await resp.json();
-      if (json.status === 'success') {
-        this.menuData = json.data.reduce((acc, item) => {
-          acc[item.id] = item;
-          return acc;
-        }, {});
-        this.renderMenuList();
-        this.showStatus('Menu reset to default.', 'success');
-      } else {
-        this.showStatus(json.message || 'Reset failed.', 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      this.showStatus('Error resetting menu.', 'error');
+    if (isUnsaved) {
+      // Revert local draft (unsaved) changes to last loaded menuData
+      this.draftMenuData = JSON.parse(JSON.stringify(this.menuData)); // deep copy
+      this.renderMenuList();
+      this.showStatus('Reverted to last saved state.', 'info');
+      this.markAsSaved();
+    } else {
+      // Only if no unsaved changes, trigger full reset
+      this.pendingAction = 'reset';
+      this.showConfirmWindow('Are you sure you want to reset all menu items to default? This cannot be undone.');
     }
   }
 
+
   async saveAllChanges() {
     try {
-      const entries = Object.entries(this.menuData);
+      const entries = Object.entries(this.draftMenuData);
 
       for (const [id, item] of entries) {
+        if (item.isDeleted) {
+          if (!item.isNew) {
+            // Existing item marked for deletion
+            await fetch(`http://localhost:8000/admin/menu/${id}`, {
+              method: "DELETE"
+            });
+            console.log(`[ADMIN] Deleted item ${id}`);
+          }
+          continue; // Skip to next
+        }
+
         if (item.isNew) {
           const res = await fetch("http://localhost:8000/admin/menu", {
             method: "POST",
@@ -448,27 +505,45 @@ class AdminPanel {
       this.showStatus('All changes saved successfully!', 'success');
       this.markAsSaved();
 
-      // Optional: refetch from DB to verify
+      // Reload saved state into both data objects
       await this.loadMenuData();
+      this.draftMenuData = JSON.parse(JSON.stringify(this.menuData));
       this.renderMenuList();
 
-      } catch (error) {
-        console.error("[ADMIN] Save error:", error);
-        this.showStatus('Error saving changes to backend.', 'error');
-      }
+    } catch (error) {
+      console.error("[ADMIN] Save error:", error);
+      this.showStatus('Error saving changes to backend.', 'error');
     }
+  }
+
   
   markAsUnsaved() {
-      const saveBtn = document.getElementById('saveAllBtn');
-      saveBtn.textContent = '💾 Save Changes*';
-      saveBtn.classList.add('unsaved');
+    const saveBtn = document.getElementById('saveAllBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    saveBtn.textContent = '💾 Apply All Changes*';
+    saveBtn.classList.add('unsaved', 'blinking');
+    saveBtn.disabled = false;
+    saveBtn.style.opacity = 1.0;
+
+    resetBtn.disabled = false;
+    resetBtn.style.opacity = 1.0;
   }
-    
+
   markAsSaved() {
-      const saveBtn = document.getElementById('saveAllBtn');
-      saveBtn.textContent = '💾 Save Changes';
-      saveBtn.classList.remove('unsaved');
+    const saveBtn = document.getElementById('saveAllBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    saveBtn.textContent = '💾 No changes made yet';
+    saveBtn.classList.remove('unsaved', 'blinking');
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = 0.1;
+
+    resetBtn.disabled = true;
+    resetBtn.style.opacity = 0.1;
   }
+
+
 
   escapeHtml(text) {
     return text.replace(/[&<>"']/g, function (m) {

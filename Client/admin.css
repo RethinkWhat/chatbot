@@ -537,3 +537,59 @@ body {
         transform: rotate(360deg);
     }
 }
+
+@keyframes blinkFade {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.blinking {
+  animation: blinkFade .2s infinite;
+}
+
+/* for rendering menu list */
+.menu-item.new {
+  border-left: 4px solid green;
+  background-color: #e9fce9;
+}
+
+.menu-item.edited {
+  border-left: 4px solid orange;
+  background-color: #fff5e5;
+}
+
+.tag {
+  font-size: 0.75rem;
+  background: #ccc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.new-tag {
+  background: green;
+  color: white;
+}
+
+.edited-tag {
+  background: orange;
+  color: white;
+}
+
+.menu-item.deleted {
+  opacity: 0.5;
+  background-color: #ffe6e6;
+  border-left: 4px solid red;
+}
+
+.tag.deleted-tag {
+  background: red;
+  color: white;
+}
+
+.action-btn.restore {
+  background: #fff;
+  color: #d00;
+  border: 1px solid red;
+}

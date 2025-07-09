@@ -70,6 +70,7 @@ class SLUChatbot {
   }
   initializeEventListeners() {
     this.sendBtn.addEventListener('click', () => this.handleSend());
+    this.stopBtn.addEventListener('click', () => this.handleStop());
     this.chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -103,6 +104,7 @@ class SLUChatbot {
     this.addUserMessage(msg);
     this.chatInput.value = '';
     this.chatInput.style.height = 'auto';
+    this.showTypingIndicator();
     this.toggleButtons(true); //set the stop button frontend
     await this.processMessage(msg);
   }
@@ -286,14 +288,15 @@ class SLUChatbot {
             this.abortController.abort();  // Immediately cancel any ongoing fetch
             this.abortController = null;   // Reset
         }
-        fetch(`${this.ragServer}/stop`, {
+        // Immediately hide typing animation
+        this.hideTypingIndicator();
+        this.toggleButtons(false);  // Restore send button
+        fetch(`${this.actionsURL}/stop`, {
             method: "POST"
         })
         .then(res => res.json())
         .then(data => {
             console.log("Stop requested:", data);
-            this.hideTypingIndicator();
-            this.toggleButtons(false);
         })
         .catch(err => {
             console.error("Stop request failed:", err);
