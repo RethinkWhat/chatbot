@@ -67,17 +67,13 @@ class ActionRAGFallback(Action):
             dispatcher.utter_message(text="You can click the menu icon or type a question.")
             return []
 
-
-        prev_question = tracker.get_slot("prev_question") or ""
-        print("RASA PREVIOUS QUESTION: " + prev_question)
-
         try:
 
             rag_url = "http://rag_server:8000/predict"
             response = requests.post(
                 rag_url,
                 json={"query": user_message, 
-                    "prevQuestion": prev_question}
+                }
             )
 
             # Get the full answer from the response as a JSON object
@@ -94,6 +90,5 @@ class ActionRAGFallback(Action):
         except requests.exceptions.RequestException as e:
             dispatcher.utter_message(text=f"Error connecting to RAG service: {str(e)}")
 
-        updated_prev = prev_question + "\n " + user_message
-        return [SlotSet("prev_question", updated_prev)]
+        return 
         

@@ -29,13 +29,6 @@ intents:
   - petition_course
   - readmission_process
   - window_10_clearance
-  
-slots:
-  prev_question:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_text
 
 actions:
   - action_rag_fallback
