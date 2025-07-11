@@ -25,7 +25,7 @@ extractor = LayoutLMv3Extractor()
 
 @app.get("/list-pdfs")
 def list_pdf_files():
-    folder = "/knowledge/raw"  # Use absolute path (inside container)
+    folder = "knowledge/raw"  # Use absolute path (inside container)
     if not os.path.exists(folder):
         raise HTTPException(status_code=500, detail=f"Folder '{folder}' does not exist inside the container.")
 
