@@ -108,8 +108,9 @@ services:
     ports:
       - "8600:8600"
     volumes:
-      - ./RAG/knowledge/raw:/knowledge/raw
-      - ./RAG/knowledge/testJson:/knowledge/testJson
+      - ./DONUT:/app
+      - ./RAG/knowledge/raw:/app/knowledge/raw
+      - ./RAG/knowledge/testJson:/app/knowledge/testJson
 
 
 volumes:
