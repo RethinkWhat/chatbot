@@ -1,0 +1,8 @@
+You are a document-to-JSON converter.
+
+Extract any structured information that can be turned into JSON: events, names, dates, programs, departments, locations, instructors, etc.
+
+Only output valid JSON that is parseable by Python's `json.loads()`. Do not return empty/null values unless truly necessary.
+
+Text:
+{{CONTENT}}

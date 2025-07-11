@@ -20,20 +20,28 @@ class PDFScraper:
             doc = fitz.open(pdf_path)
             chunks = []
             current_chunk = []
+
             for i, page in enumerate(doc):
                 text = page.get_text("text").strip()
+                ocr_text = ""
 
-                if len(text) >= 50:
-                    logging.info(f"[Page {i+1}] Text extracted via PDF")
-                else:
+                # If there's little to no text, fallback to OCR
+                if len(text) < 50:
                     logging.warning(f"[Page {i+1}] Not enough text, applying OCR")
                     images = convert_from_path(pdf_path, dpi=300, first_page=i+1, last_page=i+1)
-                    text = ""
                     for img in images:
-                        text += pytesseract.image_to_string(img, lang="eng+fil")
-                    text = Cleaner.runOCRCleaner(text.strip())
+                        ocr_text += pytesseract.image_to_string(img, lang="eng+fil")
+                    ocr_text = Cleaner.runOCRCleaner(ocr_text.strip())
+                else:
+                    logging.info(f"[Page {i+1}] Text extracted via PDF")
 
-                current_chunk.append(text)
+                # Merge text + OCR if needed
+                if text and ocr_text:
+                    merged_text = f"{text}\n\n[OCR Supplement]\n{ocr_text}"
+                else:
+                    merged_text = text or ocr_text
+
+                current_chunk.append(merged_text)
 
                 # Every `pages_per_chunk` pages, store a chunk
                 if (i + 1) % self.pages_per_chunk == 0 or (i + 1) == len(doc):
@@ -45,6 +53,7 @@ class PDFScraper:
         except Exception as e:
             logging.error(f"[Error] Failed to extract {pdf_path}: {e}")
             return []
+
     def extract_page_text(self, pdf_path):
         try:
             doc = fitz.open(pdf_path)

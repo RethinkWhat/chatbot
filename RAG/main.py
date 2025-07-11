@@ -354,6 +354,25 @@ def jsonify_single_file(filename: str):
 
     return {"status": "success", "json_file": output_path}
 
+#pdf to JSON
+@app.post("/jsonify-pdf/{filename}")
+def jsonify_pdf_to_json(filename: str):
+    rag = RAGPipeline()
+
+    pdf_path = os.path.join("knowledge/raw", filename)
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=404, detail="PDF not found")
+
+    json_output = rag.jsonify_pdf_with_layoutlm(pdf_path)
+
+    # Save JSON
+    output_path = os.path.join("knowledge/testJson", Path(filename).stem + ".json")
+    os.makedirs("knowledge/testJson", exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(json_output, f, indent=2, ensure_ascii=False)
+
+    return {"filename": filename, "status": "success", "output_file": output_path}
+
 #upload files
 @app.post("/upload")
 async def upload_files(files: list[UploadFile] = File(...)):

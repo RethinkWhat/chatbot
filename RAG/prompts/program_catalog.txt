@@ -4,7 +4,8 @@ Extract the following fields if available:
 - "program": Name of the program
 - "description": Overview of the program
 - "job_opportunities": List of careers after graduation
-- "program_outcomes": Learning outcomes or objectives
+- "PEO": Program Education Objectives, what to expect from gratuated students from the program
+- "PLO": Learning outcomes or objectives, Program Learning Outcomes
 - "vision": School's vision statement
 - "mission": School's mission statement
 - "contact": {

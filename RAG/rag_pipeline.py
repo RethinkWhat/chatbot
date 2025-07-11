@@ -9,7 +9,7 @@ from pathlib import Path
 import torch
 import uuid
 import posthog
-import requests, json, time, os, re
+import requests, json, time, os, re, subprocess
 
 
 import weaviate
@@ -150,7 +150,7 @@ class RAGPipeline:
             print("Connecting to Ollama at:", self.llmModel.base_url)
         except Exception as e:
                 raise RuntimeError("Ollama is not running. Please start it with `ollama run llama3`") from e
-        
+    self.layoutlm = LayoutLMv3Extractor()
         
     def task(self, distinct_id, input, output, event="llm-task", timestamp=None, session_id=None, properties=None):
         props = properties if properties else {}
@@ -244,22 +244,46 @@ Answer:
         print("LLM RESPONSE: ", response )
         return response
     
-    def jsonifyTxt(self, raw_text: str) -> dict:
-        cleaned_text = self._clean_text_for_jsonification(raw_text)
-        doc_type = self.classify_document(cleaned_text)
-        prompt = self.get_prompt_by_type(doc_type, cleaned_text)
+    #new sol: JSONify pdf 
+    def jsonify_pdf_with_layoutlm(self, pdf_path: str) -> dict:
+        processor = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-base", revision="main")
+        model = LayoutLMv3ForQuestionAnswering.from_pretrained("microsoft/layoutlmv3-base")
 
-        response = self.get_ollama_completion(prompt)
-        json_string = self.extract_json_block(response)
+        pages = convert_from_path(pdf_path, dpi=300)
+        if not pages:
+            return {"error": "No pages found in PDF"}
 
+        results = []
+        for i, image in enumerate(pages):
+            encoding = processor(images=image, return_tensors="pt")
+            with torch.no_grad():
+                outputs = model(**encoding)
+            # NOTE: LayoutLMv3 by default is for QA tasks; needs fine-tuning or zero-shot formatting
+            # Here we just simulate a placeholder structure
+            results.append({
+                "page": i + 1,
+                "raw_text": pytesseract.image_to_string(image, lang="eng+fil").strip()
+            })
+
+        return {"document": Path(pdf_path).name, "pages": results}
+    
+    def jsonifyTxt(self, raw_text_or_path: str, is_pdf_path=False) -> dict:
+        """
+        If `is_pdf_path` is True, treat `raw_text_or_path` as a PDF file path to extract via LayoutLMv3.
+        Else, fallback to legacy LLM JSONification (if needed).
+        """
         try:
-            return json.loads(json_string)
+            if is_pdf_path:
+                outputs = self.layoutlm.extract_from_pdf(raw_text_or_path)
+                # Optionally post-process outputs here if needed
+                return {
+                    "source": os.path.basename(raw_text_or_path),
+                    "layoutlmv3_output": outputs
+                }
+            else:
+                raise NotImplementedError("Legacy LLM-based extraction is disabled. Use PDF path with LayoutLMv3.")
         except Exception as e:
-            failed_path = os.path.join("knowledge/failed", f"{uuid.uuid4()}.txt")
-            with open(failed_path, "w", encoding="utf-8") as f:
-                f.write(cleaned_text)
-            return {"raw_output": response, "error": str(e)}
-
+            return {"error": str(e)}
     # def jsonifyTxt(self, text: str) -> dict:
     #     """
     #     Clean the input text and use LLM to convert it to structured JSON output.
@@ -339,6 +363,8 @@ Answer:
             ],
             "law_course": [
                 "JUSTICE", "SUPREME COURT", "LEGAL THEORY", "JURISPRUDENCE", "LAW", "ATTY.", "CA JUSTICE"
+            ],"acad_calendar": [
+                "REGISTRATION", "EXAMS", "SEMESTER", "HOLY WEEK", "GRADUATION", "BREAK", "BACCALAUREATE", "FOUNDATION WEEK"
             ],
         }
 
@@ -427,9 +453,24 @@ Answer:
     def get_prompt_by_type(self, doc_type: str, cleaned_text: str) -> str:
         prompt_file = f"prompts/{doc_type}.txt"
         if not os.path.exists(prompt_file):
-            prompt_file = "prompts/generic.txt"
+            prompt_file = "prompts/fallback_general.txt"
 
         with open(prompt_file, "r", encoding="utf-8") as f:
             template = f.read()
 
         return template.replace("{{CONTENT}}", cleaned_text.strip())
+    
+# JSONification using Donut
+    def get_layoutlm_completion(image_path):
+        try:
+            result = subprocess.run(
+                ["/venv-donut/bin/python", "donut_worker.py", image_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+                text=True
+            )
+            return result.stdout.strip()
+        except subprocess.CalledProcessError as e:
+            print("[ERROR] Donut subprocess failed:", e.stderr)
+            return ""
