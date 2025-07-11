@@ -326,7 +326,7 @@ def get_txt_content(filename: str):
     with open(path, "r", encoding="utf-8") as f:
         return {"content": f.read()}
 
-@app.post("/trigger/jsonify/{filename}")
+# @app.post("/trigger/jsonify/{filename}")
 # def jsonify_txt_file(filename: str):
 #     rag = RAGPipeline()
 #     path = os.path.join("knowledge/txt", filename)
@@ -338,7 +338,7 @@ def get_txt_content(filename: str):
 #     return {"filename": filename, "json": result}
 @app.post("/trigger/jsonify/{filename}")
 def jsonify_single_file(filename: str):
-    input_path = f"knowledge/cleaned/{filename}"
+    input_path = f"knowledge/txt/{filename}"
     output_path = f"knowledge/testJson/{filename.replace('.txt', '.json')}"
 
     if not os.path.exists(input_path):

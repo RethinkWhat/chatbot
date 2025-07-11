@@ -1,0 +1,51 @@
+{
+  "PEO": {
+    "description": "formulate innovative solutions to complex computing problems and requirements using the principles of research, mathematics and computing sciences; engage in corporate and community-based advocacies that address social problems to positively impact the society; contribute to the advancement of the computer science discipline by augmenting existing domain knowledge; and exemplify Christian values in the practice of one's computing profession while working ethically and with integrity."
+  },
+  "PLO": {
+    "description": "integrate knowledge of computing, science, mathematics and other domains in the appreciation of the Computer Science discipline; solve real-world computing problems within constraints of time, cost and resources by employing critical thinking skills; apply mathematical foundations, algorithmic principles and computer science theories in the modeling and design of computer-based systems; evaluate solutions and systems for complex computing problems with considerations on public health and safety, cultural, societal and environmental impact; utilize the appropriate tools, techniques and resources in the provision of computing solutions; communicate effectively knowledge and ideas to the computing community and society at large across a wide range of contexts and media; function effectively as an accountable individual and as a team player in a multicultural and multidisciplinary environment; act in accordance with social, legal, and ethical responsibilities as CS professional, with recognition of the local and global impact of technology to individuals, organizations and society; adapt to new and emerging technologies in the pursuit of continuing professional growth; and practice Christian, Louisian and Filipino values in their personal and professional endeavors and actively participate in the service of the community."
+  },
+  "Expected Outcomes": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "Career Paths": [
+    {
+      "name": "Web Developer"
+    },
+    {
+      "name": "Computer Programmer"
+    },
+    {
+      "name": "Information Security Analyst"
+    },
+    {
+      "name": "Database Administrator"
+    },
+    {
+      "name": "Software Developer"
+    },
+    {
+      "name": "Software Engineer"
+    },
+    {
+      "name": "Computer Forensic Analyst"
+    }
+  ],
+  "Department Head": {
+    "name": "Josephine Dela Cruz",
+    "email": "jdelacruz@slu.edu.ph"
+  },
+  "Fees": {
+    "P 17,800.00": "Undergraduate Freshman Students",
+    "P 37,906..00": "Transfer Students"
+  }
+}

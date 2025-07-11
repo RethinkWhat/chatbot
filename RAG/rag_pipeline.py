@@ -1,10 +1,11 @@
+from sklearn import base
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_ollama import ChatOllama
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.output_parsers import StrOutputParser
-from Pathlib import Path
+from pathlib import Path
 import torch
 import uuid
 import posthog
@@ -243,36 +244,52 @@ Answer:
         print("LLM RESPONSE: ", response )
         return response
     
-    def jsonifyTxt(self, text: str) -> dict:
-        """
-        Clean the input text and use LLM to convert it to structured JSON output.
-        """
+    def jsonifyTxt(self, raw_text: str) -> dict:
         cleaned_text = self._clean_text_for_jsonification(raw_text)
+        doc_type = self.classify_document(cleaned_text)
+        prompt = self.get_prompt_by_type(doc_type, cleaned_text)
+
+        response = self.get_ollama_completion(prompt)
+        json_string = self.extract_json_block(response)
+
+        try:
+            return json.loads(json_string)
+        except Exception as e:
+            failed_path = os.path.join("knowledge/failed", f"{uuid.uuid4()}.txt")
+            with open(failed_path, "w", encoding="utf-8") as f:
+                f.write(cleaned_text)
+            return {"raw_output": response, "error": str(e)}
+
+    # def jsonifyTxt(self, text: str) -> dict:
+    #     """
+    #     Clean the input text and use LLM to convert it to structured JSON output.
+    #     """
+    #     cleaned_text = self._clean_text_for_jsonification(raw_text)
         
 
-        system_prompt = (
-            "You are a document-to-JSON converter.\n"
-            "You must extract structured information from the document and return only a valid JSON object.\n"
-            "Make sure to retain full names (even if split across lines) and roles like Dean, Professor, Justice, etc.\n"
-            "Do NOT drop prefixes like 'DR.', 'PROF.', 'CA JUSTICE', or 'ATTY.'.\n"
-            "Do NOT include explanations, formatting hints, or markdown.\n"
-            "Do NOT wrap the output in triple backticks or say 'Here is the JSON'.\n"
-            "Avoid returning empty arrays or fields unless they are clearly needed.\n"
-            "Preserve factual details, and group items logically.\n"
-            "Only return valid JSON parseable by `json.loads()` in Python.\n"
-        )
-        prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
+    #     system_prompt = (
+    #         "You are a document-to-JSON converter.\n"
+    #         "You must extract structured information from the document and return only a valid JSON object.\n"
+    #         "Make sure to retain full names (even if split across lines) and roles like Dean, Professor, Justice, etc.\n"
+    #         "Do NOT drop prefixes like 'DR.', 'PROF.', 'CA JUSTICE', or 'ATTY.'.\n"
+    #         "Do NOT include explanations, formatting hints, or markdown.\n"
+    #         "Do NOT wrap the output in triple backticks or say 'Here is the JSON'.\n"
+    #         "Avoid returning empty arrays or fields unless they are clearly needed.\n"
+    #         "Preserve factual details, and group items logically.\n"
+    #         "Only return valid JSON parseable by `json.loads()` in Python.\n"
+    #     )
+    #     prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
 
-        response = self.get_ollama_completion(instruction)
-        cleaned = self.extract_json_block(response)
+    #     response = self.get_ollama_completion(instruction)
+    #     cleaned = self.extract_json_block(response)
 
-        # Try to extract valid JSON content
-        try:
-            parsed = json.loads(cleaned)
-            return parsed
-        except Exception as e:
-            print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
-            return {"raw_output": response, "error": str(e)}
+    #     # Try to extract valid JSON content
+    #     try:
+    #         parsed = json.loads(cleaned)
+    #         return parsed
+    #     except Exception as e:
+    #         print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
+    #         return {"raw_output": response, "error": str(e)}
 
 #testing new jsonification method
     def jsonify_all_cleaned_txt(self):
@@ -309,18 +326,74 @@ Answer:
         match = re.search(r"({.*})", text, re.DOTALL)
         return match.group(1) if match else text.strip()
 
+    def classify_document(self, text: str) -> str:
+        upper = text.upper()
+
+        keyword_sets = {
+            "program_catalog": [
+                "PROGRAM EDUCATIONAL OBJECTIVES", "PEO", "PLO",
+                "LEARNING OUTCOMES", "CAREER PATHS", "PROGRAM OUTCOMES"
+            ],
+            "schedule": [
+                "COURSE SCHEDULE", "UNITS", "LLM", "TIME", "DATE", "INSTRUCTOR", "PROFESSOR"
+            ],
+            "law_course": [
+                "JUSTICE", "SUPREME COURT", "LEGAL THEORY", "JURISPRUDENCE", "LAW", "ATTY.", "CA JUSTICE"
+            ],
+        }
+
+        match_scores = {}
+        for doc_type, keywords in keyword_sets.items():
+            match_scores[doc_type] = sum(kw in upper for kw in keywords)
+
+        # Pick the type with the most keyword matches
+        best_match = max(match_scores, key=match_scores.get)
+        if match_scores[best_match] > 1:  # Require at least 2 matches to be confident
+            return best_match
+        return "generic"
+
 
 
     def _clean_text_for_jsonification(self, text: str) -> str:
-        text = re.sub(r'[\x0c\u000c\f]+', '', text)             # Remove form-feed
-        text = re.sub(r'[\t\r]+', '', text)                      # Remove tab/carriage returns
-        text = re.sub(r'[ \xa0]+', ' ', text)                    # Replace non-breaking spaces
-        text = re.sub(r'\s+\n', '\n', text)                    # Remove spaces before line breaks
-        text = re.sub(r'\n{2,}', '\n\n', text)                 # Collapse multiple newlines
-        text = re.sub(r'-\n', '', text)                          # Remove hyphenation at line breaks
-        text = re.sub(r'[ ]{2,}', ' ', text)                      # Collapse extra spaces
-        text = re.sub(r'\b(?:[A-Z] ?){3,}\b', '', text)         # Remove spaced-out headings
-        return text.strip()
+        # Remove control characters
+        text = re.sub(r'[\x0c\u000c\f]+', '', text)
+        text = re.sub(r'[\t\r]+', '', text)
+        text = re.sub(r'[ \xa0]+', ' ', text)
+
+        # Remove headings like 'S C H O O L  O F  A C C O U N T A N C Y'
+        text = re.sub(r'\b(?:[A-Z] ?){4,}\b', '', text)
+
+        # Fix hyphenation at line breaks
+        text = re.sub(r'-\n', '', text)
+
+        # Collapse multiple spaces and newlines
+        text = re.sub(r'\n{2,}', '\n\n', text)
+        text = re.sub(r'[ ]{2,}', ' ', text)
+        text = re.sub(r'\s+\n', '\n', text)
+
+        # Fix bullet lines (e.g., lines ending in ;) split by newlines
+        lines = text.split('\n')
+        fixed_lines = []
+        buffer = ""
+
+        for line in lines:
+            if not line.strip():
+                fixed_lines.append(buffer.strip())
+                buffer = ""
+                continue
+
+            # If line ends with ; or , or incomplete sentence, assume it's a bullet
+            if line.strip()[-1:] in (';', ',') or line.strip()[-1].islower():
+                buffer += " " + line.strip()
+            else:
+                buffer += " " + line.strip()
+                fixed_lines.append(buffer.strip())
+                buffer = ""
+
+        if buffer:
+            fixed_lines.append(buffer.strip())
+
+        return '\n'.join(fixed_lines).strip()
 
 
     def _clean_llm_json_output(self, output: str) -> str:
@@ -350,3 +423,13 @@ Answer:
         except Exception as e:
             print(f"[ERROR] Failed to get Ollama completion: {e}")
             return ""
+        
+    def get_prompt_by_type(self, doc_type: str, cleaned_text: str) -> str:
+        prompt_file = f"prompts/{doc_type}.txt"
+        if not os.path.exists(prompt_file):
+            prompt_file = "prompts/generic.txt"
+
+        with open(prompt_file, "r", encoding="utf-8") as f:
+            template = f.read()
+
+        return template.replace("{{CONTENT}}", cleaned_text.strip())
