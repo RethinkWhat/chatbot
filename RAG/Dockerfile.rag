@@ -4,43 +4,18 @@ USER root
 ENV HOME=/root
 WORKDIR /app
 
-# 1. Install system dependencies
+# Poppler-utils is required for PDF processing
+# Tesseract is required for OCR processing
 RUN apt-get update && \
-    apt-get install -y \
-    poppler-utils \
-    tesseract-ocr \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    git \
-    curl \
-    && apt-get clean
+    apt-get install -y poppler-utils tesseract-ocr && \
+    apt-get clean
 
-# 2. Install main Python deps (Weaviate works with protobuf>=4)
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 RUN pip install pymysql
-# Force protobuf >=4.x for Weaviate (will override if needed in subprocess)
-RUN pip install 'protobuf>=4.25.0'
+RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple torch==2.7.1
 
-# 3. Create virtualenv for Donut (LayoutLMv3) with protobuf==3.20
-RUN python3 -m venv /venv-donut && \
-    /venv-donut/bin/pip install --upgrade pip && \
-    /venv-donut/bin/pip install \
-        torch torchvision \
-        protobuf==3.20.* \
-        transformers \
-        pytesseract \
-        Pillow \
-        --index-url https://download.pytorch.org/whl/cpu
 
-# 4. Optional: preload Donut model (reduces cold-start time)
-RUN /venv-donut/bin/python -c "\
-from transformers import DonutProcessor, VisionEncoderDecoderModel; \
-DonutProcessor.from_pretrained('naver-clova-ix/donut-base-finetuned-docvqa'); \
-VisionEncoderDecoderModel.from_pretrained('naver-clova-ix/donut-base-finetuned-docvqa')"
-
-# 5. Copy your code
 COPY . .
 
-# 6. Launch server
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

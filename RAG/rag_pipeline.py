@@ -21,7 +21,6 @@ import textwrap # for paraphrasing the knowledge base
 from constants import apologyMsg
 
 
-
 llmModel = None  # Initialize llmModel to be used later in the class
 
 
@@ -150,7 +149,6 @@ class RAGPipeline:
             print("Connecting to Ollama at:", self.llmModel.base_url)
         except Exception as e:
                 raise RuntimeError("Ollama is not running. Please start it with `ollama run llama3`") from e
-    self.layoutlm = LayoutLMv3Extractor()
         
     def task(self, distinct_id, input, output, event="llm-task", timestamp=None, session_id=None, properties=None):
         props = properties if properties else {}
@@ -474,3 +472,34 @@ Answer:
         except subprocess.CalledProcessError as e:
             print("[ERROR] Donut subprocess failed:", e.stderr)
             return ""
+
+    def jsonify_pdf_with_layoutlm(self, pdf_path: str) -> dict:
+        from transformers import DonutProcessor, VisionEncoderDecoderModel
+        from PIL import Image
+        import pdf2image
+
+        processor = DonutProcessor.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa", use_fast=False)
+        model = VisionEncoderDecoderModel.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa")
+
+        images = pdf2image.convert_from_path(pdf_path, dpi=200)
+        if not images:
+            return {"error": "No pages found in PDF"}
+
+        image = images[0].convert("RGB")
+        pixel_values = processor(image, return_tensors="pt").pixel_values
+        task_prompt = "<s_docvqa><s_question>Extract all structured information in JSON</s_question><s_answer>"
+        decoder_input_ids = processor.tokenizer(task_prompt, return_tensors="pt").input_ids
+
+        outputs = model.generate(
+            pixel_values,
+            decoder_input_ids=decoder_input_ids,
+            max_length=1024,
+            early_stopping=True,
+            pad_token_id=processor.tokenizer.pad_token_id
+        )
+
+        decoded = processor.batch_decode(outputs, skip_special_tokens=True)[0]
+        try:
+            return json.loads(decoded)
+        except Exception as e:
+            return {"raw_output": decoded, "error": str(e)}

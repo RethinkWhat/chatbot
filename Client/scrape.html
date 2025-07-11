@@ -51,7 +51,7 @@
         <pre id="uploadOutput" class="output-box"></pre>
       </div>
 
-      <div class="section">
+      <!-- <div class="section">
         <h2>📝 Preview & Convert Raw Text to JSON</h2>
         <select id="txtFileList" style="width: 300px;"></select>
         <button id="loadTxtBtn">📖 Preview</button>
@@ -60,7 +60,17 @@
         <textarea id="jsonifiedOutputArea" rows="10" cols="80" placeholder="JSON output will appear here..."></textarea>
         <button id="saveJsonifiedBtn">💾 Save JSON</button>
         <pre id="jsonifyStatus"></pre>
+      </div> -->
+
+      <div class="section">
+        <h2>📄 Convert PDF to JSON (via LayoutLMv3)</h2>
+        <select id="pdfFileList" style="width: 300px;"></select>
+        <button id="jsonifyPdfBtn">🧠 JSONify PDF</button>
+        <textarea id="pdfJsonifiedOutputArea" rows="10" cols="80" placeholder="PDF → JSON output will appear here..."></textarea>
+        <button id="savePdfJsonBtn">💾 Save PDF JSON</button>
+        <pre id="pdfJsonifyStatus"></pre>
       </div>
+
 
 
       <div class="section">
@@ -305,6 +315,63 @@
         document.getElementById("jsonifyStatus").textContent = "✅ Saved: " + result.status;
       } catch (err) {
         document.getElementById("jsonifyStatus").textContent = "❌ Invalid JSON format.";
+        console.error(err);
+      }
+    });
+
+    //new JSONify PDF files
+      async function loadPdfFileList() {
+      const res = await fetch("http://localhost:8000/knowledge/raw");
+      const data = await res.json();
+      const list = document.getElementById("pdfFileList");
+      list.innerHTML = '';
+      data.files
+        .filter(name => name.toLowerCase().endsWith(".pdf"))
+        .forEach(file => {
+          const opt = document.createElement("option");
+          opt.value = file;
+          opt.textContent = file;
+          list.appendChild(opt);
+        });
+    }
+    loadPdfFileList();  // Call on page load
+
+    // Trigger PDF JSONification
+    document.getElementById("jsonifyPdfBtn").addEventListener("click", async () => {
+      const file = document.getElementById("pdfFileList").value;
+      const outputArea = document.getElementById("pdfJsonifiedOutputArea");
+      const status = document.getElementById("pdfJsonifyStatus");
+      status.textContent = "⏳ Processing with LayoutLMv3...";
+      try {
+        const res = await fetch(`http://localhost:8600/trigger/jsonify-pdf/${file}`, {
+          method: "POST"
+        });
+        const data = await res.json();
+        const jsonStr = JSON.stringify(data.json || data, null, 2);
+        outputArea.value = jsonStr;
+        status.textContent = "✅ JSON created!";
+      } catch (err) {
+        outputArea.value = "";
+        status.textContent = "❌ Failed to process PDF.";
+        console.error(err);
+      }
+    });
+
+    // Save LayoutLMv3 result to JSON
+    document.getElementById("savePdfJsonBtn").addEventListener("click", async () => {
+      const file = document.getElementById("pdfFileList").value.replace(".pdf", ".json");
+      const content = document.getElementById("pdfJsonifiedOutputArea").value;
+      try {
+        const parsed = JSON.parse(content);
+        const res = await fetch(`http://localhost:8000/knowledge/json/${file}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: parsed })
+        });
+        const data = await res.json();
+        document.getElementById("pdfJsonifyStatus").textContent = "✅ Saved: " + data.status;
+      } catch (err) {
+        document.getElementById("pdfJsonifyStatus").textContent = "❌ Invalid JSON format.";
         console.error(err);
       }
     });

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+transformers==4.38.1
+torch==2.1.0
+pdf2image
+Pillow
+pytesseract
+python-multipart
