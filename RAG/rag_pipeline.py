@@ -7,7 +7,7 @@ from langchain_core.output_parsers import StrOutputParser
 import torch
 import uuid
 import posthog
-import requests, json, time, os
+import requests, json, time, os, re
 
 
 import weaviate
@@ -243,21 +243,78 @@ Answer:
         return response
     
     def jsonifyTxt(self, text: str) -> dict:
+        """
+        Clean the input text and use LLM to convert it to structured JSON output.
+        """
+        cleaned_text = self._clean_text_for_jsonification(raw_text)
+
         system_prompt = (
-            "You are a document-to-JSON converter. Given an academic document, "
-            "extract structured JSON with balanced depth. Use flat keys for scalar fields, "
-            "but group similar items (e.g., objectives, learning outcomes) under common prefixes."
+            "You are a document-to-JSON converter.\n"
+            "You must extract structured information from the document and return only a valid JSON object.\n"
+            "Make sure to retain full names (even if split across lines) and roles like Dean, Professor, Justice, etc.\n"
+            "Do NOT drop prefixes like 'DR.', 'PROF.', 'CA JUSTICE', or 'ATTY.'.\n"
+            "Do NOT include explanations, formatting hints, or markdown.\n"
+            "Do NOT wrap the output in triple backticks or say 'Here is the JSON'.\n"
+            "Avoid returning empty arrays or fields unless they are clearly needed.\n"
+            "Preserve factual details, and group items logically.\n"
+            "Only return valid JSON parseable by `json.loads()` in Python.\n"
         )
         prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
 
-        response = self.get_ollama_completion(prompt)
-        
-        try:
-            return json.loads(response)
-        except json.JSONDecodeError:
-            print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
-            return {"raw_output": response}
+        response = self.get_ollama_completion(instruction)
+        cleaned = self.extract_json_block(response)
 
+        # Try to extract valid JSON content
+        try:
+            parsed = json.loads(cleaned)
+            return parsed
+        except Exception as e:
+            print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
+            return {"raw_output": response, "error": str(e)}
+
+    def extract_json_block(self, text: str) -> str:
+        """
+        Try to extract a clean JSON block from a possibly messy LLM output.
+        """
+        # Remove triple backticks and preambles
+        text = re.sub(r"```(?:json)?", "", text)
+        text = re.sub(r"```", "", text)
+        text = text.strip()
+
+        # Try to locate a JSON object
+        match = re.search(r"{[\s\S]*}", text)
+        if match:
+            return match.group(0)
+
+        # Fallback: just return the full text
+        return text
+
+
+
+    def _clean_text_for_jsonification(self, text: str) -> str:
+        text = re.sub(r'[\x0c\f]+', '', text)  # Remove form feeds
+        text = re.sub(r'-\n', '', text)        # Join hyphenated breaks
+        text = re.sub(r'\s+\n', '\n', text)    # Clean trailing whitespace
+        text = re.sub(r'[^\S\r\n]{2,}', ' ', text)  # Collapse extra spaces
+        text = re.sub(r'\n{2,}', '\n\n', text)      # Normalize spacing
+
+        # Join numbered lists split on separate lines (e.g., "1.\n" to "1. ")
+        text = re.sub(r'\n(\d+)\.\s*\n', r'\n\1. ', text)
+
+        # Fix broken bullet-style lines without numbers
+        text = re.sub(r'(?<=[a-zA-Z0-9,;])\n(?=[a-zA-Z])', ' ', text)
+
+        # Remove fake spaced-out headings
+        text = re.sub(r'\b(?:[A-Z] ?){3,}\b', '', text)
+
+        return text.strip()
+
+
+    def _clean_llm_json_output(self, output: str) -> str:
+        output = re.sub(r"^```(?:json)?\\s*", "", output.strip(), flags=re.IGNORECASE)
+        output = re.sub(r"\\s*```$", "", output.strip())
+        output = re.sub(r"(?i)^here is.*json.*?:", "", output.strip())
+        return output.strip()
     def get_ollama_completion(self, prompt: str) -> str:
         if not self.llmModel:
             raise RuntimeError("LLM is not initialized.")
@@ -270,7 +327,13 @@ Answer:
                 streaming=False  # Force non-streaming
             )
             response = non_streaming_llm.invoke(prompt)
-            return response.content if hasattr(response, "content") else str(response)
+            if isinstance(response, str):
+                return response.strip()
+            if hasattr(response, "content"):
+                return response.content.strip()
+            if isinstance(response, dict) and "content" in response:
+                return response["content"].strip()
+            return str(response).strip()
         except Exception as e:
             print(f"[ERROR] Failed to get Ollama completion: {e}")
             return ""

@@ -28,6 +28,13 @@
         <pre id="scrapeOutput" class="output-box"></pre>
       </div>
       <div class="section">
+        <h2>📝 Edit URLs to Scrape</h2>
+        <textarea id="urlsEditor" rows="8" cols="80" placeholder="Enter one URL per line..."></textarea><br>
+        <button id="loadUrlsBtn" class="toolbar-btn">🔄 Load URLs</button>
+        <button id="saveUrlsBtn" class="toolbar-btn">💾 Save URLs</button>
+        <pre id="urlsStatus" class="output-box"></pre>
+      </div>
+      <div class="section">
         <h2>📄 Scan PDF and Image Files</h2>
         <button id="scanPdfBtn" class="toolbar-btn">📄 Scan PDFs</button>
         <button id="scanImageBtn" class="toolbar-btn">🖼️ Scan Images</button>
@@ -45,6 +52,18 @@
       </div>
 
       <div class="section">
+        <h2>📝 Preview & Convert Raw Text to JSON</h2>
+        <select id="txtFileList" style="width: 300px;"></select>
+        <button id="loadTxtBtn">📖 Preview</button>
+        <button id="jsonifyBtn">🧪 Convert to JSON</button>
+        <textarea id="txtPreviewArea" rows="10" cols="80" placeholder="Raw text will appear here..."></textarea>
+        <textarea id="jsonifiedOutputArea" rows="10" cols="80" placeholder="JSON output will appear here..."></textarea>
+        <button id="saveJsonifiedBtn">💾 Save JSON</button>
+        <pre id="jsonifyStatus"></pre>
+      </div>
+
+
+      <div class="section">
         <h3>Edit Existing JSON Knowledge Files</h3>
         <input type="text" id="jsonSearch" placeholder="🔍 Search JSON files..." style="width: 300px; padding: 5px; margin-bottom: 10px;"><br>
         <select id="jsonFileList" style="width: 300px;"></select>
@@ -54,7 +73,7 @@
       </div>
 
       <div class="section">
-        <h2>📦 Deploy AI knowledge base</h2>
+        <h2>📦 JSON-ify all text files</h2>
         <button id="knowledgeDeployBtn" class="toolbar-btn primary">📦 PROCEED</button>
         <pre id="deployStatus" class="output-box"></pre>
       </div>
@@ -119,6 +138,44 @@
             list.dispatchEvent(new Event("change"));  // Auto-load first file
         }
     }
+
+    // Load urls.txt content into textarea
+    document.getElementById("loadUrlsBtn").addEventListener("click", async () => {
+      const output = document.getElementById("urlsStatus");
+      output.textContent = "⏳ Loading URLs...";
+      try {
+        const res = await fetch("http://localhost:8000/urls");
+        const data = await res.json();
+        document.getElementById("urlsEditor").value = data.urls.join("\n");
+        output.textContent = "✅ URLs loaded.";
+      } catch (err) {
+        output.textContent = "❌ Failed to load URLs.";
+        console.error(err);
+      }
+    });
+
+    // Save updated content to urls.txt
+    document.getElementById("saveUrlsBtn").addEventListener("click", async () => {
+      const output = document.getElementById("urlsStatus");
+      const content = document.getElementById("urlsEditor").value
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length > 0); // Remove empty lines
+
+      output.textContent = "⏳ Saving URLs...";
+      try {
+        const res = await fetch("http://localhost:8000/urls", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls: content })
+        });
+        const data = await res.json();
+        output.textContent = "✅ " + data.status;
+      } catch (err) {
+        output.textContent = "❌ Failed to save URLs.";
+        console.error(err);
+      }
+    });
     // Scan PDFs
     document.getElementById("scanPdfBtn").addEventListener("click", async () => {
       const output = document.getElementById("scanOutput");
@@ -186,20 +243,72 @@
     <!-- subject to changes -->
     document.getElementById("knowledgeDeployBtn").addEventListener("click", async () => {
       const statusEl = document.getElementById("deployStatus");
-      statusEl.textContent = "⏳ converting json to AI knowledge base...";
+      statusEl.textContent = "⏳ converting .txts to .jsons...";
       try {
         const res = await fetch("http://localhost:8000/trigger/jsonify", {
           method: "POST"
         });
-        const data = await res.json();
-        statusEl.textContent = `✅ Done. Total chunks: ${data.chunks || "unknown"}`;
+        statusEl.textContent = "✅ Done.";
       } catch (err) {
-        statusEl.textContent = "❌ Failed to deploy.";
+        statusEl.textContent = "❌ Failed to JSON-ify.";
         console.error(err);
       }
     });
 
     loadJsonFileList();
+
+    // Load .txt file list from knowledge/raw
+    async function loadTxtFileList() {
+      const res = await fetch("http://localhost:8000/knowledge/txt");
+      const data = await res.json();
+      const list = document.getElementById("txtFileList");
+      list.innerHTML = '';
+      data.files.forEach(file => {
+        const opt = document.createElement("option");
+        opt.value = file;
+        opt.textContent = file;
+        list.appendChild(opt);
+      });
+    }
+    loadTxtFileList();
+
+    // Preview selected .txt file
+    document.getElementById("loadTxtBtn").addEventListener("click", async () => {
+      const file = document.getElementById("txtFileList").value;
+      const res = await fetch(`http://localhost:8000/knowledge/txt/${file}`);
+      const data = await res.json();
+      document.getElementById("txtPreviewArea").value = data.content || "❌ No content";
+    });
+
+    // JSONify selected .txt file
+    document.getElementById("jsonifyBtn").addEventListener("click", async () => {
+      const file = document.getElementById("txtFileList").value;
+      const res = await fetch(`http://localhost:8000/trigger/jsonify/${file}`, { method: "POST" });
+      const data = await res.json();
+      const jsonStr = JSON.stringify(data.json || data, null, 2);
+      document.getElementById("jsonifiedOutputArea").value = jsonStr;
+    });
+
+    // Save to /knowledge/json/filename.json
+    document.getElementById("saveJsonifiedBtn").addEventListener("click", async () => {
+      const file = document.getElementById("txtFileList").value.replace(".txt", ".json");
+      const rawJson = document.getElementById("jsonifiedOutputArea").value;
+
+      try {
+        const parsed = JSON.parse(rawJson);
+        const res = await fetch(`http://localhost:8000/knowledge/json/${file}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: parsed })
+        });
+        const result = await res.json();
+        document.getElementById("jsonifyStatus").textContent = "✅ Saved: " + result.status;
+      } catch (err) {
+        document.getElementById("jsonifyStatus").textContent = "❌ Invalid JSON format.";
+        console.error(err);
+      }
+    });
+
 
   </script>
 </body>

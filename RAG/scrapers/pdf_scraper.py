@@ -1,75 +1,110 @@
-from PyPDF2 import PdfReader, errors
 from pdf2image import convert_from_path
+from pdfminer.high_level import extract_text
 import pytesseract
 from scrapers.cleaner import Cleaner
-import os
+import os, logging
 from pathlib import Path
+import fitz  # PyMuPDF for per-page control
 
-INPUT_DIR = "knowledge/raw"
-OUTPUT_DIR = "knowledge/txt"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
 class PDFScraper:
-    def readPDF(self, file):
-        text = ""
-        try:
-            reader = PdfReader(file)
-            for page in reader.pages:
-                extracted = page.extract_text()
-                if extracted:
-                    text += extracted
-        except errors.PdfReadError as e:
-            print(f"[Error] Cannot read {file} using PdfReader — {e}")
-            return None
+    def __init__(self, input_dir="knowledge/raw", output_dir="knowledge/txt", pages_per_chunk=5):
+        self.input_dir = input_dir
+        self.output_dir = output_dir
+        self.pages_per_chunk = pages_per_chunk
+        os.makedirs(self.output_dir, exist_ok=True)
 
-        return text if text.strip() else None
-
-    def readPDFImage(self, file):
+    def extract_page_text_chunks(self, pdf_path):
         try:
-            pages = convert_from_path(file, dpi=300)
-            text = "".join(pytesseract.image_to_string(page) for page in pages)
+            doc = fitz.open(pdf_path)
+            chunks = []
+            current_chunk = []
+            for i, page in enumerate(doc):
+                text = page.get_text("text").strip()
+
+                if len(text) >= 50:
+                    logging.info(f"[Page {i+1}] Text extracted via PDF")
+                else:
+                    logging.warning(f"[Page {i+1}] Not enough text, applying OCR")
+                    images = convert_from_path(pdf_path, dpi=300, first_page=i+1, last_page=i+1)
+                    text = ""
+                    for img in images:
+                        text += pytesseract.image_to_string(img, lang="eng+fil")
+                    text = Cleaner.runOCRCleaner(text.strip())
+
+                current_chunk.append(text)
+
+                # Every `pages_per_chunk` pages, store a chunk
+                if (i + 1) % self.pages_per_chunk == 0 or (i + 1) == len(doc):
+                    chunks.append("\n\n".join(current_chunk))
+                    current_chunk = []
+
+            return chunks
+
         except Exception as e:
-            print(f"[Error] OCR failed for {file} — {e}")
+            logging.error(f"[Error] Failed to extract {pdf_path}: {e}")
+            return []
+    def extract_page_text(self, pdf_path):
+        try:
+            doc = fitz.open(pdf_path)
+            full_text = []
+            for i, page in enumerate(doc):
+                text = page.get_text("text").strip()
+                if len(text) >= 50:
+                    logging.info(f"[Page {i+1}] Text extracted via PDF")
+                    full_text.append(text)
+                else:
+                    logging.warning(f"[Page {i+1}] Not enough text, applying OCR")
+                    images = convert_from_path(pdf_path, dpi=300, first_page=i+1, last_page=i+1)
+                    ocr_text = ""
+                    for img in images:
+                        ocr_text += pytesseract.image_to_string(img, lang="eng+fil")
+                    full_text.append(Cleaner.runOCRCleaner(ocr_text.strip()))
+            return "\n\n".join(full_text)
+        except Exception as e:
+            logging.error(f"[Error] Failed to extract {pdf_path}: {e}")
             return ""
 
-        return Cleaner.runOCRCleaner(text)
+    def scan_all_pdfs(self):
+        txt_removed = 0
+        for f in os.listdir(self.input_dir):
+            if f.endswith(".txt"):
+                try:
+                    os.remove(os.path.join(self.input_dir, f))
+                    txt_removed += 1
+                except Exception as e:
+                    logging.warning(f"[Cleanup] Could not remove {f}: {e}")
+        if txt_removed:
+            logging.info(f"[Cleanup] Removed {txt_removed} leftover .txt files.")
 
-def scan_all_pdfs():
-    scraper = PDFScraper()
-
-    # Step 1: Clean up leftover .txt files in raw directory
-    for f in os.listdir(INPUT_DIR):
-        if f.endswith(".txt"):
-            try:
-                os.remove(os.path.join(INPUT_DIR, f))
-                print(f"[Cleanup] Removed leftover TXT: {f}")
-            except Exception as e:
-                print(f"[Cleanup Error] Couldn't remove {f}: {e}")
-
-    found = False
-    for filename in os.listdir(INPUT_DIR):
-        if filename.lower().endswith(".pdf"):
+        found = False
+        for filename in os.listdir(self.input_dir):
+            if not filename.lower().endswith(".pdf"):
+                continue
             found = True
-            file_path = os.path.join(INPUT_DIR, filename)
+            file_path = os.path.join(self.input_dir, filename)
             base_name = Path(filename).stem
-            output_path = os.path.join(OUTPUT_DIR, base_name + ".txt")
 
-            print(f"[PDF Scanner] Scanning: {filename}")
-            text = scraper.readPDF(file_path)
+            logging.info(f"[PDF] Processing: {filename}")
+            chunks = self.extract_page_text_chunks(file_path)
 
-            if text is None or len(text.strip()) < 50:
-                print(f"[Fallback OCR] {filename} appears flattened or unreadable — using OCR")
-                text = scraper.readPDFImage(file_path)
+            if not chunks:
+                logging.error(f"[Failed] No extractable text from: {filename}")
+                continue
 
-            if text and len(text.strip()) > 0:
+            for idx, chunk_text in enumerate(chunks, 1):
+                chunk_filename = f"{base_name}-{idx}.txt"
+                output_path = os.path.join(self.output_dir, chunk_filename)
+
                 with open(output_path, "w", encoding="utf-8") as out:
-                    out.write(text)
-                print(f"[Saved] Text written to: {output_path}")
-            else:
-                print(f"[Failed] Could not extract any text from: {filename}")
+                    out.write(chunk_text)
+                logging.info(f"[Saved] → {output_path}")
 
-    if not found:
-        print(f"[PDF Scanner] No PDF files found in {INPUT_DIR}")
+        if not found:
+            logging.warning(f"[PDF Scanner] No PDF files found in {self.input_dir}")
+
 
 if __name__ == "__main__":
-    scan_all_pdfs()
+    scraper = PDFScraper()
+    scraper.scan_all_pdfs()

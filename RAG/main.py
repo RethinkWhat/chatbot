@@ -6,14 +6,17 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware # middleware, allowing connection between client and server
 import pymysql # for db access
 from pathlib import Path
+from typing import Dict, List
 # local Imports
 from rag_pipeline import RAGPipeline  
 from build_vector_index import BuildVectorIndex
 import bcrypt, subprocess, shutil,json
 # Scraper functions
 from scrapers.web_scraper import run_scraper
-from scrapers.pdf_scraper import scan_all_pdfs
+from scrapers.pdf_scraper import PDFScraper
 from scrapers.image_scraper import scan_images
+
+
 
 from threading import Lock
 
@@ -263,7 +266,30 @@ async def run_scraper_endpoint(data: dict = Body(...)):
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"message": str(e)})
-    
+# URLS.txt
+URLS_FILE = os.path.join(os.path.dirname(__file__), "urls.txt")
+
+@app.get("/urls")
+def get_urls() -> Dict[str, List[str]]:
+    """Read urls.txt and return as JSON list."""
+    if not os.path.exists(URLS_FILE):
+        return {"urls": []}
+    with open(URLS_FILE, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+    return {"urls": lines}
+
+
+@app.post("/urls")
+async def save_urls(request: Request) -> Dict[str, str]:
+    """Save a JSON list of URLs into urls.txt."""
+    try:
+        data = await request.json()
+        urls = data.get("urls", [])
+        with open(URLS_FILE, "w", encoding="utf-8") as f:
+            f.write("\n".join(urls) + "\n")
+        return {"status": "URLs updated."}
+    except Exception as e:
+        return {"status": f"Failed to update URLs: {str(e)}"}
 #populate all json in /knowledge/json
 @app.get("/knowledge/json")
 async def list_json_files():
@@ -287,6 +313,29 @@ async def save_json_file(filename: str, data: dict = Body(...)):
         json.dump(data["content"], f, indent=2, ensure_ascii=False)
     return {"status": "saved"}
 
+@app.get("/knowledge/txt")
+def list_txt_files():
+    files = [f for f in os.listdir("knowledge/txt") if f.endswith(".txt")]
+    return {"files": files}
+
+@app.get("/knowledge/txt/{filename}")
+def get_txt_content(filename: str):
+    path = os.path.join("knowledge/txt", filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    with open(path, "r", encoding="utf-8") as f:
+        return {"content": f.read()}
+
+@app.post("/trigger/jsonify/{filename}")
+def jsonify_txt_file(filename: str):
+    rag = RAGPipeline()
+    path = os.path.join("knowledge/txt", filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    with open(path, "r", encoding="utf-8") as f:
+        text = f.read()
+    result = rag.jsonifyTxt(text)
+    return {"filename": filename, "json": result}
 
 #upload files
 @app.post("/upload")
@@ -314,7 +363,8 @@ async def trigger_web_scraper():
 
 @app.post("/trigger/pdf")
 async def trigger_pdf_scanner():
-    scan_all_pdfs()
+    scraper=PDFScraper()
+    scraper.scan_all_pdfs()
     return {"status": "pdf scan done"}
 
 @app.post("/trigger/image")
