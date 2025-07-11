@@ -63,13 +63,14 @@
       </div> -->
 
       <div class="section">
-        <h2>📄 Convert PDF to JSON (via LayoutLMv3)</h2>
+        <h2>🧾 LayoutLMv3: PDF to JSON</h2>
         <select id="pdfFileList" style="width: 300px;"></select>
-        <button id="jsonifyPdfBtn">🧠 JSONify PDF</button>
-        <textarea id="pdfJsonifiedOutputArea" rows="10" cols="80" placeholder="PDF → JSON output will appear here..."></textarea>
-        <button id="savePdfJsonBtn">💾 Save PDF JSON</button>
+        <button id="jsonifyPdfBtn">🧪 Convert PDF</button>
+        <button id="savePdfJsonBtn">💾 Save JSON</button>
+        <textarea id="pdfJsonifiedOutputArea" rows="10" cols="80" placeholder="Result will appear here..."></textarea>
         <pre id="pdfJsonifyStatus"></pre>
       </div>
+
 
 
 
@@ -267,7 +268,7 @@
 
     loadJsonFileList();
 
-    // Load .txt file list from knowledge/raw
+    //Load .txt file list from knowledge/raw
     async function loadTxtFileList() {
       const res = await fetch("http://localhost:8000/knowledge/txt");
       const data = await res.json();
@@ -280,15 +281,15 @@
         list.appendChild(opt);
       });
     }
-    loadTxtFileList();
+    //loadTxtFileList();
 
     // Preview selected .txt file
-    document.getElementById("loadTxtBtn").addEventListener("click", async () => {
-      const file = document.getElementById("txtFileList").value;
-      const res = await fetch(`http://localhost:8000/knowledge/txt/${file}`);
-      const data = await res.json();
-      document.getElementById("txtPreviewArea").value = data.content || "❌ No content";
-    });
+    //document.getElementById("loadTxtBtn").addEventListener("click", async () => {
+      //const file = document.getElementById("txtFileList").value;
+      //const res = await fetch(`http://localhost:8000/knowledge/txt/${file}`);
+      //const data = await res.json();
+      //document.getElementById("txtPreviewArea").value = data.content || "❌ No content";
+    //});
 
     // JSONify selected .txt file
     document.getElementById("jsonifyBtn").addEventListener("click", async () => {
@@ -319,37 +320,33 @@
       }
     });
 
-    //new JSONify PDF files
-      async function loadPdfFileList() {
-      const res = await fetch("http://localhost:8000/knowledge/raw");
+    async function loadPdfFileList() {
+      const res = await fetch("http://localhost:8600/list-pdfs");
       const data = await res.json();
       const list = document.getElementById("pdfFileList");
       list.innerHTML = '';
-      data.files
-        .filter(name => name.toLowerCase().endsWith(".pdf"))
-        .forEach(file => {
-          const opt = document.createElement("option");
-          opt.value = file;
-          opt.textContent = file;
-          list.appendChild(opt);
-        });
+      data.files.forEach(file => {
+        const opt = document.createElement("option");
+        opt.value = file;
+        opt.textContent = file;
+        list.appendChild(opt);
+      });
     }
-    loadPdfFileList();  // Call on page load
+    loadPdfFileList();
 
-    // Trigger PDF JSONification
+    // Trigger JSONification
     document.getElementById("jsonifyPdfBtn").addEventListener("click", async () => {
       const file = document.getElementById("pdfFileList").value;
       const outputArea = document.getElementById("pdfJsonifiedOutputArea");
       const status = document.getElementById("pdfJsonifyStatus");
-      status.textContent = "⏳ Processing with LayoutLMv3...";
+      status.textContent = "⏳ Processing PDF...";
       try {
         const res = await fetch(`http://localhost:8600/trigger/jsonify-pdf/${file}`, {
           method: "POST"
         });
         const data = await res.json();
-        const jsonStr = JSON.stringify(data.json || data, null, 2);
-        outputArea.value = jsonStr;
-        status.textContent = "✅ JSON created!";
+        outputArea.value = JSON.stringify(data.json || data, null, 2);
+        status.textContent = "✅ JSON extracted!";
       } catch (err) {
         outputArea.value = "";
         status.textContent = "❌ Failed to process PDF.";
@@ -357,7 +354,7 @@
       }
     });
 
-    // Save LayoutLMv3 result to JSON
+    // Save extracted JSON
     document.getElementById("savePdfJsonBtn").addEventListener("click", async () => {
       const file = document.getElementById("pdfFileList").value.replace(".pdf", ".json");
       const content = document.getElementById("pdfJsonifiedOutputArea").value;
@@ -375,6 +372,38 @@
         console.error(err);
       }
     });
+
+    //shotgun therapy
+    async function autoJsonifyAllPdfs() {
+      try {
+        const res = await fetch("http://localhost:8600/list-pdfs");
+        const data = await res.json();
+        const files = data.files || [];
+
+        if (files.length === 0) {
+          console.log("📭 No PDFs found to JSONify.");
+          return;
+        }
+
+        for (const file of files) {
+          console.log(`📄 Sending ${file} to Donut JSONifier...`);
+          try {
+            const res = await fetch(`http://localhost:8600/trigger/jsonify-pdf/${file}`, {
+              method: "POST"
+            });
+            const jsonData = await res.json();
+            console.log(`✅ JSON created for ${file}:`, jsonData);
+          } catch (jsonifyErr) {
+            console.error(`❌ Failed to jsonify ${file}:`, jsonifyErr);
+          }
+        }
+      } catch (err) {
+        console.error("❌ Error fetching PDF list from Donut:", err);
+      }
+    }
+
+    // 🔁 Automatically run Donut JSONification on page load
+    autoJsonifyAllPdfs();
 
 
   </script>

@@ -452,19 +452,4 @@ async def trigger_vector_index():
     num_chunks = builder.build_index()  # Capture return value
     return {"status": "vector index built", "chunks": num_chunks}
 
-# NEW JSONIFICATION
-@app.post("/jsonify-pdf/{filename}")
-def jsonify_pdf(filename: str):
-    rag = RAGPipeline()
-    path = os.path.join("knowledge/raw", filename)
-
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="PDF not found")
-
-    result = rag.jsonify_pdf_with_layoutlm(path)  # This uses the Donut model
-    out_path = os.path.join("knowledge/testJson", Path(filename).stem + ".json")
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=2, ensure_ascii=False)
-
-    return {"filename": filename, "output": out_path, "json": result}
 

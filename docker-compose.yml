@@ -106,10 +106,10 @@ services:
       dockerfile: Dockerfile.donut
     container_name: DONUT-THE-JSONIFIER
     ports:
-      - "8600:8000"
+      - "8600:8600"
     volumes:
-      - ./knowledge/raw:/knowledge/raw
-      - ./knowledge/testJson:/knowledge/testJson
+      - ./RAG/knowledge:/knowledge
+
 
 volumes:
   ollama_data:
