@@ -4,6 +4,7 @@ from langchain_ollama import ChatOllama
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.output_parsers import StrOutputParser
+from Pathlib import Path
 import torch
 import uuid
 import posthog
@@ -247,6 +248,7 @@ Answer:
         Clean the input text and use LLM to convert it to structured JSON output.
         """
         cleaned_text = self._clean_text_for_jsonification(raw_text)
+        
 
         system_prompt = (
             "You are a document-to-JSON converter.\n"
@@ -272,41 +274,52 @@ Answer:
             print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
             return {"raw_output": response, "error": str(e)}
 
+#testing new jsonification method
+    def jsonify_all_cleaned_txt(self):
+        input_dir = "knowledge/cleaned"
+        output_dir = "knowledge/testJson"
+        os.makedirs(output_dir, exist_ok=True)
+
+        for filename in os.listdir(input_dir):
+            if not filename.endswith(".txt"):
+                continue
+
+            txt_path = os.path.join(input_dir, filename)
+            json_path = os.path.join(output_dir, Path(filename).stem + ".json")
+
+            if os.path.exists(json_path):
+                print(f"[Skip] Already exists: {json_path}")
+                continue
+
+            with open(txt_path, "r", encoding="utf-8") as f:
+                raw_text = f.read()
+
+            print(f"[Processing] → {filename}")
+            result = self.jsonifyTxt(raw_text)
+
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
+
+            print(f"[✓] JSON saved → {json_path}")
+            
     def extract_json_block(self, text: str) -> str:
-        """
-        Try to extract a clean JSON block from a possibly messy LLM output.
-        """
-        # Remove triple backticks and preambles
-        text = re.sub(r"```(?:json)?", "", text)
-        text = re.sub(r"```", "", text)
-        text = text.strip()
-
-        # Try to locate a JSON object
-        match = re.search(r"{[\s\S]*}", text)
+        match = re.search(r"```(?:json)?\s*({.*?})\s*```", text, re.DOTALL)
         if match:
-            return match.group(0)
-
-        # Fallback: just return the full text
-        return text
+            return match.group(1)
+        match = re.search(r"({.*})", text, re.DOTALL)
+        return match.group(1) if match else text.strip()
 
 
 
     def _clean_text_for_jsonification(self, text: str) -> str:
-        text = re.sub(r'[\x0c\f]+', '', text)  # Remove form feeds
-        text = re.sub(r'-\n', '', text)        # Join hyphenated breaks
-        text = re.sub(r'\s+\n', '\n', text)    # Clean trailing whitespace
-        text = re.sub(r'[^\S\r\n]{2,}', ' ', text)  # Collapse extra spaces
-        text = re.sub(r'\n{2,}', '\n\n', text)      # Normalize spacing
-
-        # Join numbered lists split on separate lines (e.g., "1.\n" to "1. ")
-        text = re.sub(r'\n(\d+)\.\s*\n', r'\n\1. ', text)
-
-        # Fix broken bullet-style lines without numbers
-        text = re.sub(r'(?<=[a-zA-Z0-9,;])\n(?=[a-zA-Z])', ' ', text)
-
-        # Remove fake spaced-out headings
-        text = re.sub(r'\b(?:[A-Z] ?){3,}\b', '', text)
-
+        text = re.sub(r'[\x0c\u000c\f]+', '', text)             # Remove form-feed
+        text = re.sub(r'[\t\r]+', '', text)                      # Remove tab/carriage returns
+        text = re.sub(r'[ \xa0]+', ' ', text)                    # Replace non-breaking spaces
+        text = re.sub(r'\s+\n', '\n', text)                    # Remove spaces before line breaks
+        text = re.sub(r'\n{2,}', '\n\n', text)                 # Collapse multiple newlines
+        text = re.sub(r'-\n', '', text)                          # Remove hyphenation at line breaks
+        text = re.sub(r'[ ]{2,}', ' ', text)                      # Collapse extra spaces
+        text = re.sub(r'\b(?:[A-Z] ?){3,}\b', '', text)         # Remove spaced-out headings
         return text.strip()
 
 

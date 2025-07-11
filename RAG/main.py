@@ -327,15 +327,32 @@ def get_txt_content(filename: str):
         return {"content": f.read()}
 
 @app.post("/trigger/jsonify/{filename}")
-def jsonify_txt_file(filename: str):
-    rag = RAGPipeline()
-    path = os.path.join("knowledge/txt", filename)
-    if not os.path.exists(path):
+# def jsonify_txt_file(filename: str):
+#     rag = RAGPipeline()
+#     path = os.path.join("knowledge/txt", filename)
+#     if not os.path.exists(path):
+#         raise HTTPException(status_code=404, detail="File not found")
+#     with open(path, "r", encoding="utf-8") as f:
+#         text = f.read()
+#     result = rag.jsonifyTxt(text)
+#     return {"filename": filename, "json": result}
+@app.post("/trigger/jsonify/{filename}")
+def jsonify_single_file(filename: str):
+    input_path = f"knowledge/cleaned/{filename}"
+    output_path = f"knowledge/testJson/{filename.replace('.txt', '.json')}"
+
+    if not os.path.exists(input_path):
         raise HTTPException(status_code=404, detail="File not found")
-    with open(path, "r", encoding="utf-8") as f:
-        text = f.read()
-    result = rag.jsonifyTxt(text)
-    return {"filename": filename, "json": result}
+    rag = RAGPipeline()
+    with open(input_path, "r", encoding="utf-8") as f:
+        raw_text = f.read()
+
+    result = rag.jsonifyTxt(raw_text)
+
+    with open(output_path, "w", encoding="utf-8") as out:
+        json.dump(result, out, indent=2, ensure_ascii=False)
+
+    return {"status": "success", "json_file": output_path}
 
 #upload files
 @app.post("/upload")
