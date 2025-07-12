@@ -45,7 +45,7 @@ def jsonify_pdf(filename: str):
     logging.info(f"[{timestamp}] 📄 Starting JSONification of: {filename}")
 
     try:
-        result = extractor.jsonify(pdf_path)
+        result = extractor.extract(pdf_path)
     except Exception as e:
         logging.error(f"[{timestamp}] ❌ Extraction failed for {filename}: {e}")
         raise HTTPException(status_code=500, detail=f"Extraction failed: {e}")

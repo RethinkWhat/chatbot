@@ -2,6 +2,7 @@ fastapi
 uvicorn
 transformers==4.38.1
 torch==2.1.0
+numpy<2.0
 pdf2image
 Pillow
 protobuf==3.20.3

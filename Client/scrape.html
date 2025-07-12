@@ -292,33 +292,33 @@
     //});
 
     // JSONify selected .txt file
-    document.getElementById("jsonifyBtn").addEventListener("click", async () => {
-      const file = document.getElementById("txtFileList").value;
-      const res = await fetch(`http://localhost:8000/trigger/jsonify/${file}`, { method: "POST" });
-      const data = await res.json();
-      const jsonStr = JSON.stringify(data.json || data, null, 2);
-      document.getElementById("jsonifiedOutputArea").value = jsonStr;
-    });
+    //document.getElementById("jsonifyBtn").addEventListener("click", async () => {
+      //const file = document.getElementById("txtFileList").value;
+      //const res = await fetch(`http://localhost:8000/trigger/jsonify/${file}`, { method: "POST" });
+      //const data = await res.json();
+      //const jsonStr = JSON.stringify(data.json || data, null, 2);
+      //document.getElementById("jsonifiedOutputArea").value = jsonStr;
+    //});
 
     // Save to /knowledge/json/filename.json
-    document.getElementById("saveJsonifiedBtn").addEventListener("click", async () => {
-      const file = document.getElementById("txtFileList").value.replace(".txt", ".json");
-      const rawJson = document.getElementById("jsonifiedOutputArea").value;
+    //document.getElementById("saveJsonifiedBtn").addEventListener("click", async () => {
+      //const file = document.getElementById("txtFileList").value.replace(".txt", ".json");
+      //const rawJson = document.getElementById("jsonifiedOutputArea").value;
 
-      try {
-        const parsed = JSON.parse(rawJson);
-        const res = await fetch(`http://localhost:8000/knowledge/json/${file}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: parsed })
-        });
-        const result = await res.json();
-        document.getElementById("jsonifyStatus").textContent = "✅ Saved: " + result.status;
-      } catch (err) {
-        document.getElementById("jsonifyStatus").textContent = "❌ Invalid JSON format.";
-        console.error(err);
-      }
-    });
+      //try {
+        //const parsed = JSON.parse(rawJson);
+        //const res = await fetch(`http://localhost:8000/knowledge/json/${file}`, {
+          //method: "POST",
+          //headers: { "Content-Type": "application/json" },
+          //body: JSON.stringify({ content: parsed })
+        //});
+        //const result = await res.json();
+        //document.getElementById("jsonifyStatus").textContent = "✅ Saved: " + result.status;
+      //} catch (err) {
+        //document.getElementById("jsonifyStatus").textContent = "❌ Invalid JSON format.";
+        //console.error(err);
+      //}
+    //});
 
     async function loadPdfFileList() {
       const res = await fetch("http://localhost:8600/list-pdfs");
@@ -372,7 +372,7 @@
         console.error(err);
       }
     });
-
+    
     //shotgun therapy
     async function autoJsonifyAllPdfs() {
       try {
