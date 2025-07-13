@@ -71,6 +71,11 @@
         <pre id="pdfJsonifyStatus"></pre>
       </div>
 
+      <h2>🤖 Fine-tune Donut Model</h2>
+      <button id="prepareBtn">📁 Prepare Donut Data</button>
+      <button id="trainBtn">🚀 Train Donut</button>
+      <pre id="trainOutput" class="output-box"></pre>
+
 
 
 
@@ -373,37 +378,60 @@
       }
     });
     
-    //shotgun therapy
-    async function autoJsonifyAllPdfs() {
-      try {
-        const res = await fetch("http://localhost:8600/list-pdfs");
-        const data = await res.json();
-        const files = data.files || [];
+    //AUTO Jsonification
+    //async function autoJsonifyAllPdfs() {
+      //try {
+        //const res = await fetch("http://localhost:8600/list-pdfs");
+        //const data = await res.json();
+        //const files = data.files || [];
 
-        if (files.length === 0) {
-          console.log("📭 No PDFs found to JSONify.");
-          return;
-        }
+        //if (files.length === 0) {
+          //console.log("📭 No PDFs found to JSONify.");
+          //return;
+        //}
 
-        for (const file of files) {
-          console.log(`📄 Sending ${file} to Donut JSONifier...`);
-          try {
-            const res = await fetch(`http://localhost:8600/trigger/jsonify-pdf/${file}`, {
-              method: "POST"
-            });
-            const jsonData = await res.json();
-            console.log(`✅ JSON created for ${file}:`, jsonData);
-          } catch (jsonifyErr) {
-            console.error(`❌ Failed to jsonify ${file}:`, jsonifyErr);
-          }
-        }
-      } catch (err) {
-        console.error("❌ Error fetching PDF list from Donut:", err);
-      }
-    }
+        //for (const file of files) {
+          //console.log(`📄 Sending ${file} to Donut JSONifier...`);
+          //try {
+            //const res = await fetch(`http://localhost:8600/trigger/jsonify-pdf/${file}`, {
+              //method: "POST"
+            //});
+            //const jsonData = await res.json();
+            //console.log(`✅ JSON created for ${file}:`, jsonData);
+          //} catch (jsonifyErr) {
+            //console.error(`❌ Failed to jsonify ${file}:`, jsonifyErr);
+          //}
+        //}
+      //} catch (err) {
+        //console.error("❌ Error fetching PDF list from Donut:", err);
+      //}
+    //}
 
     // 🔁 Automatically run Donut JSONification on page load
-    autoJsonifyAllPdfs();
+    //autoJsonifyAllPdfs();
+
+    //pdf-->JSON with Donut
+    document.getElementById("trainBtn").addEventListener("click", async () => {
+      const output = document.getElementById("trainOutput");
+      output.textContent = "⏳ Training Donut model...";
+
+      try {
+        const res = await fetch("http://localhost:8600/train/donut", {
+          method: "POST"
+        });
+
+        const isJson = res.headers.get("content-type")?.includes("application/json");
+        const data = isJson ? await res.json() : { status: "❌ No JSON response", stdout: "", stderr: await res.text() };
+
+        output.textContent = data.status || "❌ Training failed.";
+        if (data.stdout) output.textContent += `\n\n📝 STDOUT:\n${data.stdout}`;
+        if (data.stderr) output.textContent += `\n\n🔧 STDERR:\n${data.stderr}`;
+
+      } catch (err) {
+        output.textContent = "❌ Error during training (network/server). See console.";
+        console.error("Training error:", err);
+      }
+    });
 
 
   </script>

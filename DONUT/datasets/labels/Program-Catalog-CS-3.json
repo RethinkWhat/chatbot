@@ -1,0 +1,642 @@
+{
+  "title" : "Program Catalog Computer Science",
+  "university": "Saint Louis University",
+  "location": "Baguio City, Philippines",
+  "school": "School of Accountancy, Management, Computing, and Information Studies (SAMCIS)",
+  "program": "Bachelor of Science in Computer Science",
+  "vision_mission": {
+    "university": "Saint Louis University is envisioned as an excellent missionary and transformative educational institution zealous in developing human resources imbued with Christian Spirit and who are creative, competent and socially involved.",
+    "school": "The School of Accountancy, Management, Computing and Information Studies (SAMCIS) is envisioned as the center of excellence in Business, Management, and Information Technology Education, committed to the creative, competent, and Christian formation of individuals who can be agents of progress in the changing local and international business and information technology environments."
+  },
+  "program_educational_objectives": [
+    "Formulate innovative solutions to complex computing problems and requirements using the principles of research, mathematics, and computing sciences.",
+    "Engage in corporate and community-based advocacies that address social problems to positively impact the society.",
+    "Contribute to the advancement of the computer science discipline by augmenting existing domain knowledge.",
+    "Exemplify Christian values in the practice of one’s computing profession while working ethically and with integrity."
+  ],
+  "program_learning_outcomes": [
+    "Integrate knowledge of computing, science, mathematics, and other domains in the appreciation of the Computer Science discipline.",
+    "Solve real-world computing problems within constraints of time, cost, and resources by employing critical thinking skills.",
+    "Apply mathematical foundations, algorithmic principles, and computer science theories in the modeling and design of computer-based systems.",
+    "Evaluate solutions and systems for complex computing problems with considerations on public health and safety, cultural, societal, and environmental impact.",
+    "Utilize the appropriate tools, techniques, and resources in the provision of computing solutions.",
+    "Communicate effectively knowledge and ideas to the computing community and society at large across a wide range of contexts and media.",
+    "Function effectively as an accountable individual and as a team player in a multicultural and multidisciplinary environment.",
+    "Act in accordance with social, legal, and ethical responsibilities as a CS professional, with recognition of the local and global impact of technology to individuals, organizations, and society.",
+    "Adapt to new and emerging technologies in the pursuit of continuing professional growth.",
+    "Practice Christian, Louisian, and Filipino values in their personal and professional endeavors and actively participate in the service of the community."
+  ],
+  "Year 1 First Semester": [
+    {
+      "Course No.": "CS 111",
+      "Course Descriptive Title": "Introduction to Computing",
+      "Units": 2,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CS 111L",
+      "Course Descriptive Title": "Introduction to Computing (Lab)",
+      "Units": 1,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CS 112",
+      "Course Descriptive Title": "Computer Programming 1",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CS 112L",
+      "Course Descriptive Title": "Computer Programming 1 (Lab)",
+      "Units": 1,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CS 113",
+      "Course Descriptive Title": "Discrete Structures",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "GMATH",
+      "Course Descriptive Title": "Mathematics in the Modern World",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "GART",
+      "Course Descriptive Title": "Art Appreciation",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "GHIST",
+      "Course Descriptive Title": "Readings in Philippine History",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "FIT HW",
+      "Course Descriptive Title": "Physical Activity Towards Health & Fitness (Health)",
+      "Units": 2,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CFE 101",
+      "Course Descriptive Title": "God’s Journey with His People",
+      "Units": 3,
+      "Pre-requisite": ""
+    }
+  ],
+  "Year 1 Short Term": [
+    {
+      "Course No.": "CS 131",
+      "Course Descriptive Title": "Software Modeling and Analysis",
+      "Units": 3,
+      "Pre-requisite": "CS 111"
+    },
+    {
+      "Course No.": "CS 132",
+      "Course Descriptive Title": "Mathematics for Computer Science",
+      "Units": 3,
+      "Pre-requisite": ""
+    }
+  ],
+  "Year 1 Second Semester": [
+    {
+      "Course No.": "CS 121",
+      "Course Descriptive Title": "Digital Logic Design",
+      "Units": 3,
+      "Pre-requisite": "CS 111"
+    },
+    {
+      "Course No.": "CS 122",
+      "Course Descriptive Title": "Computer Programming 2",
+      "Units": 3,
+      "Pre-requisite": "CS 112"
+    },
+    {
+      "Course No.": "CS 122L",
+      "Course Descriptive Title": "Computer Programming 2 (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 112"
+    },
+    {
+      "Course No.": "CS 123",
+      "Course Descriptive Title": "Architecture and Organization",
+      "Units": 3,
+      "Pre-requisite": "CS 112"
+    },
+    {
+      "Course No.": "CS 123L",
+      "Course Descriptive Title": "Architecture and Organization (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 112"
+    },
+    {
+      "Course No.": "GSELF",
+      "Course Descriptive Title": "Understanding the Self",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "GPCOM",
+      "Course Descriptive Title": "Purposive Communication",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "GENVI",
+      "Course Descriptive Title": "Environmental Science",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "FIT CS",
+      "Course Descriptive Title": "Physical Activity Towards Health & Fitness (Combative)",
+      "Units": 2,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CFE 102",
+      "Course Descriptive Title": "Christian Morality in Our Times",
+      "Units": 3,
+      "Pre-requisite": ""
+    }
+  ],
+  "Year 2 First Semester": [
+    {
+      "Course No.": "CS 211",
+      "Course Descriptive Title": "Data Structures",
+      "Units": 3,
+      "Pre-requisite": "CS 112, CS 113"
+    },
+    {
+      "Course No.": "CS 211L",
+      "Course Descriptive Title": "Data Structures (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 112, CS 113"
+    },
+    {
+      "Course No.": "CS 212",
+      "Course Descriptive Title": "Operating Systems",
+      "Units": 3,
+      "Pre-requisite": "CS 122 (co-requisite)"
+    },
+    {
+      "Course No.": "CS 212L",
+      "Course Descriptive Title": "Operating Systems (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 122 (co-requisite)"
+    },
+    {
+      "Course No.": "CS 213",
+      "Course Descriptive Title": "Human Computer Interaction",
+      "Units": 3,
+      "Pre-requisite": "CS 122"
+    },
+    {
+      "Course No.": "GTS",
+      "Course Descriptive Title": "Science, Technology and Society",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "GRVA",
+      "Course Descriptive Title": "Reading Visual Art",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "NSTP-CWTS 1",
+      "Course Descriptive Title": "Foundations of Service",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "FIT OA",
+      "Course Descriptive Title": "Physical Activity Towards Health & Fitness (Outdoor)",
+      "Units": 2,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CFE 103",
+      "Course Descriptive Title": "Catholic Foundation of Mission",
+      "Units": 3,
+      "Pre-requisite": ""
+    }
+  ],
+  "Year 2 Second Semester": [
+    {
+      "Course No.": "CS 221",
+      "Course Descriptive Title": "Information Management",
+      "Units": 3,
+      "Pre-requisite": "CS 211"
+    },
+    {
+      "Course No.": "CS 221L",
+      "Course Descriptive Title": "Information Management (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 211"
+    },
+    {
+      "Course No.": "CS 222",
+      "Course Descriptive Title": "Programming Languages",
+      "Units": 3,
+      "Pre-requisite": "CS 122"
+    },
+    {
+      "Course No.": "CS 222L",
+      "Course Descriptive Title": "Programming Languages (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 122"
+    },
+    {
+      "Course No.": "CS 223",
+      "Course Descriptive Title": "Computer Organization and Architecture",
+      "Units": 3,
+      "Pre-requisite": "CS 132"
+    },
+    {
+      "Course No.": "GGWORLD",
+      "Course Descriptive Title": "The Contemporary World",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "GSTS",
+      "Course Descriptive Title": "Social Awareness and Empowerment for Service",
+      "Units": 3,
+      "Pre-requisite": "NSTP-CWTS 1"
+    },
+    {
+      "Course No.": "FIT AQ",
+      "Course Descriptive Title": "Physical Activity (Aquatics)",
+      "Units": 2,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CFE 104",
+      "Course Descriptive Title": "CICM Missionary Identity",
+      "Units": 3,
+      "Pre-requisite": "CFE 103"
+    }
+  ],
+  "Year 3 First Semester": [
+    {
+      "Course No.": "CS 311",
+      "Course Descriptive Title": "Applications Development",
+      "Units": 3,
+      "Pre-requisite": "CS 221"
+    },
+    {
+      "Course No.": "CS 311L",
+      "Course Descriptive Title": "Applications Development (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 221"
+    },
+    {
+      "Course No.": "CS 312",
+      "Course Descriptive Title": "Web Systems Development",
+      "Units": 3,
+      "Pre-requisite": "CS 211"
+    },
+    {
+      "Course No.": "CS 312L",
+      "Course Descriptive Title": "Web Systems Development (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 211"
+    },
+    {
+      "Course No.": "CS 313",
+      "Course Descriptive Title": "Software Engineering",
+      "Units": 3,
+      "Pre-requisite": "CS 131, CS 221"
+    },
+    {
+      "Course No.": "CS 314",
+      "Course Descriptive Title": "Social and Personal Development in the ICT Workplace",
+      "Units": 2,
+      "Pre-requisite": "CS 111, GSELF"
+    },
+    {
+      "Course No.": "CS 315",
+      "Course Descriptive Title": "Technology-Assisted Presentation",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CSM 316",
+      "Course Descriptive Title": "Numerical Methods for Computer Science",
+      "Units": 3,
+      "Pre-requisite": "CS 132"
+    },
+    {
+      "Course No.": "CFE 105A",
+      "Course Descriptive Title": "CICM in Action: Justice, Peace, Integrity...",
+      "Units": 1.5,
+      "Pre-requisite": "CFE 103, 104"
+    }
+  ],
+  "Year 3 Short Term": [
+    {
+      "Course No.": "CS 331",
+      "Course Descriptive Title": "Practicum",
+      "Units": 6,
+      "Pre-requisite": "3rd year standing"
+    }
+  ],
+  "Year 3 Second Semester": [
+    {
+      "Course No.": "CS 321",
+      "Course Descriptive Title": "Artificial Intelligence",
+      "Units": 3,
+      "Pre-requisite": "CS 132, CS 211"
+    },
+    {
+      "Course No.": "CS 322",
+      "Course Descriptive Title": "Data Science",
+      "Units": 3,
+      "Pre-requisite": "CS 221"
+    },
+    {
+      "Course No.": "CS 322L",
+      "Course Descriptive Title": "Data Science (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 221"
+    },
+    {
+      "Course No.": "CS 323",
+      "Course Descriptive Title": "Modeling and Simulation",
+      "Units": 2,
+      "Pre-requisite": "CS 132, CS 211"
+    },
+    {
+      "Course No.": "CS 323L",
+      "Course Descriptive Title": "Modeling and Simulation (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 132, CS 211"
+    },
+    {
+      "Course No.": "CS 324",
+      "Course Descriptive Title": "Methods of Research in Computer Science",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CS 325",
+      "Course Descriptive Title": "Structure of Programming Languages",
+      "Units": 3,
+      "Pre-requisite": ""
+    },
+    {
+      "Course No.": "CFE 105B",
+      "Course Descriptive Title": "CICM in Action: Environmental Planning...",
+      "Units": 1.5,
+      "Pre-requisite": "CFE 105A"
+    }
+  ],
+  "Year 4 First Semester": [
+    {
+      "Course No.": "CS 411",
+      "Course Descriptive Title": "Information Assurance and Security",
+      "Units": 3,
+      "Pre-requisite": "CS 221"
+    },
+    {
+      "Course No.": "CS 412",
+      "Course Descriptive Title": "Networks and Communications",
+      "Units": 3,
+      "Pre-requisite": "CS 221"
+    },
+    {
+      "Course No.": "CS 412L",
+      "Course Descriptive Title": "Networks and Communications (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 221"
+    },
+    {
+      "Course No.": "CS 413",
+      "Course Descriptive Title": "Professional Issues in Information Technology",
+      "Units": 3,
+      "Pre-requisite": "CS 111, GSELF"
+    },
+    {
+      "Course No.": "CS 414",
+      "Course Descriptive Title": "Capstone Project 1",
+      "Units": 3,
+      "Pre-requisite": "CS 324, CS 313"
+    },
+    {
+      "Course No.": "CS ELEC 1",
+      "Course Descriptive Title": "CS Elective 1",
+      "Units": 3,
+      "Pre-requisite": "4th Year Standing"
+    },
+    {
+      "Course No.": "CS ELEC 2",
+      "Course Descriptive Title": "CS Elective 2",
+      "Units": 3,
+      "Pre-requisite": "4th Year Standing"
+    },
+    {
+      "Course No.": "CFE 106",
+      "Course Descriptive Title": "CICM Missionary Challenges: Pastoral Ministry",
+      "Units": 3,
+      "Pre-requisite": "CFE 105B"
+    }
+  ],
+  "Year 4 Second Semester": [
+    {
+      "Course No.": "CS 421",
+      "Course Descriptive Title": "Parallel and Distributed Computing",
+      "Units": 3,
+      "Pre-requisite": "CS 221, CS 223"
+    },
+    {
+      "Course No.": "CS 421L",
+      "Course Descriptive Title": "Parallel and Distributed Computing (Lab)",
+      "Units": 1,
+      "Pre-requisite": "CS 221, CS 223"
+    },
+    {
+      "Course No.": "CS 422",
+      "Course Descriptive Title": "Capstone Project 2",
+      "Units": 3,
+      "Pre-requisite": "CS 414"
+    },
+    {
+      "Course No.": "CS ELEC 3",
+      "Course Descriptive Title": "CS Elective 3",
+      "Units": 3,
+      "Pre-requisite": "4th Year Standing"
+    },
+    {
+      "Course No.": "CS ELEC 4",
+      "Course Descriptive Title": "CS Elective 4",
+      "Units": 3,
+      "Pre-requisite": "4th Year Standing"
+    }
+  ],
+  "electives": [
+    {
+      "course_no": "CSE 10",
+      "title": "Advanced Computer Architecture",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 11",
+      "title": "Advanced Operating Systems",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 12",
+      "title": "Advanced Information Management",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 13",
+      "title": "Advanced Software Engineering",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 14",
+      "title": "Data Mining",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 15",
+      "title": "Design and Analysis of Algorithms",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 16",
+      "title": "Operations Research",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 17",
+      "title": "Machine Learning",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 18",
+      "title": "Compiler Design",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 19",
+      "title": "Advanced Security Concepts",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 20",
+      "title": "Multimedia Systems",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 21",
+      "title": "Advanced Applications Development",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 22",
+      "title": "Computer Graphics",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 23",
+      "title": "Game Design and Development",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 24",
+      "title": "UX Design and Applications",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 25",
+      "title": "Field Trips and Seminars",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 26",
+      "title": "System Resource Management",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 27",
+      "title": "Special Topics 1",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 28",
+      "title": "Current Trends 1",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 29",
+      "title": "Current Trends 2",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 30",
+      "title": "Special Topics 2",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 31",
+      "title": "Special Topics 3",
+      "units": 3
+    },
+    {
+      "course_no": "CSE 32",
+      "title": "Information Technology Certification",
+      "units": 3
+    }
+  ],
+  "admission_policies": {
+    "freshmen": [
+      "Must pass the SLU College Entrance Exam (SLU-CEE)",
+      "Exam conducted on weekends from mid-October to mid-December",
+      "Admission starts mid-April",
+      "Local and foreign students accepted"
+    ],
+    "transferees": [
+      "Accepted in all programs except BS Medical Laboratory Science",
+      "Must take a Qualifying Exam and pass Personality Test/Interview",
+      "Foreign transferees must pass English Proficiency Test"
+    ],
+    "graduate_students": {
+      "masters": "Must hold a Baccalaureate degree from a recognized institution",
+      "doctorate": "Must hold a Master’s degree in a related field"
+    },
+    "foreign_students": [
+      "Must apply 6 months prior to term",
+      "Must arrive 4 weeks before classes to complete preadmission tests",
+      "Must get Student Visa and complete processing at Student Affairs Office"
+    ]
+  },
+  "fees": {
+    "academic_year": "2022-2023",
+    "first_year": {
+      "partial": "PHP 17,800.00",
+      "full": "PHP 37,906.00"
+    },
+    "note": "Fees per semester and subject to change without prior notice."
+  },
+  "job_opportunities": [
+    "Web Developer",
+    "Computer Programmer",
+    "Information Security Analyst",
+    "Database Administrator",
+    "Software Developer",
+    "Software Engineer",
+    "Computer Forensic Analyst"
+  ],
+  "contact": {
+    "name": "Josephine Dela Cruz",
+    "position": "Computer Science Department Head",
+    "email": "jdelacruz@slu.edu.ph"
+  }
+}

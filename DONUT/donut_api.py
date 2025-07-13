@@ -2,10 +2,12 @@
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from train_donut import train_donut_model
 from donut_extractor import LayoutLMv3Extractor
-import os, json
+import os, json, io , contextlib, traceback
 from pathlib import Path
-import logging
+import logging, subprocess
 
 logging.basicConfig(level=logging.INFO)
 from datetime import datetime
@@ -60,3 +62,20 @@ def jsonify_pdf(filename: str):
         raise HTTPException(status_code=500, detail=f"JSON save error: {e}")
 
     return {"filename": filename, "output": output_path, "json": result}
+
+@app.post("/train/donut")
+def train_donut():
+    result = train_donut_model()
+    return {
+        "status": result.get("status", "❌ Unknown training status"),
+        "stdout": result.get("stdout", ""),
+        "stderr": result.get("error", "")
+    }
+
+@app.post("/prepare/training-data")
+def prepare_data():
+    try:
+        result = subprocess.run(["python3", "prepare_donut_data.py"], capture_output=True, text=True, check=True)
+        return {"status": "✅ Data preparation complete", "log": result.stdout}
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"❌ Data preparation failed: {e.stderr}")

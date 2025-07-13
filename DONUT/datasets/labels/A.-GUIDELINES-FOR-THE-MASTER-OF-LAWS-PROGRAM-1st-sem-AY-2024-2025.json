@@ -1,0 +1,132 @@
+{
+  "title": "Saint Louis University – School of Law: Master of Laws (LL.M.) Program Overview",
+  "university": "Saint Louis University",
+  "school": "School of Law",
+  "program_name": "Master of Laws (LL.M.)",
+  "program_type": "Post-graduate, non-thesis",
+  "units_required": 48,
+  "duration_years": 2,
+  "allowed_load_per_semester": "9 to 12 units",
+  "subjects_fixed": true,
+  "thesis_required": false,
+  "assessment_format": "Exams and research papers per subject",
+  "bar_passage_required": false,
+  "eligibility": "Bachelor of Laws (LL.B.) or Juris Doctor (J.D.)",
+
+  "delivery": {
+    "mode": "100% online",
+    "class_modality": "Online",
+    "class_frequency": "One weekend (Saturday & Sunday) per month",
+    "faculty_location_note": "Most professors based outside Baguio City",
+    "first_semester_duration": "August to December",
+    "second_semester_duration": "January to June"
+  },
+
+  "launch_and_enrollment": {
+    "program_launch_date": "August 2024",
+    "enrollment_start": "At least one week before start of classes",
+    "enrollment_mode": "Online",
+    "document_submission_required": true,
+    "submission_address": "Office of the Dean, Room 414, Diego Silang Building, Saint Louis University, Bonifacio Street, Baguio City",
+    "post_submission_process": "Authorization to Enlist will be issued after document review"
+  },
+
+  "tuition_fees": {
+    "minimum_enrollment_units": 6,
+    "minimum_initial_payment": 23000,
+    "initial_payment_note": "Non-refundable",
+    "by_unit_load": {
+      "6_units": 44000,
+      "9_units": 54500,
+      "12_units": 65000
+    }
+  },
+
+  "courses_offered_first_semester": [
+    {
+      "code": "LLM 101",
+      "title": "Methods of Research and Statistics",
+      "units": 3,
+      "schedule": "August 31–September 1, 2024 | 8:00am–5:00pm",
+      "professor": "Dr. John Ruffo Chong"
+    },
+    {
+      "code": "LLM 125",
+      "title": "Corporate Law and Corporate Rehabilitation",
+      "units": 3,
+      "schedule": "August 24–25, 2024 | 8:00am–5:00pm",
+      "professor": "Dr. Cheselden George Carmona"
+    },
+    {
+      "code": "LLM 142",
+      "title": "Comparative Criminal Justice Systems and Criminological Theory",
+      "units": 3,
+      "schedule": "Sept 28, Oct 12, Oct 26, Nov 9, Nov 23, 2024 | 8:00am–12:00nn",
+      "professor": "Dr. Raymund Narag"
+    },
+    {
+      "code": "LLM 144",
+      "title": "Pre-Trial and Trial Advocacy",
+      "units": 3,
+      "schedule": "Oct 12 (1:00–5:00pm), Oct 19–20 (8:00am–5:00pm), Nov 23 (1:00–5:00pm)",
+      "professor": "CA Justice Bonifacio Pascua"
+    },
+    {
+      "code": "LLM 143",
+      "title": "Feminist Legal Theory and Jurisprudence",
+      "units": 3,
+      "schedule": "September 7 & 14, 2024 | 8:00am–5:00pm",
+      "professor": "Prof. Evelyn Battad"
+    },
+    {
+      "code": "LLM 120",
+      "title": "Environmental Law and Climate Change",
+      "units": 3,
+      "schedule": "November 16–17, 2024 | 8:00am–5:00pm",
+      "professor": "Dr. Antonio Gabriel M. La Viña"
+    }
+  ],
+
+  "admission": {
+    "requirements": {
+      "slu_graduates": [
+        "Transcript of Records",
+        "Student Record Form",
+        "Readmission Form (Form A)",
+        "Law Admission Form",
+        "Application Form",
+        "Certificate of Good Moral Character",
+        "Certificate of Graduation",
+        "PSA Birth Certificate",
+        "Marriage Certificate (if applicable)",
+        "Three 2x2 ID photos"
+      ],
+      "others": [
+        "Transfer Credential/Honorable Dismissal",
+        "Certified True Copy of Transcript of Records",
+        "Application Form",
+        "Student Record Form",
+        "Law Admission Form",
+        "Certificate of Good Moral Character",
+        "PSA Birth Certificate",
+        "Marriage Certificate (if applicable)",
+        "Three 2x2 ID photos"
+      ]
+    },
+    "late_submission_policy": "Promissory note allowed; complete requirements within the first month",
+    "submission_steps": [
+      "Download the forms via the provided links",
+      "Save all documents as PDF files",
+      "Rename each file: <Last Name First Name Document Name>",
+      "Example: DELA CRUZ JUANITA APPLICATION FORM",
+      "Email to: sol.llm@slu.edu.ph",
+      "Use subject: SUBMISSION DOCUMENTARY REQUIREMENTS"
+    ]
+  },
+
+  "contact": {
+    "email": "sol.llm@slu.edu.ph"
+  },
+
+  "welcome_message": "Welcome to the Saint Louis University Master of Laws Program!"
+}

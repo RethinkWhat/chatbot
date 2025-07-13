@@ -105,6 +105,7 @@ services:
       context: ./donut
       dockerfile: Dockerfile.donut
     container_name: DONUT-THE-JSONIFIER
+    command: 
     ports:
       - "8600:8600"
     volumes:
