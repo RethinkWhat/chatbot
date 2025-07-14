@@ -76,26 +76,31 @@ def preprocess_example(example):
     if not isinstance(image, Image.Image):
         # This fallback should ideally not be hit if convert_from_path works
         image = Image.open(image).convert("RGB")
-    
-    # Process image to pixel values. Ensure it's a tensor and squeeze the batch dim.
-    pixel_tensor = processor(images=image, return_tensors="pt").pixel_values.squeeze(0)
-    logger.debug(f"DEBUG_PREPROCESS: pixel_tensor type before return: {type(pixel_tensor)}, shape: {pixel_tensor.shape}, dtype: {pixel_tensor.dtype}")
+    elif image.mode != "RGB":
+        image = image.convert("RGB")
 
-    # Tokenize labels. Ensure it's a tensor and cast to long.
-    # .input_ids[0] takes the first (and only) item from the batch dimension
-    label_tensor = processor.tokenizer(
-        example["task_prompt"] + example["ground_truth"],
-        add_special_tokens=False, # Important: for a task prompt, add_special_tokens should typically be False here
+    pixel_values = processor.image_processor(image, return_tensors="pt").pixel_values.squeeze(0)
+    # Tokenize prompt + label
+    text = example["task_prompt"] + example["ground_truth"]
+    tokenized = processor.tokenizer(
+        text,
         return_tensors="pt",
         padding="max_length",
-        truncation=True,
-        max_length=512
-    ).input_ids[0].long() # Explicitly cast to torch.long, common for token IDs
-    logger.debug(f"DEBUG_PREPROCESS: label_tensor type before return: {type(label_tensor)}, shape: {label_tensor.shape}, dtype: {label_tensor.dtype}")
+        max_length=512,
+        truncation=True
+    )
+    labels = tokenized.input_ids.squeeze(0)
+
+    # Mask pad token IDs
+    labels[labels == processor.tokenizer.pad_token_id] = -100
+    if (labels >= processor.tokenizer.vocab_size).any():
+        logger.warning("⚠️ Some labels exceed vocab size after masking.")
+    # Debug check
+    logger.debug(f"Max label ID: {labels.max().item()} / Vocab size: {processor.tokenizer.vocab_size}")
 
     return {
-        "pixel_values": pixel_tensor,
-        "labels": label_tensor
+        "pixel_values": pixel_values,
+        "labels": labels
     }
 
 
@@ -135,32 +140,57 @@ def train_donut_model():
     # Removed contextlib.redirect_stdout/stderr to allow direct log output in Docker
     try:
         logger.info("⏳ Initializing model...")
-        # `processor` is already global, no need to re-initialize here
         model = VisionEncoderDecoderModel.from_pretrained(MODEL_NAME)
-        model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids(["<s_docvqa>"])[0]
+
+        #SPECIAL token
+        if "<s_docvqa>" not in processor.tokenizer.get_vocab():
+            special_tokens_dict = {"additional_special_tokens": ["<s_docvqa>"]}
+            processor.tokenizer.add_special_tokens(special_tokens_dict)
+            model.decoder.resize_token_embeddings(len(processor.tokenizer))
+
+        from transformers.models.mbart.modeling_mbart import MBartLearnedPositionalEmbedding
+        MAX_NEW_POSITION_EMBEDDINGS = 1536  # or higher if needed
+
+        model.decoder.model.decoder.embed_positions = MBartLearnedPositionalEmbedding(
+            MAX_NEW_POSITION_EMBEDDINGS + model.decoder.config.pad_token_id + 1,
+            model.decoder.config.d_model
+        )
+        model.decoder.config.max_position_embeddings = MAX_NEW_POSITION_EMBEDDINGS
+        model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids("<s_docvqa>")
+        model.config.pad_token_id = processor.tokenizer.pad_token_id
+        model.config.eos_token_id = processor.tokenizer.eos_token_id
+        model.config.vocab_size = len(processor.tokenizer)
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model.to(device)
 
         samples = load_training_examples(PDF_DIR, JSON_DIR, limit=MAX_TRAIN_SAMPLES)
         if not samples:
             raise ValueError("❌ No training samples found in datasets.")
-        
-        # --- Debugging before and after .map ---
+
+        dataset = Dataset.from_list(samples)  # ✅ Defined once
+
+        # Log raw structure
         logger.debug(f"DEBUG_DATASET_INIT: First raw sample (before map): {samples[0].keys()}")
-        
+
+        # Preprocess the dataset (produces 'pixel_values' and 'labels')
         logger.info("🔁 Preprocessing dataset with map...")
-        dataset = Dataset.from_list(samples)
-        
-        # Log content of first item after from_list to see initial structure
-        logger.debug(f"DEBUG_DATASET_AFTER_FROMLIST: First element of dataset: {dataset[0].keys()}")
-        logger.debug(f"DEBUG_DATASET_AFTER_FROMLIST: Type of image in first element: {type(dataset[0]['image'])}")
+        dataset = dataset.map(preprocess_example, remove_columns=["image", "task_prompt", "ground_truth"])
+        # tokenization is done here
+        max_label_id = max([max(example['labels']) for example in dataset])
+        logger.debug(f"📏 Max label ID in dataset: {max_label_id}")
+        logger.debug(f"📚 Tokenizer vocab size: {len(processor.tokenizer)}")
+        logger.debug(f"📐 Decoder embedding size: {model.config.vocab_size}")
+        assert max_label_id < len(processor.tokenizer), "❌ Token ID out of bounds!"
 
-        dataset = dataset.map(preprocess_example, remove_columns=["image", "task_prompt", "ground_truth"]) # Removed cols in map for efficiency
 
-        # --- ADD THIS LINE HERE ---
+        # Log structure after map
+        logger.debug(f"DEBUG_DATASET_AFTER_MAP: First element of dataset: {dataset[0].keys()}")
+        logger.debug(f"DEBUG_DATASET_AFTER_MAP: Type of pixel_values in first element: {type(dataset[0]['pixel_values'])}")
+        logger.debug(f"DEBUG_DATASET_AFTER_MAP: Type of labels in first element: {type(dataset[0]['labels'])}")
+
+        # Set format for PyTorch
         dataset.set_format("torch") 
         logger.info("✅ Dataset format set to 'torch'.")
-        # -------------------------
 
         # Log content of first item after map to see processed structure
         logger.debug(f"DEBUG_DATASET_AFTER_MAP: First element of dataset: {dataset[0].keys()}")
