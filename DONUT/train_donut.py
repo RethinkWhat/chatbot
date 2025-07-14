@@ -29,7 +29,7 @@ DATA_DIR = "./datasets"
 PDF_DIR = os.path.join(DATA_DIR, "pdfs")
 JSON_DIR = os.path.join(DATA_DIR, "labels")
 OUTPUT_DIR = "./donut-finetuned"
-MAX_TRAIN_SAMPLES = 20
+MAX_TRAIN_SAMPLES = 50
 NUM_EPOCHS = 3
 # Initialize processor globally once
 processor = DonutProcessor.from_pretrained(MODEL_NAME)
@@ -86,7 +86,7 @@ def preprocess_example(example):
         text,
         return_tensors="pt",
         padding="max_length",
-        max_length=512,
+        max_length=1024,
         truncation=True
     )
     labels = tokenized.input_ids.squeeze(0)
@@ -205,13 +205,18 @@ def train_donut_model():
         args = Seq2SeqTrainingArguments(
             output_dir=OUTPUT_DIR,
             per_device_train_batch_size=1,
+            gradient_accumulation_steps=2,
             num_train_epochs=NUM_EPOCHS,
-            learning_rate=5e-5,
-            save_strategy="epoch",
+            learning_rate=3e-5,
+            save_strategy="no",
             logging_dir="./logs",
             predict_with_generate=True,
             remove_unused_columns=False, # Keep this to retain pixel_values, labels
-            fp16=torch.cuda.is_available()
+            fp16=torch.cuda.is_available(),
+            logging_steps=10,
+            save_total_limit=2,              # Avoid disk bloat
+            warmup_steps=50,
+            weight_decay=0.01
         )
 
         trainer = Seq2SeqTrainer(
@@ -223,12 +228,14 @@ def train_donut_model():
         )
 
         logger.info("🚀 Starting training...")
+        logger.info("✅ trainer.train() completed.")  # ← Add this line
         trainer.train()
-        model.save_pretrained(OUTPUT_DIR)
+        logger.info("✅ trainer.train() completed.")  # ← Add this AFTER it
+        model.save_pretrained(OUTPUT_DIR, safe_serialization=False)  # ← saves .bin
+        model.save_pretrained(OUTPUT_DIR, safe_serialization=True)   # ← saves .safetensors
         processor.save_pretrained(OUTPUT_DIR)
         logger.info(f"✅ Training completed. Model saved to {OUTPUT_DIR}")
 
-        return { "status": "✅ Donut model trained successfully." }
 
     except Exception as e:
         error_trace = traceback.format_exc()

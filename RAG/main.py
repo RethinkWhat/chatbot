@@ -248,26 +248,38 @@ async def serve_admin():
 async def serve_scraper():
     return FileResponse("Client/scraper.html")
 
-@app.post("/scrape")
-async def run_scraper_endpoint(data: dict = Body(...)):
-    depth = data.get("depth", 2)
-
-    try:
-        # Adjust path based on your project layout
-        result = subprocess.run(
-            ["python3", "RASA/scrapers/web_scraper.py", "--depth", str(depth)],
-            capture_output=True,
-            text=True,
-            timeout=300  # Optional timeout in seconds
-        )
-        return {
-            "output": result.stdout,
-            "error": result.stderr
-        }
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"message": str(e)})
 # URLS.txt
 URLS_FILE = os.path.join(os.path.dirname(__file__), "urls.txt")
+
+#admin popup:scraper popup
+#==========================
+URLS_PATH = "urls.txt"
+SCRAPER_SCRIPT = "web_scraper.py"
+
+@app.get("/scrape/urls")
+def get_urls():
+    if not os.path.exists(URLS_PATH):
+        return {"urls": []}
+    with open(URLS_PATH, "r", encoding="utf-8") as f:
+        urls = [line.strip() for line in f if line.strip()]
+    return {"urls": urls}
+
+@app.post("/scrape/urls")
+async def save_urls(request: Request):
+    data = await request.json()
+    urls = data.get("urls", "")
+    with open(URLS_PATH, "w", encoding="utf-8") as f:
+        f.write(urls.strip() + "\n")
+    return {"status": "✅ URLs saved to urls.txt"}
+
+@app.post("/scrape/run")
+def run_web_scraper():
+    try:
+        result = subprocess.run(["python3", "scrapers/web_scraper.py"], capture_output=True, text=True, check=True)
+        return {"status": "✅ Web scraping complete", "stdout": result.stdout}
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"❌ Scraping failed: {e.stderr}")
+#========================================
 
 @app.get("/urls")
 def get_urls() -> Dict[str, List[str]]:
@@ -326,16 +338,6 @@ def get_txt_content(filename: str):
     with open(path, "r", encoding="utf-8") as f:
         return {"content": f.read()}
 
-# @app.post("/trigger/jsonify/{filename}")
-# def jsonify_txt_file(filename: str):
-#     rag = RAGPipeline()
-#     path = os.path.join("knowledge/txt", filename)
-#     if not os.path.exists(path):
-#         raise HTTPException(status_code=404, detail="File not found")
-#     with open(path, "r", encoding="utf-8") as f:
-#         text = f.read()
-#     result = rag.jsonifyTxt(text)
-#     return {"filename": filename, "json": result}
 @app.post("/trigger/jsonify/{filename}")
 def jsonify_single_file(filename: str):
     input_path = f"knowledge/txt/{filename}"

@@ -121,6 +121,38 @@
             </div>
         </div>
     </div>
+        <!-- Scraper Panel popup/modal -->
+        <div class="window" id="scrapeWindow">
+            <div class="window-content">
+            <div class="window-header">
+                <h3>Knowledge Scraper</h3>
+                <button class="close-btn" id="closeScrapeWindow">&times;</button>
+            </div>
+            <form id="scrapeForm">
+                <div class="form-group">
+                <label for="fileUpload">Upload Files (.pdf, .png, .jpeg, .txt):</label>
+                <input type="file" id="fileUpload" multiple accept=".pdf,.png,.jpg,.jpeg,.txt" />
+                </div>
+                <div class="form-group">
+                <label for="urlInput">Scrape from URL:</label>
+                <input type="text" id="urlInput" placeholder="https://example.com" />
+                </div>
+                <div class="form-actions">
+                <button type="submit" class="btn primary">Start Scraping</button>
+                </div>
+                <div id="scrapeStatus" class="status-message"></div>
+            </form>
+            </div>
+            <div id="scrapeWindow" class="popup">
+                <h2>📡 Web Scraper</h2>
+                <textarea id="urlsInput" rows="8" placeholder="Enter URLs to scrape..."></textarea><br>
+                <button id="saveUrlsBtn">💾 Save URLs</button>
+                <button id="runScraperBtn">🚀 Run Scraper</button>
+                <pre id="scrapeLogs"></pre>
+                <button id="closeScrapeWindow">❌ Close</button>
+              </div>
+        </div>
+  
 
     <script src="admin.js"></script>
 </body>

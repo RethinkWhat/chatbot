@@ -46,8 +46,55 @@ class AdminPanel {
     });
     document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
     document.getElementById("scrapeBtn").addEventListener("click", () => {
-      window.location.href = "scrape.html"; // or any correct path to scrape interface
+      document.getElementById("scrapeWindow").classList.add("active");
     });
+    document.getElementById("closeScrapeWindow").addEventListener("click", () => {
+      document.getElementById("scrapeWindow").classList.remove("active");
+    });
+    document.getElementById("scrapeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = document.getElementById("scrapeStatus");
+      const files = document.getElementById("fileUpload").files;
+      const url = document.getElementById("urlInput").value.trim();
+      const formData = new FormData();
+    
+      if (files.length > 0) {
+        for (let file of files) {
+          formData.append("files", file);
+        }
+      }
+    
+      if (url) {
+        formData.append("url", url);
+      }
+    
+      try {
+        const res = await fetch("http://localhost:8000/scrape", {
+          method: "POST",
+          body: formData
+        });
+    
+        const data = await res.json();
+        if (data.status === "success") {
+          status.textContent = "Scraping completed successfully!";
+          status.className = "status-message success show";
+        } else {
+          status.textContent = data.message || "Scraping failed.";
+          status.className = "status-message error show";
+        }
+      } catch (err) {
+        console.error("Scrape failed:", err);
+        status.textContent = "Error sending scrape request.";
+        status.className = "status-message error show";
+      }
+    
+      setTimeout(() => {
+        status.classList.remove("show");
+      }, 4000);
+    });
+    document.getElementById("scrapeForm").addEventListener("submit", (e) => this.handleScrapeForm(e));
+
+    
     document.getElementById('closeWindow').addEventListener('click', () => this.closeMenuWindow());
     document.getElementById('cancelBtn').addEventListener('click', () => this.closeMenuWindow());
     this.menuForm.addEventListener('submit', (e) => this.handleMenuSave(e));
@@ -68,6 +115,54 @@ class AdminPanel {
       }
     });
   }
+  async handleScrapeForm(e) {
+    e.preventDefault();
+    const status = document.getElementById("scrapeStatus");
+    const files = document.getElementById("fileUpload").files;
+    const url = document.getElementById("urlInput").value.trim();
+    const formData = new FormData();
+  
+    if (files.length > 0) {
+      for (let file of files) {
+        formData.append("files", file);
+      }
+    }
+  
+    if (url) {
+      formData.append("url", url);
+    }
+  
+    status.textContent = "Processing...";
+    status.className = "status-message info show";
+    status.style.display = "block";
+  
+    try {
+      const res = await fetch("http://localhost:8000/scrape", {
+        method: "POST",
+        body: formData
+      });
+  
+      const data = await res.json();
+  
+      if (data.status === "success") {
+        status.textContent = "Scraping completed successfully!";
+        status.className = "status-message success show";
+      } else {
+        status.textContent = data.message || "Scraping failed.";
+        status.className = "status-message error show";
+      }
+    } catch (err) {
+      console.error("Scrape failed:", err);
+      status.textContent = "Error sending scrape request.";
+      status.className = "status-message error show";
+    }
+  
+    setTimeout(() => {
+      status.classList.remove("show");
+      status.style.display = "none";
+    }, 4000);
+  }
+  
 
   // async checkAuthentication() {
   //   try {
@@ -565,4 +660,57 @@ document.addEventListener('DOMContentLoaded', () => {
             e.returnValue = '';
         });
         window.adminPanel = new AdminPanel();
+});
+
+// Load URLs into textarea on popup open
+document.getElementById("scrapeBtn").addEventListener("click", async () => {
+  document.getElementById("scrapeWindow").classList.add("active");
+
+  try {
+    const res = await fetch("http://localhost:8000/scrape/urls");
+    const data = await res.json();
+    document.getElementById("urlsInput").value = data.urls.join("\n");
+  } catch (err) {
+    console.error("Failed to load urls.txt:", err);
+  }
+});
+
+document.getElementById("saveUrlsBtn").addEventListener("click", async () => {
+  const urls = document.getElementById("urlsInput").value;
+  try {
+    const res = await fetch("http://localhost:8000/scrape/urls", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls })
+    });
+    const data = await res.json();
+    alert(data.status);
+  } catch (err) {
+    console.error("Failed to save urls.txt:", err);
+  }
+});
+
+document.getElementById("runScrapeBtn").addEventListener("click", async () => {
+  const output = document.getElementById("scrapeOutput");
+  output.textContent = "⏳ Running web scraper...";
+
+  try {
+    const res = await fetch("http://localhost:8000/scrape/run", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({}) // or remove if your API doesn’t expect a body
+    });
+
+    const data = await res.json();
+    output.textContent = data.status || "⚠️ No response.";
+  } catch (err) {
+    output.textContent = "❌ Web scraper failed to run.";
+    console.error("Scraper error:", err);
+  }
+});
+
+document.getElementById("closeScrapeWindow").addEventListener("click", () => {
+  document.getElementById("scrapeWindow").classList.remove("active");
 });

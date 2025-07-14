@@ -410,7 +410,33 @@
     // 🔁 Automatically run Donut JSONification on page load
     //autoJsonifyAllPdfs();
 
-    //pdf-->JSON with Donut
+    //pdf+ json for preprocessing, to training.jsonl
+    document.getElementById("prepareBtn").addEventListener("click", async () => {
+      const output = document.getElementById("trainOutput");
+      output.textContent = "⏳ Training Donut model...";
+
+      try {
+        const res = await fetch("http://localhost:8600/prepare/training-data", {
+          method: "POST"
+        });
+
+        const isJson = res.headers.get("content-type")?.includes("application/json");
+        const data = isJson ? await res.json() : {
+          status: "❌ No JSON response",
+          stdout: "",
+          stderr: await res.text()
+        };
+
+        output.textContent = data.status || "❌ Training failed.";
+        if (data.stdout) output.textContent += `\n\n📝 STDOUT:\n${data.stdout}`;
+        if (data.stderr) output.textContent += `\n\n🔧 STDERR:\n${data.stderr}`;
+
+      } catch (err) {
+        output.textContent = "❌ Error during training (network/server). See console.";
+        console.error("Training error:", err);
+      }
+    });
+
     document.getElementById("trainBtn").addEventListener("click", async () => {
       const output = document.getElementById("trainOutput");
       output.textContent = "⏳ Training Donut model...";

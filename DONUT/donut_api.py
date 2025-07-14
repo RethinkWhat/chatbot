@@ -8,9 +8,12 @@ from donut_extractor import LayoutLMv3Extractor
 import os, json, io , contextlib, traceback
 from pathlib import Path
 import logging, subprocess
+from tqdm import tqdm
+from pdf2image import convert_from_path
 
 logging.basicConfig(level=logging.INFO)
 from datetime import datetime
+from inference import run_inference_batch
 
 app = FastAPI()
 
@@ -73,9 +76,69 @@ def train_donut():
     }
 
 @app.post("/prepare/training-data")
-def prepare_data():
+def prepare_training_data():
     try:
-        result = subprocess.run(["python3", "prepare_donut_data.py"], capture_output=True, text=True, check=True)
-        return {"status": "✅ Data preparation complete", "log": result.stdout}
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"❌ Data preparation failed: {e.stderr}")
+        PDF_DIR = Path("/app/datasets/pdfs")
+        JSON_DIR = Path("/app/datasets/labels")
+        IMAGE_DIR = Path("/app/datasets/images")
+        JSONL_PATH = Path("/app/training.jsonl")
+
+        IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+        entries = []
+
+        for json_file in tqdm(JSON_DIR.glob("*.json"), desc="📄 Building training.jsonl"):
+            base = json_file.stem
+            pdf_file = PDF_DIR / f"{base}.pdf"
+
+            if not pdf_file.exists():
+                print(f"⚠️ Missing PDF for {json_file.name}, skipping.")
+                continue
+
+            with open(json_file, "r", encoding="utf-8") as f:
+                try:
+                    label = json.load(f)
+                except Exception as e:
+                    print(f"⚠️ Invalid JSON in {json_file.name}: {e}")
+                    continue
+
+            try:
+                pages = convert_from_path(str(pdf_file), dpi=150)
+            except Exception as e:
+                print(f"⚠️ Failed to convert {pdf_file.name}: {e}")
+                continue
+
+            for i, page in enumerate(pages):
+                image_filename = f"{base}_page{i+1}.png"
+                image_path = IMAGE_DIR / image_filename
+                page.save(image_path, format="PNG")
+
+                entries.append({
+                    "image": str(image_path.resolve()),
+                    "ground_truth": json.dumps(label, ensure_ascii=False)
+                })
+
+        with open(JSONL_PATH, "w", encoding="utf-8") as f:
+            for entry in entries:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+        return JSONResponse(content={"status": f"✅ training.jsonl created with {len(entries)} entries."})
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "status": "❌ Failed to prepare training data.",
+            "error": str(e)
+        })
+
+@app.post("/jsonify")
+async def jsonify_pdfs():
+    input_dir = Path("/app/knowledge/raw")
+    output_dir = Path("/app/knowledge/testJson")
+
+    processed_files = run_inference_batch(input_dir, output_dir)
+
+    return {
+        "status": "success",
+        "files": processed_files,
+        "count": len(processed_files)
+    }
