@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # -------------------------------
 MODEL_NAME = "naver-clova-ix/donut-base-finetuned-docvqa"
-MAX_TRAIN_SAMPLES = 50
-NUM_EPOCHS = 3
+#MAX_TRAIN_SAMPLES = 30
+NUM_EPOCHS = 4
 MAX_LENGTH = 768
 # DPI should match the DPI used when preparing images in prepare_all_training_data
 # If your prepare_all_training_data used 150 DPI, keep it consistent.
-DPI = 150
+DPI = 200
 
 # Define root directories for prepared data and output models
 JSONL_ROOT = Path("/app/training_jsonl") # Where .jsonl files (image_path, ground_truth) are stored
@@ -195,7 +195,7 @@ def train_donut_model(task_name: str):
         model.to(device)
 
         # Load samples using the .jsonl path for the current task
-        samples = load_training_examples(jsonl_path_for_task, limit=MAX_TRAIN_SAMPLES)
+        samples = load_training_examples(jsonl_path_for_task)
         if not samples:
             raise ValueError(f"❌ No training samples found in {jsonl_path_for_task}. Cannot train model for {task_name}.")
 
@@ -207,14 +207,15 @@ def train_donut_model(task_name: str):
         args = Seq2SeqTrainingArguments(
             output_dir=str(output_dir), # Convert Path to string for HuggingFace args
             per_device_train_batch_size=1,
-            gradient_accumulation_steps=2,
+            evaluation_strategy="no", # No evaluation during training
             num_train_epochs=NUM_EPOCHS,
-            learning_rate=3e-5,
+            learning_rate=2e-5,
             save_strategy="epoch", # Save checkpoints after each epoch
             logging_dir=os.path.join(str(output_dir), "logs"), # Logs specific to this output_dir
             predict_with_generate=True,
             remove_unused_columns=False,
-            fp16=torch.cuda.is_available(),
+            fp16=False,
+            logging_strategy = "steps",
             logging_steps=10,
             save_total_limit=2, # Keep only the last 2 checkpoints
             warmup_steps=max(1, len(dataset) // 4),

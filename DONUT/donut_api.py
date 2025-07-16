@@ -18,7 +18,7 @@ from datetime import datetime
 from inference import run_inference_batch
 
 app = FastAPI()
-DPI = 100
+DPI = 200
 
 # Allow requests from other frontends
 app.add_middleware(
@@ -70,15 +70,21 @@ def jsonify_pdf(filename: str):
     return {"filename": filename, "output": output_path, "json": result}
 
 @app.post("/train/donut")
-def train_donut(filename):
+#def train_donut(filename):
+def train_donut():
 # def train_donut_for_file(filename: str):
-    task_type = classify_document_type(filename)
-    result = train_donut_model(task_type)
-    return {
-        "status": result.get("status", "❌ Unknown training status"),
-        "stdout": result.get("stdout", ""),
-        "stderr": result.get("error", "")
-    }
+    #task_type = classify_document_type(filename)
+    filenames = ["announcements", "calendar", "program_catalog", "school_info"]
+    results = []
+    for filename in filenames:
+        result = train_donut_model(filename)
+        results.append({
+            "filename": filename,
+            "status": result.get("status", "❌ Unknown training status"),
+            "stdout": result.get("stdout", ""),
+            "stderr": result.get("error", "")
+        })
+    return {"results": results}
 
 @app.post("/prepare/training-data")
 def prepare_all_training_data():
