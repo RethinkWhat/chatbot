@@ -33,6 +33,19 @@ OUTPUT_BASE_DIR = Path("./donut-finetuned-models") # Where trained models will b
 
 # Initialize processor globally once
 processor = DonutProcessor.from_pretrained(MODEL_NAME)
+# -------------------------------
+# clasisfying document type
+# -------------------------------
+def classify_document_type(text: str) -> str:
+    text = text.lower()
+    if "program catalog" in text or "bachelor of" in text:
+        return "program_catalog"
+    elif "academic calendar" in text or "holiday" in text or "semester" in text:
+        return "academic_calendar"
+    elif "announcement" in text or "attention" in text:
+        return "announcement"
+    else:
+        return "unknown"
 
 # -------------------------------
 # Data Loading (Modified to read from .jsonl files)
