@@ -39,7 +39,19 @@ def load_model_for_type(doc_type):
         return None, None
 
 def pdf_to_images(pdf_path):
-    return convert_from_path(pdf_path, dpi=DPI)
+    pages = convert_from_path(str(pdf_path), dpi=DPI)
+    if not pages:
+        raise ValueError(f"No pages found in PDF: {pdf_path}")
+    widths, heights = zip(*(page.size for page in pages))
+    total_height = sum(heights)
+    max_width = max(widths)
+
+    stitched_image = Image.new('RGB', (max_width, total_height), color=(255, 255, 255))
+    y_offset = 0
+    for page in pages:
+        stitched_image.paste(page, (0, y_offset))
+        y_offset += page.height
+    return stitched_image
 
 def run_inference_on_pdf(pdf_path, output_json_path):
     doc_type = classify_document_type(pdf_path.name)
@@ -51,30 +63,30 @@ def run_inference_on_pdf(pdf_path, output_json_path):
     images = pdf_to_images(pdf_path)
     results = []
 
-    for i, img in enumerate(images):
-        print(f"[INFO] Processing page {i+1} of {os.path.basename(pdf_path)} using model '{doc_type}'")
-        pixel_values = processor(images=img, return_tensors="pt").pixel_values.to(model.device)
-        task_prompt = f"<s_docvqa><s_question>extract information</s_question><s_answer>"
-        decoder_input_ids = processor.tokenizer(task_prompt, add_special_tokens=False, return_tensors="pt").input_ids.to(model.device)
+    
+    print(f"[INFO] Processing {os.path.basename(pdf_path)} using model '{doc_type}'")
+    pixel_values = processor(images=images, return_tensors="pt").pixel_values.to(model.device)
+    task_prompt = f"<s_docvqa><s_question>extract structured JSON for {doc_type} document</s_question><s_answer>"
+    decoder_input_ids = processor.tokenizer(task_prompt, add_special_tokens=False, return_tensors="pt").input_ids.to(model.device)
 
-        with torch.no_grad():
-            outputs = model.generate(
-                pixel_values,
-                decoder_input_ids=decoder_input_ids,
-                max_length=MAX_LENGTH,
-                early_stopping=True,
-                pad_token_id=processor.tokenizer.pad_token_id,
-                eos_token_id=processor.tokenizer.eos_token_id,
-                bad_words_ids=[[processor.tokenizer.unk_token_id]]
-            )
+    with torch.no_grad():
+        outputs = model.generate(
+            pixel_values,
+            decoder_input_ids=decoder_input_ids,
+            max_length=MAX_LENGTH,
+            early_stopping=True,
+            pad_token_id=processor.tokenizer.pad_token_id,
+            eos_token_id=processor.tokenizer.eos_token_id,
+            bad_words_ids=[[processor.tokenizer.unk_token_id]]
+        )
 
-        result = processor.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        print(f"[RAW OUTPUT] {result}")
-        try:
-            parsed = json.loads(result)
-            results.append(parsed)
-        except json.JSONDecodeError:
-            results.append({"error": "Invalid JSON", "raw_output": result})
+    result = processor.tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print(f"[RAW OUTPUT] {result}")
+    try:
+        parsed = json.loads(result)
+        results.append(parsed)
+    except json.JSONDecodeError:
+        results.append({"error": "Invalid JSON", "raw_output": result})
 
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
