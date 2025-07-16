@@ -10,6 +10,8 @@ from pathlib import Path
 import logging, subprocess
 from tqdm import tqdm
 from pdf2image import convert_from_path
+from train_donut import train_donut_model, classify_document_type
+
 
 logging.basicConfig(level=logging.INFO)
 from datetime import datetime
@@ -67,62 +69,74 @@ def jsonify_pdf(filename: str):
     return {"filename": filename, "output": output_path, "json": result}
 
 @app.post("/train/donut")
-def train_donut():
-    result = train_donut_model()
+def train_donut(filename):
+# def train_donut_for_file(filename: str):
+    task_type = classify_document_type(filename)
+    result = train_donut_model(task_type)
     return {
         "status": result.get("status", "❌ Unknown training status"),
         "stdout": result.get("stdout", ""),
         "stderr": result.get("error", "")
     }
 
-@app.post("/prepare/training-data")
-def prepare_training_data():
+def prepare_all_training_data():
     try:
-        PDF_DIR = Path("/app/datasets/pdfs")
-        JSON_DIR = Path("/app/datasets/labels")
-        IMAGE_DIR = Path("/app/datasets/images")
-        JSONL_PATH = Path("/app/training.jsonl")
+        BASE_DIR = Path("/app/datasets/types")
+        IMAGE_DIR_ROOT = Path("/app/datasets/images")
+        JSONL_ROOT = Path("/app/training_jsonl")
+        JSONL_ROOT.mkdir(parents=True, exist_ok=True)
 
-        IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+        results = {}
 
-        entries = []
-
-        for json_file in tqdm(JSON_DIR.glob("*.json"), desc="📄 Building training.jsonl"):
-            base = json_file.stem
-            pdf_file = PDF_DIR / f"{base}.pdf"
-
-            if not pdf_file.exists():
-                print(f"⚠️ Missing PDF for {json_file.name}, skipping.")
+        for task_dir in BASE_DIR.iterdir():
+            if not task_dir.is_dir():
                 continue
 
-            with open(json_file, "r", encoding="utf-8") as f:
+            task_name = task_dir.name
+            PDF_DIR = task_dir / "pdfs"
+            JSON_DIR = task_dir / "labels"
+            IMAGE_DIR = IMAGE_DIR_ROOT / task_name
+            JSONL_PATH = JSONL_ROOT / f"{task_name}.jsonl"
+            IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+            entries = []
+            for json_file in tqdm(JSON_DIR.glob("*.json"), desc=f"📄 {task_name}"):
+                base = json_file.stem
+                pdf_file = PDF_DIR / f"{base}.pdf"
+                if not pdf_file.exists():
+                    print(f"⚠️ Missing PDF for {json_file.name}, skipping.")
+                    continue
+
                 try:
-                    label = json.load(f)
+                    with open(json_file, "r", encoding="utf-8") as f:
+                        label = json.load(f)
                 except Exception as e:
                     print(f"⚠️ Invalid JSON in {json_file.name}: {e}")
                     continue
 
-            try:
-                pages = convert_from_path(str(pdf_file), dpi=150)
-            except Exception as e:
-                print(f"⚠️ Failed to convert {pdf_file.name}: {e}")
-                continue
+                try:
+                    pages = convert_from_path(str(pdf_file), dpi=150)
+                except Exception as e:
+                    print(f"⚠️ Failed to convert {pdf_file.name}: {e}")
+                    continue
 
-            for i, page in enumerate(pages):
-                image_filename = f"{base}_page{i+1}.png"
-                image_path = IMAGE_DIR / image_filename
-                page.save(image_path, format="PNG")
+                for i, page in enumerate(pages):
+                    image_filename = f"{base}_page{i+1}.png"
+                    image_path = IMAGE_DIR / image_filename
+                    page.save(image_path, format="PNG")
 
-                entries.append({
-                    "image": str(image_path.resolve()),
-                    "ground_truth": json.dumps(label, ensure_ascii=False)
-                })
+                    entries.append({
+                        "image": str(image_path.resolve()),
+                        "ground_truth": json.dumps(label, ensure_ascii=False)
+                    })
 
-        with open(JSONL_PATH, "w", encoding="utf-8") as f:
-            for entry in entries:
-                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            with open(JSONL_PATH, "w", encoding="utf-8") as f:
+                for entry in entries:
+                    f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-        return JSONResponse(content={"status": f"✅ training.jsonl created with {len(entries)} entries."})
+            results[task_name] = f"{len(entries)} entries saved to {JSONL_PATH.name}"
+
+        return JSONResponse(content={"status": "✅ All training.jsonl files created", "details": results})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={

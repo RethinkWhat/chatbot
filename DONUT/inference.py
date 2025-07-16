@@ -9,16 +9,30 @@ from transformers import DonutProcessor, VisionEncoderDecoderModel
 import torch
 
 MODEL_DIR = "/app/donut-finetuned"
-processor = DonutProcessor.from_pretrained(MODEL_DIR)
-model = VisionEncoderDecoderModel.from_pretrained(MODEL_DIR, ignore_mismatched_sizes=True)
-model.eval()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+
+def is_model_ready():
+    files = ["preprocessor_config.json", "tokenizer.json", "pytorch_model.bin"]
+    return all((Path(MODEL_DIR) / f).exists() for f in files)
+
+if is_model_ready():
+    processor = DonutProcessor.from_pretrained(MODEL_DIR)
+    model = VisionEncoderDecoderModel.from_pretrained(MODEL_DIR, ignore_mismatched_sizes=True)
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+else:
+    print("❌ Model not yet trained. Run training first.")
+    processor = None
+    model = None
+
 
 def pdf_to_images(pdf_path):
-    return convert_from_path(pdf_path, dpi=150)
+    return convert_from_path(pdf_path, dpi=72)
 
 def run_inference_on_pdf(pdf_path, output_json_path):
+    if model is None or processor is None:
+        print("❌ Inference skipped. Model not trained.")
+        return
     images = pdf_to_images(pdf_path)
     results = []
 
@@ -32,7 +46,7 @@ def run_inference_on_pdf(pdf_path, output_json_path):
             outputs = model.generate(
                 pixel_values,
                 decoder_input_ids=decoder_input_ids,
-                max_length=1024,
+                max_length=256,
                 early_stopping=True,
                 pad_token_id=processor.tokenizer.pad_token_id,
                 eos_token_id=processor.tokenizer.eos_token_id,

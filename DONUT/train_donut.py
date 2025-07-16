@@ -1,10 +1,7 @@
 # train_donut.py
-import os, io, contextlib, traceback
-import json
-import traceback
-import logging
+import os, json, traceback, logging
 from pathlib import Path
-from datasets import Dataset, Features, Value, Array3D
+from datasets import Dataset
 from transformers import (
     DonutProcessor,
     VisionEncoderDecoderModel,
@@ -25,41 +22,77 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # -------------------------------
 MODEL_NAME = "naver-clova-ix/donut-base-finetuned-docvqa"
-DATA_DIR = "./datasets"
-PDF_DIR = os.path.join(DATA_DIR, "pdfs")
-JSON_DIR = os.path.join(DATA_DIR, "labels")
-OUTPUT_DIR = "./donut-finetuned"
+BASE_DATA_DIR = "./datasets"
+OUTPUT_BASE_DIR = "./donut-finetuned"
 MAX_TRAIN_SAMPLES = 50
 NUM_EPOCHS = 3
-# Initialize processor globally once
+MAX_LENGTH = 768
+DPI = 100
+
 processor = DonutProcessor.from_pretrained(MODEL_NAME)
+
+# -------------------------------
+# Utilities
+# -------------------------------
+def stitch_pdf_to_image(pdf_path):
+    pages = convert_from_path(str(pdf_path), dpi=DPI)
+    widths, heights = zip(*(page.size for page in pages))
+    total_height = sum(heights)
+    max_width = max(widths)
+
+    stitched_image = Image.new('RGB', (max_width, total_height), color=(255, 255, 255))
+    y_offset = 0
+    for page in pages:
+        stitched_image.paste(page, (0, y_offset))
+        y_offset += page.height
+    return stitched_image
+
+def classify_document_type(filename: str) -> str:
+    lower_name = filename.lower()
+    if "calendar" in lower_name:
+        return "calendar"
+    elif "announcement" in lower_name or "memo" in lower_name:
+        return "announcement"
+    elif "catalog" in lower_name or "program" in lower_name:
+        return "program_catalog"
+    else:
+        return "generic"
 
 # -------------------------------
 # Data Loading
 # -------------------------------
-def load_training_examples(pdf_dir, json_dir, limit=None):
-    logger.info("📚 Loading training examples...")
+def load_training_examples(task_name: str, limit=None):
+    logger.info(f"📚 Loading training examples for task: {task_name}...")
+    pdf_dir = Path(BASE_DATA_DIR) / task_name / "pdfs"
+    json_dir = Path(BASE_DATA_DIR) / task_name / "labels"
     data = []
-    for json_file in Path(json_dir).glob("*.json"):
+
+    for json_file in json_dir.glob("*.json"):
         base = json_file.stem
-        pdf_path = Path(pdf_dir) / f"{base}.pdf"
+        pdf_path = pdf_dir / f"{base}.pdf"
         if not pdf_path.exists():
             logger.warning(f"⚠️ PDF missing for {json_file.name}")
             continue
 
-        pages = convert_from_path(str(pdf_path), dpi=150) # Keep DPI at 150
-        with open(json_file, "r", encoding="utf-8") as f:
-            label = json.load(f)
+        try:
+            stitched_img = stitch_pdf_to_image(pdf_path)
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to process PDF {pdf_path.name}: {e}")
+            continue
 
-        for i, img in enumerate(pages):
-            data.append({
-                "image": img,
-                "task_prompt": "<s_docvqa><s_question>extract information</s_question><s_answer>",
-                "ground_truth": json.dumps(label, ensure_ascii=False)
-            })
+        try:
+            with open(json_file, "r", encoding="utf-8") as f:
+                label = json.load(f)
+        except Exception as e:
+            logger.warning(f"⚠️ Invalid JSON in {json_file.name}: {e}")
+            continue
 
-            if limit and len(data) >= limit:
-                break
+        prompt = f"<s_docvqa><s_question>extract structured JSON for {task_name}</s_question><s_answer>"
+        data.append({
+            "image": stitched_img,
+            "task_prompt": prompt,
+            "ground_truth": json.dumps(label, ensure_ascii=False)
+        })
 
         if limit and len(data) >= limit:
             break
@@ -67,90 +100,56 @@ def load_training_examples(pdf_dir, json_dir, limit=None):
     logger.info(f"✅ Loaded {len(data)} training samples.")
     return data
 
-
 # -------------------------------
 # Preprocessing
 # -------------------------------
 def preprocess_example(example):
     image = example["image"]
-    if not isinstance(image, Image.Image):
-        # This fallback should ideally not be hit if convert_from_path works
-        image = Image.open(image).convert("RGB")
-    elif image.mode != "RGB":
+    if image.mode != "RGB":
         image = image.convert("RGB")
 
     pixel_values = processor.image_processor(image, return_tensors="pt").pixel_values.squeeze(0)
-    # Tokenize prompt + label
     text = example["task_prompt"] + example["ground_truth"]
     tokenized = processor.tokenizer(
         text,
         return_tensors="pt",
         padding="max_length",
-        max_length=1024,
+        max_length=MAX_LENGTH,
         truncation=True
     )
     labels = tokenized.input_ids.squeeze(0)
-
-    # Mask pad token IDs
     labels[labels == processor.tokenizer.pad_token_id] = -100
-    if (labels >= processor.tokenizer.vocab_size).any():
-        logger.warning("⚠️ Some labels exceed vocab size after masking.")
-    # Debug check
-    logger.debug(f"Max label ID: {labels.max().item()} / Vocab size: {processor.tokenizer.vocab_size}")
-
     return {
         "pixel_values": pixel_values,
         "labels": labels
     }
 
-
+# -------------------------------
+# Collate Function
+# -------------------------------
 def collate_fn(batch):
-    logger.debug(f"DEBUG_COLLATE: Entering collate_fn. Batch size: {len(batch)}")
-    for i, x in enumerate(batch):
-        # Safely inspect batch items before attempting operations that require tensors
-        pixel_val_obj = x.get('pixel_values')
-        label_obj = x.get('labels')
-
-        logger.debug(f"DEBUG_COLLATE: Item {i} pixel_values type: {type(pixel_val_obj)}")
-        logger.debug(f"DEBUG_COLLATE: Item {i} labels type: {type(label_obj)}")
-
-        # Print shape only if it's a tensor, otherwise print N/A
-        if isinstance(pixel_val_obj, torch.Tensor):
-            logger.debug(f"DEBUG_COLLATE: Item {i} pixel_values shape: {pixel_val_obj.shape}")
-        if isinstance(label_obj, torch.Tensor):
-            logger.debug(f"DEBUG_COLLATE: Item {i} labels shape: {label_obj.shape}")
-
-
-    # These lines will now attempt to stack/pad.
-    # If the error still occurs here, the issue is that items in 'batch' are lists.
     pixel_values = torch.stack([x["pixel_values"] for x in batch])
     labels = torch.nn.utils.rnn.pad_sequence(
         [x["labels"] for x in batch],
         batch_first=True,
         padding_value=processor.tokenizer.pad_token_id
     )
-    logger.debug(f"DEBUG_COLLATE: Stacked pixel_values shape: {pixel_values.shape}, labels shape: {labels.shape}")
     return {"pixel_values": pixel_values, "labels": labels}
 
-
 # -------------------------------
-# Training Entry Point
+# Training
 # -------------------------------
-def train_donut_model():
-    # Removed contextlib.redirect_stdout/stderr to allow direct log output in Docker
+def train_donut_model(task_name: str):
     try:
         logger.info("⏳ Initializing model...")
         model = VisionEncoderDecoderModel.from_pretrained(MODEL_NAME)
 
-        #SPECIAL token
         if "<s_docvqa>" not in processor.tokenizer.get_vocab():
-            special_tokens_dict = {"additional_special_tokens": ["<s_docvqa>"]}
-            processor.tokenizer.add_special_tokens(special_tokens_dict)
+            processor.tokenizer.add_special_tokens({"additional_special_tokens": ["<s_docvqa>"]})
             model.decoder.resize_token_embeddings(len(processor.tokenizer))
 
         from transformers.models.mbart.modeling_mbart import MBartLearnedPositionalEmbedding
-        MAX_NEW_POSITION_EMBEDDINGS = 1536  # or higher if needed
-
+        MAX_NEW_POSITION_EMBEDDINGS = 1536
         model.decoder.model.decoder.embed_positions = MBartLearnedPositionalEmbedding(
             MAX_NEW_POSITION_EMBEDDINGS + model.decoder.config.pad_token_id + 1,
             model.decoder.config.d_model
@@ -160,50 +159,23 @@ def train_donut_model():
         model.config.pad_token_id = processor.tokenizer.pad_token_id
         model.config.eos_token_id = processor.tokenizer.eos_token_id
         model.config.vocab_size = len(processor.tokenizer)
+
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model.to(device)
 
-        samples = load_training_examples(PDF_DIR, JSON_DIR, limit=MAX_TRAIN_SAMPLES)
+        samples = load_training_examples(task_name, limit=MAX_TRAIN_SAMPLES)
         if not samples:
-            raise ValueError("❌ No training samples found in datasets.")
+            raise ValueError("❌ No training samples found.")
 
-        dataset = Dataset.from_list(samples)  # ✅ Defined once
-
-        # Log raw structure
-        logger.debug(f"DEBUG_DATASET_INIT: First raw sample (before map): {samples[0].keys()}")
-
-        # Preprocess the dataset (produces 'pixel_values' and 'labels')
-        logger.info("🔁 Preprocessing dataset with map...")
+        dataset = Dataset.from_list(samples)
         dataset = dataset.map(preprocess_example, remove_columns=["image", "task_prompt", "ground_truth"])
-        # tokenization is done here
-        max_label_id = max([max(example['labels']) for example in dataset])
-        logger.debug(f"📏 Max label ID in dataset: {max_label_id}")
-        logger.debug(f"📚 Tokenizer vocab size: {len(processor.tokenizer)}")
-        logger.debug(f"📐 Decoder embedding size: {model.config.vocab_size}")
-        assert max_label_id < len(processor.tokenizer), "❌ Token ID out of bounds!"
+        dataset.set_format("torch")
 
-
-        # Log structure after map
-        logger.debug(f"DEBUG_DATASET_AFTER_MAP: First element of dataset: {dataset[0].keys()}")
-        logger.debug(f"DEBUG_DATASET_AFTER_MAP: Type of pixel_values in first element: {type(dataset[0]['pixel_values'])}")
-        logger.debug(f"DEBUG_DATASET_AFTER_MAP: Type of labels in first element: {type(dataset[0]['labels'])}")
-
-        # Set format for PyTorch
-        dataset.set_format("torch") 
-        logger.info("✅ Dataset format set to 'torch'.")
-
-        # Log content of first item after map to see processed structure
-        logger.debug(f"DEBUG_DATASET_AFTER_MAP: First element of dataset: {dataset[0].keys()}")
-        logger.debug(f"DEBUG_DATASET_AFTER_MAP: Type of pixel_values in first element: {type(dataset[0]['pixel_values'])}")
-        logger.debug(f"DEBUG_DATASET_AFTER_MAP: Type of labels in first element: {type(dataset[0]['labels'])}")
-        
-        logger.info(f"🧾 Dataset columns after map and remove: {dataset.column_names}")
-        # Note: Printing dataset[0] directly might re-trigger processing if not cached
-        # logger.info(f"🧾 Example first element after map: {dataset[0]}")
-
+        output_dir = os.path.join(OUTPUT_BASE_DIR, task_name)
+        os.makedirs(output_dir, exist_ok=True)
 
         args = Seq2SeqTrainingArguments(
-            output_dir=OUTPUT_DIR,
+            output_dir=output_dir,
             per_device_train_batch_size=1,
             gradient_accumulation_steps=2,
             num_train_epochs=NUM_EPOCHS,
@@ -211,11 +183,11 @@ def train_donut_model():
             save_strategy="no",
             logging_dir="./logs",
             predict_with_generate=True,
-            remove_unused_columns=False, # Keep this to retain pixel_values, labels
+            remove_unused_columns=False,
             fp16=torch.cuda.is_available(),
             logging_steps=10,
-            save_total_limit=2,              # Avoid disk bloat
-            warmup_steps=50,
+            save_total_limit=2,
+            warmup_steps=max(1, len(dataset) // 4),
             weight_decay=0.01
         )
 
@@ -228,22 +200,22 @@ def train_donut_model():
         )
 
         logger.info("🚀 Starting training...")
-        logger.info("✅ trainer.train() completed.")  # ← Add this line
         trainer.train()
-        logger.info("✅ trainer.train() completed.")  # ← Add this AFTER it
-        model.save_pretrained(OUTPUT_DIR, safe_serialization=False)  # ← saves .bin
-        model.save_pretrained(OUTPUT_DIR, safe_serialization=True)   # ← saves .safetensors
-        processor.save_pretrained(OUTPUT_DIR)
-        logger.info(f"✅ Training completed. Model saved to {OUTPUT_DIR}")
+        logger.info("✅ Training completed.")
 
+        model.save_pretrained(output_dir, safe_serialization=False)
+        model.save_pretrained(output_dir, safe_serialization=True)
+        processor.save_pretrained(output_dir)
+        logger.info(f"✅ Model saved to {output_dir}")
 
     except Exception as e:
         error_trace = traceback.format_exc()
         logger.error(f"❌ Training failed:\n{error_trace}")
-        return { "status": "❌ Training failed.", "stderr": error_trace }
+        return {"status": "❌ Training failed.", "stderr": error_trace}
 
-# -------------------------------
-# Main Entry Point for Script Execution
-# -------------------------------
 if __name__ == "__main__":
-    train_donut_model()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task", type=str, required=True, help="Task name (e.g., program_catalog, calendar, announcements)")
+    args = parser.parse_args()
+    train_donut_model(args.task)
