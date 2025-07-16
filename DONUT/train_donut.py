@@ -207,7 +207,7 @@ def train_donut_model(task_name: str):
         args = Seq2SeqTrainingArguments(
             output_dir=str(output_dir), # Convert Path to string for HuggingFace args
             per_device_train_batch_size=1,
-            evaluation_strategy="no", # No evaluation during training
+            eval_strategy="no", # No evaluation during training
             num_train_epochs=NUM_EPOCHS,
             learning_rate=2e-5,
             save_strategy="epoch", # Save checkpoints after each epoch

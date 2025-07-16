@@ -128,29 +128,41 @@
                 <h3>Knowledge Scraper</h3>
                 <button class="close-btn" id="closeScrapeWindow">&times;</button>
             </div>
+            <div class="toolbar-popup">
+                <button id="webScrapeBtn" class="toolbar-btn">
+                    <span>+</span> Web Scraper
+                </button>
+                <button id="fileUploadBtn" class="toolbar-btn">
+                    <span>💾</span> File Upload
+                </button>
+                <button id="donutCtrlBtn" class="toolbar-btn">
+                    <span>🔄</span> Donut AI JSONifier
+                </button>
+            </div>
             <form id="scrapeForm">
-                <div class="form-group">
-                <label for="fileUpload">Upload Files (.pdf, .png, .jpeg, .txt):</label>
-                <input type="file" id="fileUpload" multiple accept=".pdf,.png,.jpg,.jpeg,.txt" />
+                <div id="webScrapeWindow" class="popup" style="display: flex;">
+                    <h2>📡 Web Scraper</h2>
+                    <textarea id="urlsInput" rows="8" placeholder="Enter URLs to scrape..."></textarea><br>
+                    <button id="saveUrlsBtn">💾 Save URLs</button>
+                    <button id="runScraperBtn">🚀 Run Scraper</button>
+                    <pre id="scrapeLogs"></pre>
                 </div>
-                <div class="form-group">
-                <label for="urlInput">Scrape from URL:</label>
-                <input type="text" id="urlInput" placeholder="https://example.com" />
+                
+                <div id="uploadWindow" class="popup" style="display: none;">
+                    <div class="form-group">
+                    <label for="fileUpload">Upload Files (.pdf, .png, .jpeg, .txt):</label>
+                    <input type="file" id="fileUpload" multiple accept=".pdf,.png,.jpg,.jpeg,.txt" />
                 </div>
-                <div class="form-actions">
-                <button type="submit" class="btn primary">Start Scraping</button>
+                <div id = "donutWindow" class="popup" style="display: none;">
+                    <h2>Donut AI JSONifier</h2>
+                    <textarea id="donutInput" rows="8" placeholder="Enter text to convert to JSON..."></textarea><br>
+                    <button id="donutConvertBtn">🔄 Convert to JSON</button>
+                    <!-- <pre id="donutOutput"></pre> -->
                 </div>
                 <div id="scrapeStatus" class="status-message"></div>
             </form>
             </div>
-            <div id="scrapeWindow" class="popup">
-                <h2>📡 Web Scraper</h2>
-                <textarea id="urlsInput" rows="8" placeholder="Enter URLs to scrape..."></textarea><br>
-                <button id="saveUrlsBtn">💾 Save URLs</button>
-                <button id="runScraperBtn">🚀 Run Scraper</button>
-                <pre id="scrapeLogs"></pre>
-                <button id="closeScrapeWindow">❌ Close</button>
-              </div>
+
         </div>
   
 
