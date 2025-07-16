@@ -9,6 +9,7 @@ from transformers import (
 )
 from PIL import Image
 import torch
+from pdf2image import convert_from_path
 
 # -------------------------------
 # Logging Setup
@@ -34,7 +35,7 @@ OUTPUT_BASE_DIR = Path("./donut-finetuned") # Where trained models will be saved
 # Initialize processor globally once
 processor = DonutProcessor.from_pretrained(MODEL_NAME)
 # -------------------------------
-# clasisfying document type
+# clasisfying document type and stitch pdfs
 # -------------------------------
 def classify_document_type(text: str) -> str:
     text = text.lower()
@@ -46,6 +47,21 @@ def classify_document_type(text: str) -> str:
         return "announcement"
     else:
         return "unknown"
+
+def stitch_pdf_to_image(pdf_path):
+    pages = convert_from_path(str(pdf_path), dpi=DPI)
+    if not pages:
+        raise ValueError(f"No pages found in PDF: {pdf_path}")
+    widths, heights = zip(*(page.size for page in pages))
+    total_height = sum(heights)
+    max_width = max(widths)
+
+    stitched_image = Image.new('RGB', (max_width, total_height), color=(255, 255, 255))
+    y_offset = 0
+    for page in pages:
+        stitched_image.paste(page, (0, y_offset))
+        y_offset += page.height
+    return stitched_image
 
 # -------------------------------
 # Data Loading (Modified to read from .jsonl files)
