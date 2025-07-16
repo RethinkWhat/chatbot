@@ -1,4 +1,3 @@
-# train_donut.py
 import os, json, traceback, logging
 from pathlib import Path
 from datasets import Dataset
@@ -9,7 +8,6 @@ from transformers import (
     Seq2SeqTrainingArguments,
 )
 from PIL import Image
-from pdf2image import convert_from_path
 import torch
 
 # -------------------------------
@@ -22,92 +20,78 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # -------------------------------
 MODEL_NAME = "naver-clova-ix/donut-base-finetuned-docvqa"
-BASE_DATA_DIR = "./datasets"
-OUTPUT_BASE_DIR = "./donut-finetuned"
 MAX_TRAIN_SAMPLES = 50
 NUM_EPOCHS = 3
 MAX_LENGTH = 768
-DPI = 100
+# DPI should match the DPI used when preparing images in prepare_all_training_data
+# If your prepare_all_training_data used 150 DPI, keep it consistent.
+DPI = 150
 
+# Define root directories for prepared data and output models
+JSONL_ROOT = Path("/app/training_jsonl") # Where .jsonl files (image_path, ground_truth) are stored
+OUTPUT_BASE_DIR = Path("./donut-finetuned-models") # Where trained models will be saved
+
+# Initialize processor globally once
 processor = DonutProcessor.from_pretrained(MODEL_NAME)
 
 # -------------------------------
-# Utilities
+# Data Loading (Modified to read from .jsonl files)
 # -------------------------------
-def stitch_pdf_to_image(pdf_path):
-    pages = convert_from_path(str(pdf_path), dpi=DPI)
-    widths, heights = zip(*(page.size for page in pages))
-    total_height = sum(heights)
-    max_width = max(widths)
-
-    stitched_image = Image.new('RGB', (max_width, total_height), color=(255, 255, 255))
-    y_offset = 0
-    for page in pages:
-        stitched_image.paste(page, (0, y_offset))
-        y_offset += page.height
-    return stitched_image
-
-def classify_document_type(filename: str) -> str:
-    lower_name = filename.lower()
-    if "calendar" in lower_name:
-        return "calendar"
-    elif "announcement" in lower_name or "memo" in lower_name:
-        return "announcement"
-    elif "catalog" in lower_name or "program" in lower_name:
-        return "program_catalog"
-    else:
-        return "generic"
-
-# -------------------------------
-# Data Loading
-# -------------------------------
-def load_training_examples(task_name: str, limit=None):
-    logger.info(f"📚 Loading training examples for task: {task_name}...")
-    pdf_dir = Path(BASE_DATA_DIR) / task_name / "pdfs"
-    json_dir = Path(BASE_DATA_DIR) / task_name / "labels"
+def load_training_examples(jsonl_path: Path, limit=None):
+    """
+    Loads training examples directly from a .jsonl file, which should contain
+    paths to pre-processed images and their corresponding JSON ground truths.
+    """
+    logger.info(f"📚 Loading training examples from JSONL: {jsonl_path}...")
     data = []
 
-    for json_file in json_dir.glob("*.json"):
-        base = json_file.stem
-        pdf_path = pdf_dir / f"{base}.pdf"
-        if not pdf_path.exists():
-            logger.warning(f"⚠️ PDF missing for {json_file.name}")
-            continue
+    if not jsonl_path.exists():
+        logger.error(f"❌ JSONL file not found: {jsonl_path}")
+        return []
 
-        try:
-            stitched_img = stitch_pdf_to_image(pdf_path)
-        except Exception as e:
-            logger.warning(f"⚠️ Failed to process PDF {pdf_path.name}: {e}")
-            continue
+    # Infer task_name from the jsonl_path (e.g., 'ProgCat' from 'ProgCat.jsonl')
+    task_name = jsonl_path.stem
 
-        try:
-            with open(json_file, "r", encoding="utf-8") as f:
-                label = json.load(f)
-        except Exception as e:
-            logger.warning(f"⚠️ Invalid JSON in {json_file.name}: {e}")
-            continue
+    with open(jsonl_path, "r", encoding="utf-8") as f:
+        for line_num, line in enumerate(f):
+            if limit and len(data) >= limit:
+                break
+            try:
+                entry = json.loads(line)
+                image_path = Path(entry["image"])
+                ground_truth = entry["ground_truth"]
 
-        prompt = f"<s_docvqa><s_question>extract structured JSON for {task_name}</s_question><s_answer>"
-        data.append({
-            "image": stitched_img,
-            "task_prompt": prompt,
-            "ground_truth": json.dumps(label, ensure_ascii=False)
-        })
+                if not image_path.exists():
+                    logger.warning(f"⚠️ Image missing for entry in {jsonl_path} line {line_num+1}: {image_path}, skipping.")
+                    continue
 
-        if limit and len(data) >= limit:
-            break
+                # Open the pre-processed image (e.g., the stitched PNG)
+                image = Image.open(image_path)
+                if image.mode != "RGB":
+                    image = image.convert("RGB")
 
-    logger.info(f"✅ Loaded {len(data)} training samples.")
+                # Customize task prompt based on the document type (task_name)
+                # This prompt is crucial for Donut to understand the extraction task for this specific type
+                task_prompt = f"<s_docvqa><s_question>extract structured JSON for {task_name} document</s_question><s_answer>"
+
+                data.append({
+                    "image": image,
+                    "task_prompt": task_prompt,
+                    "ground_truth": ground_truth
+                })
+            except json.JSONDecodeError as e:
+                logger.warning(f"⚠️ Invalid JSON in {jsonl_path} line {line_num+1}: {e}, skipping.")
+            except Exception as e:
+                logger.warning(f"⚠️ Error processing entry in {jsonl_path} line {line_num+1}: {e}, skipping.")
+
+    logger.info(f"✅ Loaded {len(data)} training samples from {jsonl_path.name}.")
     return data
 
 # -------------------------------
-# Preprocessing
+# Preprocessing (Remains the same)
 # -------------------------------
 def preprocess_example(example):
     image = example["image"]
-    if image.mode != "RGB":
-        image = image.convert("RGB")
-
     pixel_values = processor.image_processor(image, return_tensors="pt").pixel_values.squeeze(0)
     text = example["task_prompt"] + example["ground_truth"]
     tokenized = processor.tokenizer(
@@ -118,14 +102,14 @@ def preprocess_example(example):
         truncation=True
     )
     labels = tokenized.input_ids.squeeze(0)
-    labels[labels == processor.tokenizer.pad_token_id] = -100
+    labels[labels == processor.tokenizer.pad_token_id] = -100 # Mask padding tokens
     return {
         "pixel_values": pixel_values,
         "labels": labels
     }
 
 # -------------------------------
-# Collate Function
+# Collate Function (Remains the same)
 # -------------------------------
 def collate_fn(batch):
     pixel_values = torch.stack([x["pixel_values"] for x in batch])
@@ -137,24 +121,42 @@ def collate_fn(batch):
     return {"pixel_values": pixel_values, "labels": labels}
 
 # -------------------------------
-# Training
+# Training Function (Modified to use .jsonl paths)
 # -------------------------------
 def train_donut_model(task_name: str):
+    """
+    Trains a Donut model for a specific document type (task_name).
+    Assumes .jsonl training data for this task is already prepared
+    and located at {JSONL_ROOT}/{task_name}.jsonl.
+    """
     try:
-        logger.info("⏳ Initializing model...")
+        logger.info(f"⏳ Initializing model for training task: {task_name}...")
+
+        # Construct the path to the .jsonl file for this specific task
+        jsonl_path_for_task = JSONL_ROOT / f"{task_name}.jsonl"
+
+        # Construct the output directory for this trained model
+        output_dir = OUTPUT_BASE_DIR / task_name
+        output_dir.mkdir(parents=True, exist_ok=True) # Ensure output directory exists
+
         model = VisionEncoderDecoderModel.from_pretrained(MODEL_NAME)
 
+        # Handle special tokens and model configuration
         if "<s_docvqa>" not in processor.tokenizer.get_vocab():
             processor.tokenizer.add_special_tokens({"additional_special_tokens": ["<s_docvqa>"]})
             model.decoder.resize_token_embeddings(len(processor.tokenizer))
 
-        from transformers.models.mbart.modeling_mbart import MBartLearnedPositionalEmbedding
-        MAX_NEW_POSITION_EMBEDDINGS = 1536
-        model.decoder.model.decoder.embed_positions = MBartLearnedPositionalEmbedding(
-            MAX_NEW_POSITION_EMBEDDINGS + model.decoder.config.pad_token_id + 1,
-            model.decoder.config.d_model
-        )
-        model.decoder.config.max_position_embeddings = MAX_NEW_POSITION_EMBEDDINGS
+        # Adjust position embeddings (Crucial for handling longer sequences)
+        # MAX_LENGTH + 2 is a common heuristic (for EOS and potentially start tokens)
+        if MAX_LENGTH + 2 > model.decoder.config.max_position_embeddings:
+            logger.info(f"Adjusting decoder max_position_embeddings from {model.decoder.config.max_position_embeddings} to {MAX_LENGTH + 2}")
+            from transformers.models.mbart.modeling_mbart import MBartLearnedPositionalEmbedding
+            model.decoder.model.decoder.embed_positions = MBartLearnedPositionalEmbedding(
+                MAX_LENGTH + 2,
+                model.decoder.config.d_model
+            )
+            model.decoder.config.max_position_embeddings = MAX_LENGTH + 2
+
         model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids("<s_docvqa>")
         model.config.pad_token_id = processor.tokenizer.pad_token_id
         model.config.eos_token_id = processor.tokenizer.eos_token_id
@@ -163,30 +165,29 @@ def train_donut_model(task_name: str):
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model.to(device)
 
-        samples = load_training_examples(task_name, limit=MAX_TRAIN_SAMPLES)
+        # Load samples using the .jsonl path for the current task
+        samples = load_training_examples(jsonl_path_for_task, limit=MAX_TRAIN_SAMPLES)
         if not samples:
-            raise ValueError("❌ No training samples found.")
+            raise ValueError(f"❌ No training samples found in {jsonl_path_for_task}. Cannot train model for {task_name}.")
 
         dataset = Dataset.from_list(samples)
         dataset = dataset.map(preprocess_example, remove_columns=["image", "task_prompt", "ground_truth"])
         dataset.set_format("torch")
-
-        output_dir = os.path.join(OUTPUT_BASE_DIR, task_name)
-        os.makedirs(output_dir, exist_ok=True)
+        logger.info("✅ Dataset format set to 'torch'.")
 
         args = Seq2SeqTrainingArguments(
-            output_dir=output_dir,
+            output_dir=str(output_dir), # Convert Path to string for HuggingFace args
             per_device_train_batch_size=1,
             gradient_accumulation_steps=2,
             num_train_epochs=NUM_EPOCHS,
             learning_rate=3e-5,
-            save_strategy="no",
-            logging_dir="./logs",
+            save_strategy="epoch", # Save checkpoints after each epoch
+            logging_dir=os.path.join(str(output_dir), "logs"), # Logs specific to this output_dir
             predict_with_generate=True,
             remove_unused_columns=False,
             fp16=torch.cuda.is_available(),
             logging_steps=10,
-            save_total_limit=2,
+            save_total_limit=2, # Keep only the last 2 checkpoints
             warmup_steps=max(1, len(dataset) // 4),
             weight_decay=0.01
         )
@@ -199,23 +200,56 @@ def train_donut_model(task_name: str):
             data_collator=collate_fn
         )
 
-        logger.info("🚀 Starting training...")
+        logger.info(f"🚀 Starting training for {task_name}...")
         trainer.train()
-        logger.info("✅ Training completed.")
+        logger.info(f"✅ Training for {task_name} completed.")
 
-        model.save_pretrained(output_dir, safe_serialization=False)
+        # Save the final model and processor for this task
         model.save_pretrained(output_dir, safe_serialization=True)
         processor.save_pretrained(output_dir)
-        logger.info(f"✅ Model saved to {output_dir}")
+        logger.info(f"✅ Model and processor for {task_name} saved to {output_dir}")
+
+        return { "status": f"✅ Donut model trained successfully for '{task_name}' type." }
 
     except Exception as e:
         error_trace = traceback.format_exc()
-        logger.error(f"❌ Training failed:\n{error_trace}")
-        return {"status": "❌ Training failed.", "stderr": error_trace}
+        logger.error(f"❌ Training failed for '{task_name}' type:\n{error_trace}")
+        return { "status": "❌ Training failed.", "stderr": error_trace }
 
+# -------------------------------
+# Main Entry Point for Script Execution
+# -------------------------------
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=str, required=True, help="Task name (e.g., program_catalog, calendar, announcements)")
-    args = parser.parse_args()
-    train_donut_model(args.task)
+    logger.info("--- Starting Donut Model Training for All Document Types ---")
+
+    # Ensure the base directory for output models exists
+    OUTPUT_BASE_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Check if the JSONL root directory exists and contains prepared data
+    if not JSONL_ROOT.exists():
+        logger.error(f"❌ JSONL root directory not found: {JSONL_ROOT}.")
+        logger.info("Please ensure you have run the '/prepare/training-data' API endpoint to generate .jsonl files first.")
+    else:
+        # Iterate through all .jsonl files in the JSONL_ROOT to get each task_name
+        trained_tasks = []
+        jsonl_files_found = list(JSONL_ROOT.glob("*.jsonl"))
+
+        if not jsonl_files_found:
+            logger.warning(f"⚠️ No .jsonl files found in {JSONL_ROOT}. Nothing to train.")
+        else:
+            for jsonl_file in jsonl_files_found:
+                # The task_name is derived from the filename of the .jsonl file (e.g., "ProgCat" from "ProgCat.jsonl")
+                task_name = jsonl_file.stem
+
+                logger.info(f"\n--- Initiating training for document type: {task_name} ---")
+                result = train_donut_model(task_name)
+
+                if "status" in result and "✅" in result["status"]:
+                    trained_tasks.append(task_name)
+                else:
+                    logger.error(f"Failed to train model for {task_name}. Details: {result.get('stderr', 'No error details provided.')}")
+
+            if trained_tasks:
+                logger.info(f"\n--- Successfully trained models for the following document types: {', '.join(trained_tasks)} ---")
+            else:
+                logger.warning("\n--- No Donut models were successfully trained. Check logs for errors. ---")
