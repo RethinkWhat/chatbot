@@ -29,7 +29,7 @@ DPI = 150
 
 # Define root directories for prepared data and output models
 JSONL_ROOT = Path("/app/training_jsonl") # Where .jsonl files (image_path, ground_truth) are stored
-OUTPUT_BASE_DIR = Path("./donut-finetuned-models") # Where trained models will be saved
+OUTPUT_BASE_DIR = Path("./donut-finetuned") # Where trained models will be saved
 
 # Initialize processor globally once
 processor = DonutProcessor.from_pretrained(MODEL_NAME)
