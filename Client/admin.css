@@ -162,6 +162,13 @@ body {
     margin-bottom: 30px;
     flex-wrap: wrap;
 }
+.toolbar-popup {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+}
 
 .toolbar-btn {
     display: flex;
@@ -431,6 +438,12 @@ body {
     color: var(--white);
 }
 
+.popup{
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .admin-header {
@@ -546,6 +559,10 @@ body {
 
 .blinking {
   animation: blinkFade .2s infinite;
+}
+
+.slowBlinking {
+  animation: blinkFade 1s infinite;
 }
 
 /* for rendering menu list */

@@ -163,112 +163,12 @@ class AdminPanel {
     }, 4000);
   }
   
-
-  // async checkAuthentication() {
-  //   try {
-  //     const resp = await fetch('admin_controller.php?action=list', {
-  //       credentials: 'same-origin',
-  //     });
-  //     const text = await resp.text();
-  //     console.log('Raw checkAuthentication response:', text);
-
-  //     if (!text) {
-  //       console.error('Empty response from server.');
-  //       return;
-  //     }
-
-  //     const json = JSON.parse(text);
-  //     if (json.status === 'success') {
-  //       this.menuData = json.data.reduce((acc, item) => {
-  //         acc[item.id] = item;
-  //         return acc;
-  //       }, {});
-  //       this.showAdminPanel();
-  //     } else {
-  //       console.warn('Authentication check failed or no menu data:', json.message);
-  //       this.showLoginPanel();
-  //     }
-  //   } catch (err) {
-  //     console.error('Failed to parse or fetch:', err);
-  //     this.showLoginPanel();
-  //   }
-  // }
   async checkAuthentication() {
     const isAuthenticated = sessionStorage.getItem('slu_admin_auth') === 'true';
       if (isAuthenticated) {
         this.showAdminPanel();
       }
   }
-
-  // async handleLogin(e) {
-  //   e.preventDefault();
-  //   const form = new FormData(this.loginForm);
-  //   try {
-  //     const resp = await fetch('admin_controller.php?action=login', {
-  //       method: 'POST',
-  //       body: form,
-  //       credentials: 'same-origin',
-  //     });
-  //     const text = await resp.text();
-  //     console.log('Raw login response:', text);
-  //     const json = JSON.parse(text);
-  //     if (json.status === 'success') {
-  //       this.showStatus(json.message, 'success');
-  //       await this.checkAuthentication();
-  //     } else {
-  //       this.showStatus(json.message, 'error');
-  //     }
-  //   } catch (err) {
-  //     console.error('Login error:', err);
-  //     this.showStatus('Login failed: Invalid server response.', 'error');
-  //   }
-  // }
-
-  // showAdminPanel() {
-  //   this.loginSection.style.display = 'none';
-  //   this.adminContent.style.display = 'block';
-  //   this.renderMenuList();
-  // }
-
-  // showLoginPanel() {
-  //   this.adminContent.style.display = 'none';
-  //   this.loginSection.style.display = 'flex';
-  // }
-
-  // async logout() {
-  //     try {
-  //       await fetch('admin_controller.php?action=logout', {
-  //         method: 'GET', // send GET request to logout
-  //         credentials: 'same-origin',
-  //       });
-  //       this.menuData = {};
-  //       this.showLoginPanel();
-  //       this.showStatus('Logged out successfully.', 'info');
-  //       this.menuList.innerHTML = '';
-  //     } catch (error) {
-  //       console.error('Logout failed:', error);
-  //       this.showStatus('Logout failed. Please try again.', 'error');
-  //     }
-  //   }
-
-  // async loadMenu() {
-  //   try {
-  //     const resp = await fetch('admin_controller.php?action=list');
-  //     if (!resp.ok) throw new Error('Failed to load menu');
-  //     const json = await resp.json();
-  //     if (json.status === 'success') {
-  //       this.menuData = json.data.reduce((acc, item) => {
-  //         acc[item.id] = item;
-  //         return acc;
-  //       }, {});
-  //       this.renderMenuList();
-  //     } else {
-  //       console.error('Error loading menu:', json.message);
-  //     }
-  //   } catch (err) {
-  //     console.error('Fetch error:', err);
-  //   }
-  // }
 
   async handleLogin(e) {
             e.preventDefault();
@@ -690,7 +590,7 @@ document.getElementById("saveUrlsBtn").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("runScrapeBtn").addEventListener("click", async () => {
+document.getElementById("runScraperBtn").addEventListener("click", async () => {
   const output = document.getElementById("scrapeOutput");
   output.textContent = "⏳ Running web scraper...";
 
@@ -713,4 +613,32 @@ document.getElementById("runScrapeBtn").addEventListener("click", async () => {
 
 document.getElementById("closeScrapeWindow").addEventListener("click", () => {
   document.getElementById("scrapeWindow").classList.remove("active");
+});
+
+// add even listener for the btns inside scrap window popup:
+document.getElementById("webScrapeBtn").addEventListener("click", () => {
+  document.getElementById("webScrapeWindow").style.display = "flex";
+  document.getElementById("webScrapeBtn").classList.add("slowBlinking");
+  document.getElementById("uploadWindow").style.display = "none";
+  document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
+  document.getElementById("donutWindow").style.display = "none";
+  document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
+});
+
+document.getElementById("fileUploadBtn").addEventListener("click", () => {
+  document.getElementById("webScrapeWindow").style.display = "none";
+  document.getElementById("webScrapeBtn").classList.remove("slowBlinking");
+  document.getElementById("uploadWindow").style.display = "flex";
+  document.getElementById("fileUploadBtn").classList.add("slowBlinking");
+  document.getElementById("donutWindow").style.display = "none";
+  document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
+});
+
+document.getElementById("donutCtrlBtn").addEventListener("click", () => {
+  document.getElementById("webScrapeWindow").style.display = "none";
+  document.getElementById("webScrapeBtn").classList.remove("slowBlinking");
+  document.getElementById("uploadWindow").style.display = "none";
+  document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
+  document.getElementById("donutWindow").style.display = "flex";
+  document.getElementById("donutCtrlBtn").classList.add("slowBlinking");
 });
