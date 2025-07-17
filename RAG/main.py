@@ -64,36 +64,6 @@ llm_backend = os.getenv("LLM_BACKEND", "ollama")
 rag_pipeline = RAGPipeline(llm_backend="ollama")
 os.makedirs("knowledge/cleaned", exist_ok=True)
 
-#scraper: clean the data by paraphrasing?
-@app.post("/upload")
-async def upload_files(files: list[UploadFile] = File(...)):
-    upload_folder = "knowledge/raw"
-    os.makedirs(upload_folder, exist_ok=True)
-    os.makedirs("knowledge/cleaned", exist_ok=True)
-
-    saved = []
-
-    for file in files:
-        ext = file.filename.split(".")[-1].lower()
-        if ext in ["pdf", "png", "jpg", "jpeg", "txt"]:
-            save_path = os.path.join(upload_folder, file.filename)
-            with open(save_path, "wb") as f:
-                shutil.copyfileobj(file.file, f)
-            saved.append(file.filename)
-
-            # # Optional: If it's a .txt, immediately clean it
-            # if ext == "txt":
-            #     with open(save_path, "r", encoding="utf-8") as f:
-            #         raw = f.read()
-
-            #     cleaned = rag_pipeline.paraphrase_with_ollama(raw, file.filename)
-            #     clean_path = os.path.join("knowledge/cleaned", file.filename)
-            #     with open(clean_path, "w", encoding="utf-8") as cf:
-            #         cf.write(cleaned)
-        else:
-            continue
-
-    return {"uploaded": saved}
 
 @app.get("/health")
 async def health_check():
@@ -356,25 +326,6 @@ def jsonify_single_file(filename: str):
 
     return {"status": "success", "json_file": output_path}
 
-#pdf to JSON
-@app.post("/jsonify-pdf/{filename}")
-def jsonify_pdf_to_json(filename: str):
-    rag = RAGPipeline()
-
-    pdf_path = os.path.join("knowledge/raw", filename)
-    if not os.path.exists(pdf_path):
-        raise HTTPException(status_code=404, detail="PDF not found")
-
-    json_output = rag.jsonify_pdf_with_layoutlm(pdf_path)
-
-    # Save JSON
-    output_path = os.path.join("knowledge/testJson", Path(filename).stem + ".json")
-    os.makedirs("knowledge/testJson", exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(json_output, f, indent=2, ensure_ascii=False)
-
-    return {"filename": filename, "status": "success", "output_file": output_path}
-
 #upload files
 @app.post("/upload")
 async def upload_files(files: list[UploadFile] = File(...)):
@@ -410,48 +361,5 @@ async def trigger_image_scanner():
     scan_images(folder="knowledge/txt")
     return {"status": "image scan done"}
 
-@app.post("/trigger/clean")
-async def trigger_cleaning():
-    os.makedirs("knowledge/cleaned", exist_ok=True)
-    rag = RAGPipeline()
-    count = 0
-    for filename in os.listdir("knowledge/txt"):
-        if filename.endswith(".txt"):
-            with open(f"knowledge/txt/{filename}", "r", encoding="utf-8") as f:
-                raw = f.read()
-            cleaned = rag.paraphrase_with_ollama(raw, filename)
-            with open(f"knowledge/cleaned/{filename}", "w", encoding="utf-8") as f:
-                f.write(cleaned)
-            count += 1
-    return {"status": "cleaning complete", "files": count}
-
-@app.post("/trigger/jsonify")
-async def trigger_jsonify():
-    if not rag_pipeline:
-        return JSONResponse(status_code=500, content={"message": "RAG pipeline not initialized"})
-
-    source_dir = "knowledge/txt"
-    output_dir = "knowledge/json"
-    os.makedirs(output_dir, exist_ok=True)
-
-    converted = []
-    for fname in os.listdir(source_dir):
-        if fname.endswith(".txt"):
-            with open(os.path.join(source_dir, fname), "r", encoding="utf-8") as f:
-                content = f.read()
-            jsonified = rag_pipeline.jsonifyTxt(content)
-            if jsonified:
-                json_path = os.path.join(output_dir, Path(fname).stem + ".json")
-                with open(json_path, "w", encoding="utf-8") as out:
-                    json.dump(jsonified, out, indent=2)
-                converted.append(fname)
-
-    return {"status": "converted", "files": converted}
-
-@app.post("/trigger/index")
-async def trigger_vector_index():
-    builder = BuildVectorIndex()
-    num_chunks = builder.build_index()  # Capture return value
-    return {"status": "vector index built", "chunks": num_chunks}
 
 

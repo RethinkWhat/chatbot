@@ -8,7 +8,7 @@ from transformers import DonutProcessor, VisionEncoderDecoderModel
 import torch
 
 FINETUNED_MODELS_ROOT = Path("/app/donut-finetuned")
-MAX_LENGTH = 768  # Adjust based on your model's max length
+MAX_LENGTH = 1536  # Adjust based on your model's max length
 DPI=200  # DPI for PDF to image conversion
 
 def classify_document_type(filename):
@@ -16,9 +16,11 @@ def classify_document_type(filename):
     if "calendar" in lower_name:
         return "calendar"
     elif "announcement" in lower_name or "memo" in lower_name:
-        return "announcement"
+        return "announcements"
     elif "catalog" in lower_name or "program" in lower_name:
         return "program_catalog"
+    elif "school-prospectus" in lower_name or "organization" in lower_name:
+        return "school_info"
     else:
         return "generic"
 
@@ -66,8 +68,11 @@ def run_inference_on_pdf(pdf_path, output_json_path):
     
     print(f"[INFO] Processing {os.path.basename(pdf_path)} using model '{doc_type}'")
     pixel_values = processor(images=images, return_tensors="pt").pixel_values.to(model.device)
-    task_prompt = f"<s_docvqa><s_question>extract structured JSON for {doc_type} document</s_question><s_answer>"
+    task_prompt = f"<s_docvqa><s_question>Convert the document into structured JSON format for {doc_type} document</s_question><s_answer>"
+    print(f"[DEBUG] Prompt: {task_prompt}")
+
     decoder_input_ids = processor.tokenizer(task_prompt, add_special_tokens=False, return_tensors="pt").input_ids.to(model.device)
+    print(f"[DEBUG] Decoder input tokens: {processor.tokenizer.convert_ids_to_tokens(decoder_input_ids[0])}")
 
     with torch.no_grad():
         outputs = model.generate(
@@ -75,6 +80,7 @@ def run_inference_on_pdf(pdf_path, output_json_path):
             decoder_input_ids=decoder_input_ids,
             max_length=MAX_LENGTH,
             early_stopping=True,
+            repetition_penalty=1.5,  # penalize repetitive tokens
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
             bad_words_ids=[[processor.tokenizer.unk_token_id]]

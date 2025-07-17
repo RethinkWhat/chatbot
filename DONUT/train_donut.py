@@ -7,7 +7,7 @@ from transformers import (
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
 )
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import torch
 from pdf2image import convert_from_path
 
@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 # -------------------------------
 MODEL_NAME = "naver-clova-ix/donut-base-finetuned-docvqa"
 #MAX_TRAIN_SAMPLES = 30
-NUM_EPOCHS = 4
-MAX_LENGTH = 768
+NUM_EPOCHS = 30
+MAX_LENGTH = 1536
 # DPI should match the DPI used when preparing images in prepare_all_training_data
 # If your prepare_all_training_data used 150 DPI, keep it consistent.
 DPI = 200
@@ -101,7 +101,7 @@ def load_training_examples(jsonl_path: Path, limit=None):
 
                 # Customize task prompt based on the document type (task_name)
                 # This prompt is crucial for Donut to understand the extraction task for this specific type
-                task_prompt = f"<s_docvqa><s_question>extract structured JSON for {task_name} document</s_question><s_answer>"
+                task_prompt = f"<s_docvqa><s_question>Convert the document into structured JSON format for {task_name} document</s_question><s_answer>"
 
                 data.append({
                     "image": image,
@@ -117,7 +117,7 @@ def load_training_examples(jsonl_path: Path, limit=None):
     return data
 
 # -------------------------------
-# Preprocessing (Remains the same)
+# Preprocessing (Remains the same), and verify files
 # -------------------------------
 def preprocess_example(example):
     image = example["image"]
@@ -137,8 +137,29 @@ def preprocess_example(example):
         "labels": labels
     }
 
+    
+def verify_images_and_labels(dataset):
+    for i, item in enumerate(dataset):
+        try:
+            img = item["image"]
+
+            if isinstance(img, str):
+                with Image.open(img) as im:
+                    im.verify()  # valid only right after open
+            elif isinstance(img, Image.Image):
+                img.load()  # alternative to verify for opened images
+            else:
+                raise TypeError(f"Unsupported image type: {type(img)}")
+
+            # Check JSON validity
+            json.loads(item["ground_truth"])
+
+        except (UnidentifiedImageError, json.JSONDecodeError, TypeError, OSError) as e:
+            print(f"❌ Error in item {i}: {item['image']}")
+            print(f"   {e}")
+
 # -------------------------------
-# Collate Function (Remains the same)
+# Collate Function 
 # -------------------------------
 def collate_fn(batch):
     pixel_values = torch.stack([x["pixel_values"] for x in batch])
@@ -200,6 +221,8 @@ def train_donut_model(task_name: str):
             raise ValueError(f"❌ No training samples found in {jsonl_path_for_task}. Cannot train model for {task_name}.")
 
         dataset = Dataset.from_list(samples)
+        verify_images_and_labels(dataset)
+
         dataset = dataset.map(preprocess_example, remove_columns=["image", "task_prompt", "ground_truth"])
         dataset.set_format("torch")
         logger.info("✅ Dataset format set to 'torch'.")
@@ -207,6 +230,8 @@ def train_donut_model(task_name: str):
         args = Seq2SeqTrainingArguments(
             output_dir=str(output_dir), # Convert Path to string for HuggingFace args
             per_device_train_batch_size=1,
+            gradient_accumulation_steps=4,
+            #dataloader_num_workers=1,
             eval_strategy="no", # No evaluation during training
             num_train_epochs=NUM_EPOCHS,
             learning_rate=2e-5,
@@ -216,7 +241,7 @@ def train_donut_model(task_name: str):
             remove_unused_columns=False,
             fp16=False,
             logging_strategy = "steps",
-            logging_steps=10,
+            logging_steps=1,
             save_total_limit=2, # Keep only the last 2 checkpoints
             warmup_steps=max(1, len(dataset) // 4),
             weight_decay=0.01

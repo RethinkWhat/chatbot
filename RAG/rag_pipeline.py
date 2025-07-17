@@ -242,264 +242,32 @@ Answer:
         print("LLM RESPONSE: ", response )
         return response
     
-    #new sol: JSONify pdf 
-    def jsonify_pdf_with_layoutlm(self, pdf_path: str) -> dict:
-        processor = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-base", revision="main")
-        model = LayoutLMv3ForQuestionAnswering.from_pretrained("microsoft/layoutlmv3-base")
-
-        pages = convert_from_path(pdf_path, dpi=300)
-        if not pages:
-            return {"error": "No pages found in PDF"}
-
-        results = []
-        for i, image in enumerate(pages):
-            encoding = processor(images=image, return_tensors="pt")
-            with torch.no_grad():
-                outputs = model(**encoding)
-            # NOTE: LayoutLMv3 by default is for QA tasks; needs fine-tuning or zero-shot formatting
-            # Here we just simulate a placeholder structure
-            results.append({
-                "page": i + 1,
-                "raw_text": pytesseract.image_to_string(image, lang="eng+fil").strip()
-            })
-
-        return {"document": Path(pdf_path).name, "pages": results}
+# code regarding old JSONifier is deleted; New ones follow:
+def extract_json_from_txt(text, task_description="Convert this education document to structured JSON."):
+    prompt = f"{task_description}\n\n{text.strip()}\n\nJSON:"
     
-    def jsonifyTxt(self, raw_text_or_path: str, is_pdf_path=False) -> dict:
-        """
-        If `is_pdf_path` is True, treat `raw_text_or_path` as a PDF file path to extract via LayoutLMv3.
-        Else, fallback to legacy LLM JSONification (if needed).
-        """
-        try:
-            if is_pdf_path:
-                outputs = self.layoutlm.extract_from_pdf(raw_text_or_path)
-                # Optionally post-process outputs here if needed
-                return {
-                    "source": os.path.basename(raw_text_or_path),
-                    "layoutlmv3_output": outputs
-                }
-            else:
-                raise NotImplementedError("Legacy LLM-based extraction is disabled. Use PDF path with LayoutLMv3.")
-        except Exception as e:
-            return {"error": str(e)}
-    # def jsonifyTxt(self, text: str) -> dict:
-    #     """
-    #     Clean the input text and use LLM to convert it to structured JSON output.
-    #     """
-    #     cleaned_text = self._clean_text_for_jsonification(raw_text)
-        
+    generator = pipeline("text-generation", model="gpt2", max_length=1536)
+    response = generator(prompt, do_sample=True, top_p=0.9, temperature=0.7)[0]['generated_text']
 
-    #     system_prompt = (
-    #         "You are a document-to-JSON converter.\n"
-    #         "You must extract structured information from the document and return only a valid JSON object.\n"
-    #         "Make sure to retain full names (even if split across lines) and roles like Dean, Professor, Justice, etc.\n"
-    #         "Do NOT drop prefixes like 'DR.', 'PROF.', 'CA JUSTICE', or 'ATTY.'.\n"
-    #         "Do NOT include explanations, formatting hints, or markdown.\n"
-    #         "Do NOT wrap the output in triple backticks or say 'Here is the JSON'.\n"
-    #         "Avoid returning empty arrays or fields unless they are clearly needed.\n"
-    #         "Preserve factual details, and group items logically.\n"
-    #         "Only return valid JSON parseable by `json.loads()` in Python.\n"
-    #     )
-    #     prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
+    # Extract only JSON part (basic cleaning)
+    try:
+        json_start = response.index("{")
+        json_data = response[json_start:]
+        parsed = json.loads(json_data)
+        return parsed
+    except Exception as e:
+        return {"error": str(e), "raw_output": response}
 
-    #     response = self.get_ollama_completion(instruction)
-    #     cleaned = self.extract_json_block(response)
+def batch_convert_txts_to_json(input_dir, output_dir):
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    for txt_file in Path(input_dir).glob("*.txt"):
+        with open(txt_file, "r", encoding="utf-8") as f:
+            text = f.read()
 
-    #     # Try to extract valid JSON content
-    #     try:
-    #         parsed = json.loads(cleaned)
-    #         return parsed
-    #     except Exception as e:
-    #         print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
-    #         return {"raw_output": response, "error": str(e)}
+        result = extract_json_from_txt(text)
+        out_path = Path(output_dir) / (txt_file.stem + ".json")
 
-#testing new jsonification method
-    def jsonify_all_cleaned_txt(self):
-        input_dir = "knowledge/cleaned"
-        output_dir = "knowledge/testJson"
-        os.makedirs(output_dir, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
 
-        for filename in os.listdir(input_dir):
-            if not filename.endswith(".txt"):
-                continue
-
-            txt_path = os.path.join(input_dir, filename)
-            json_path = os.path.join(output_dir, Path(filename).stem + ".json")
-
-            if os.path.exists(json_path):
-                print(f"[Skip] Already exists: {json_path}")
-                continue
-
-            with open(txt_path, "r", encoding="utf-8") as f:
-                raw_text = f.read()
-
-            print(f"[Processing] → {filename}")
-            result = self.jsonifyTxt(raw_text)
-
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(result, f, indent=2, ensure_ascii=False)
-
-            print(f"[✓] JSON saved → {json_path}")
-            
-    def extract_json_block(self, text: str) -> str:
-        match = re.search(r"```(?:json)?\s*({.*?})\s*```", text, re.DOTALL)
-        if match:
-            return match.group(1)
-        match = re.search(r"({.*})", text, re.DOTALL)
-        return match.group(1) if match else text.strip()
-
-    def classify_document(self, text: str) -> str:
-        upper = text.upper()
-
-        keyword_sets = {
-            "program_catalog": [
-                "PROGRAM EDUCATIONAL OBJECTIVES", "PEO", "PLO",
-                "LEARNING OUTCOMES", "CAREER PATHS", "PROGRAM OUTCOMES"
-            ],
-            "schedule": [
-                "COURSE SCHEDULE", "UNITS", "LLM", "TIME", "DATE", "INSTRUCTOR", "PROFESSOR"
-            ],
-            "law_course": [
-                "JUSTICE", "SUPREME COURT", "LEGAL THEORY", "JURISPRUDENCE", "LAW", "ATTY.", "CA JUSTICE"
-            ],"acad_calendar": [
-                "REGISTRATION", "EXAMS", "SEMESTER", "HOLY WEEK", "GRADUATION", "BREAK", "BACCALAUREATE", "FOUNDATION WEEK"
-            ],
-        }
-
-        match_scores = {}
-        for doc_type, keywords in keyword_sets.items():
-            match_scores[doc_type] = sum(kw in upper for kw in keywords)
-
-        # Pick the type with the most keyword matches
-        best_match = max(match_scores, key=match_scores.get)
-        if match_scores[best_match] > 1:  # Require at least 2 matches to be confident
-            return best_match
-        return "generic"
-
-
-
-    def _clean_text_for_jsonification(self, text: str) -> str:
-        # Remove control characters
-        text = re.sub(r'[\x0c\u000c\f]+', '', text)
-        text = re.sub(r'[\t\r]+', '', text)
-        text = re.sub(r'[ \xa0]+', ' ', text)
-
-        # Remove headings like 'S C H O O L  O F  A C C O U N T A N C Y'
-        text = re.sub(r'\b(?:[A-Z] ?){4,}\b', '', text)
-
-        # Fix hyphenation at line breaks
-        text = re.sub(r'-\n', '', text)
-
-        # Collapse multiple spaces and newlines
-        text = re.sub(r'\n{2,}', '\n\n', text)
-        text = re.sub(r'[ ]{2,}', ' ', text)
-        text = re.sub(r'\s+\n', '\n', text)
-
-        # Fix bullet lines (e.g., lines ending in ;) split by newlines
-        lines = text.split('\n')
-        fixed_lines = []
-        buffer = ""
-
-        for line in lines:
-            if not line.strip():
-                fixed_lines.append(buffer.strip())
-                buffer = ""
-                continue
-
-            # If line ends with ; or , or incomplete sentence, assume it's a bullet
-            if line.strip()[-1:] in (';', ',') or line.strip()[-1].islower():
-                buffer += " " + line.strip()
-            else:
-                buffer += " " + line.strip()
-                fixed_lines.append(buffer.strip())
-                buffer = ""
-
-        if buffer:
-            fixed_lines.append(buffer.strip())
-
-        return '\n'.join(fixed_lines).strip()
-
-
-    def _clean_llm_json_output(self, output: str) -> str:
-        output = re.sub(r"^```(?:json)?\\s*", "", output.strip(), flags=re.IGNORECASE)
-        output = re.sub(r"\\s*```$", "", output.strip())
-        output = re.sub(r"(?i)^here is.*json.*?:", "", output.strip())
-        return output.strip()
-    def get_ollama_completion(self, prompt: str) -> str:
-        if not self.llmModel:
-            raise RuntimeError("LLM is not initialized.")
-
-        try:
-            non_streaming_llm = ChatOllama(
-                model="llama3:8b",
-                base_url="http://ollama:11434",
-                temperature=0.4,
-                streaming=False  # Force non-streaming
-            )
-            response = non_streaming_llm.invoke(prompt)
-            if isinstance(response, str):
-                return response.strip()
-            if hasattr(response, "content"):
-                return response.content.strip()
-            if isinstance(response, dict) and "content" in response:
-                return response["content"].strip()
-            return str(response).strip()
-        except Exception as e:
-            print(f"[ERROR] Failed to get Ollama completion: {e}")
-            return ""
-        
-    def get_prompt_by_type(self, doc_type: str, cleaned_text: str) -> str:
-        prompt_file = f"prompts/{doc_type}.txt"
-        if not os.path.exists(prompt_file):
-            prompt_file = "prompts/fallback_general.txt"
-
-        with open(prompt_file, "r", encoding="utf-8") as f:
-            template = f.read()
-
-        return template.replace("{{CONTENT}}", cleaned_text.strip())
-    
-# JSONification using Donut
-    def get_layoutlm_completion(image_path):
-        try:
-            result = subprocess.run(
-                ["/venv-donut/bin/python", "donut_worker.py", image_path],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True,
-                text=True
-            )
-            return result.stdout.strip()
-        except subprocess.CalledProcessError as e:
-            print("[ERROR] Donut subprocess failed:", e.stderr)
-            return ""
-
-    def jsonify_pdf_with_layoutlm(self, pdf_path: str) -> dict:
-        from transformers import DonutProcessor, VisionEncoderDecoderModel
-        from PIL import Image
-        import pdf2image
-
-        processor = DonutProcessor.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa", use_fast=False)
-        model = VisionEncoderDecoderModel.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa")
-
-        images = pdf2image.convert_from_path(pdf_path, dpi=200)
-        if not images:
-            return {"error": "No pages found in PDF"}
-
-        image = images[0].convert("RGB")
-        pixel_values = processor(image, return_tensors="pt").pixel_values
-        task_prompt = "<s_docvqa><s_question>Extract all structured information in JSON</s_question><s_answer>"
-        decoder_input_ids = processor.tokenizer(task_prompt, return_tensors="pt").input_ids
-
-        outputs = model.generate(
-            pixel_values,
-            decoder_input_ids=decoder_input_ids,
-            max_length=1024,
-            early_stopping=True,
-            pad_token_id=processor.tokenizer.pad_token_id
-        )
-
-        decoded = processor.batch_decode(outputs, skip_special_tokens=True)[0]
-        try:
-            return json.loads(decoded)
-        except Exception as e:
-            return {"raw_output": decoded, "error": str(e)}
+        print(f"✅ Processed {txt_file.name}")
