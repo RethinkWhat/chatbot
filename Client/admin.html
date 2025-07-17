@@ -153,8 +153,8 @@
                       <div class="section">
                         <h2>📝 Edit URLs to Scrape</h2>
                         <textarea id="urlsEditor" rows="8" cols="80" placeholder="Enter one URL per line..."></textarea><br>
-                        <button id="loadUrlsBtn" class="toolbar-btn">🔄 Load URLs</button>
-                        <button id="saveUrlsBtn" class="toolbar-btn">💾 Save URLs</button>
+                        <button id="loadUrlsBtn" class="toolbar-btn" type="button">🔄 Load URLs</button>
+                        <button id="saveUrlsBtn" class="toolbar-btn" type="button">💾 Save URLs</button>
                         <pre id="urlsStatus" class="output-box"></pre>
                       </div>
                 </div>
@@ -171,8 +171,9 @@
                 </div>
                 <div id = "donutWindow" class="popup" style="display: none;">
                     <h2>AI JSONifier</h2>
-                    <button id="donutConvertBtn">🔄 JSONify data</button>
+                    <button id="jsonConvertBtn">🔄 JSONify data</button>
                     <!-- <pre id="donutOutput"></pre> -->
+                     <pre id="JSONifyOutput" class="output-box"></pre>
                 </div>
                 <div id="scrapeStatus" class="status-message"></div>
             </form>

@@ -21,6 +21,8 @@ class AdminPanel {
     //scraper popup window items
     this.loadUrlsBtn = document.getElementById('loadUrlsBtn');
     this.saveUrlsBtn = document.getElementById('saveUrlsBtn');
+    this.jsonConvertBtn = document.getElementById('jsonConvertBtn');
+    this.scrapeBtn = document.getElementById('scrapeBtn');
 
     this.currentEditingId = null;
     this.menuData = {};//edits that is applied on DB
@@ -49,9 +51,6 @@ class AdminPanel {
       this.showResetConfirmation();
     });
     document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
-    document.getElementById("scrapeBtn").addEventListener("click", () => {
-      document.getElementById("scrapeWindow").classList.add("active");
-    });
     document.getElementById("closeScrapeWindow").addEventListener("click", () => {
       document.getElementById("scrapeWindow").classList.remove("active");
     });
@@ -485,7 +484,7 @@ document.getElementById("scrapeBtn").addEventListener("click", async () => {
   try {
     const res = await fetch("http://localhost:8000/scrape/urls");
     const data = await res.json();
-    document.getElementById("urlsInput").value = data.urls.join("\n");
+    document.getElementById("urlsEditor").value = data.urls.join("\n");
   } catch (err) {
     console.error("Failed to load urls.txt:", err);
   }
@@ -597,15 +596,59 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   document.getElementById("uploadOutput").textContent = JSON.stringify(data.uploaded, null, 2);
 
   //also call pdf/img -> txt
-  if (data.uploaded.length > 0) {
-    const res2 = await fetch("http://localhost:8000/convert", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ files: data.uploaded })
+  const output = document.getElementById("uploadOutput");
+      output.textContent = "⏳ Scanning PDFs...";
+      try {
+        const res = await fetch("http://localhost:8000/trigger/pdf", {
+          method: "POST"
+        });
+        const data = await res.json();
+        output.textContent = "✅ " + data.status;
+      } catch (err) {
+        output.textContent = "❌ Failed to scan PDFs.";
+        console.error(err);
+      }
+    
+      try{
+        const res = await fetch("http://localhost:8000/trigger/image", {
+          method: "POST"
+        });
+        const data = await res.json();
+        output.textContent += "\n✅ " + data.status;
+      } catch (err) {
+        output.textContent += "\n❌ Failed to scan images.";
+        console.error(err);
+      }
+});
+
+//JSONify data using Hugging face LLM
+// document.getElementById("jsonConvertBtn").addEventListener("click", async () => {
+//   const output = document.getElementById("JSONifyOutput");
+//   output.textContent = "⏳ JSONifying data...";
+//   try {
+//     const res = await fetch("http://localhost:8000/jsonify", {
+//       method: "POST"
+//     });
+//     const data = await res.json();
+//     output.textContent = "✅ " + data.status;
+//   } catch (err) {
+//     output.textContent = "❌ Failed to JSONify data.";
+//     console.error(err);
+//   }
+// });
+
+//jsonify using LLM (batch process)
+document.getElementById("jsonConvertBtn").addEventListener("click", async () => {
+  const output = document.getElementById("JSONifyOutput");
+  output.textContent = "⏳ JSONifying data...";
+  try {
+    const res = await fetch("http://localhost:8500/batch-txt2json", {
+      method: "POST"
     });
-    const convertData = await res2.json();
-    document.getElementById("convertOutput").textContent = JSON.stringify(convertData, null, 2);
-  } else {
-    document.getElementById("convertOutput").textContent = "No files converted.";
+    const data = await res.json();
+    output.textContent = "✅ " + data.status;
+  } catch (err) {
+    output.textContent = "❌ Failed to JSONify data.";
+    console.error(err);
   }
 });

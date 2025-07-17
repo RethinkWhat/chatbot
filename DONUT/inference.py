@@ -12,9 +12,9 @@ FINETUNED_MODELS_ROOT = Path("/app/donut-finetuned")
 MAX_LENGTH = 1536
 DPI = 200
 
-# Load online Hugging Face LLM pipeline
-print("[INFO] Initializing Hugging Face LLM pipeline (smolLM3-6b)...")
-llm_pipeline = pipeline("text-generation", model="HuggingFaceTB/smolLM3-6b")
+# # Load online Hugging Face LLM pipeline
+# print("[INFO] Initializing Hugging Face LLM pipeline (smolLM3-6b)...")
+# llm_pipeline = pipeline("text-generation", model="HuggingFaceTB/smolLM3-6b")
 
 
 def classify_document_type(filename):
@@ -101,20 +101,20 @@ def run_inference_on_pdf(pdf_path, output_json_path):
         parsed = json.loads(result)
         results.append(parsed)
     except json.JSONDecodeError:
-        print("[WARNING] Invalid JSON. Triggering OCR and online LLM fallback.")
-        ocr_text = pytesseract.image_to_string(images)
-        print(f"[OCR TEXT] {ocr_text.strip()[:1000]}\n[...truncated]")
+        # print("[WARNING] Invalid JSON. Triggering OCR and online LLM fallback.")
+        # ocr_text = pytesseract.image_to_string(images)
+        # print(f"[OCR TEXT] {ocr_text.strip()[:1000]}\n[...truncated]")
 
-        prompt = f"Convert the following text into structured JSON format :\n\n{ocr_text[:3000]}"
-        llm_response = llm_pipeline(prompt, max_new_tokens=1024)[0]['generated_text']
-        print(f"[LLM OUTPUT] {llm_response[:1000]}\n[...truncated]")
+        # prompt = f"Convert the following text into structured JSON format :\n\n{ocr_text[:3000]}"
+        # llm_response = llm_pipeline(prompt, max_new_tokens=1024)[0]['generated_text']
+        # print(f"[LLM OUTPUT] {llm_response[:1000]}\n[...truncated]")
 
-        try:
-            llm_json = json.loads(llm_response)
-            results.append(llm_json)
-        except json.JSONDecodeError:
-            results.append({"error": "Invalid JSON from LLM", "raw_output": llm_response})
-
+        # try:
+        #     llm_json = json.loads(llm_response)
+        #     results.append(llm_json)
+        # except json.JSONDecodeError:
+            #results.append({"error": "Invalid JSON from LLM", "raw_output": llm_response})
+        results.append({"error": "Invalid JSON from LLM", "raw_output": results})
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
     print(f"[DONE] Saved to {output_json_path}")

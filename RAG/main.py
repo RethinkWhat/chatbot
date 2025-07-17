@@ -290,13 +290,6 @@ async def get_json_file(filename: str):
         return {"content": json.load(f)}
 
 
-@app.post("/knowledge/json/{filename}")
-async def save_json_file(filename: str, data: dict = Body(...)):
-    path = os.path.join("knowledge", "json", filename)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data["content"], f, indent=2, ensure_ascii=False)
-    return {"status": "saved"}
-
 @app.get("/knowledge/txt")
 def list_txt_files():
     files = [f for f in os.listdir("knowledge/txt") if f.endswith(".txt")]
@@ -378,7 +371,7 @@ async def trigger_pdf_scanner():
 
 @app.post("/trigger/image")
 async def trigger_image_scanner():
-    scan_images(folder="knowledge/txt")
+    scan_images(input_folder="knowledge/txt")
     return {"status": "image scan done"}
 
 # are we still building index? Or are we weaviating?
@@ -387,6 +380,4 @@ async def trigger_image_scanner():
 #     builder = BuildVectorIndex()
 #     num_chunks = builder.build_index()  # Capture return value
 #     return {"status": "vector index built", "chunks": num_chunks}
-
-
 

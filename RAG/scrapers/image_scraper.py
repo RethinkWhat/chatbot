@@ -9,7 +9,7 @@ import pytesseract
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
-def scan_images(input_folder="knowledge/raw", output_folder="knowledge/txt"):
+def scan_images(input_folder="knowledge/raw", output_folder="knowledge/raw"):
     os.makedirs(input_folder, exist_ok=True)
     os.makedirs(output_folder, exist_ok=True)
     valid_extensions = (".png", ".jpg", ".jpeg", ".bmp", ".tiff")
