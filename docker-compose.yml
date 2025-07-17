@@ -112,6 +112,18 @@ services:
       - ./RAG/knowledge/raw:/app/knowledge/raw
       - ./RAG/knowledge/testJson:/app/knowledge/testJson
 
+  smol:
+    build:
+      context: ./smol
+      dockerfile: Dockerfile.smol
+    container_name: smollm3
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./smol:/app
+      - ./RAG/knowledge/raw:/app/knowledge/raw
+      - ./RAG/knowledge/testJson:/app/knowledge/testJson
+
 
 volumes:
   ollama_data:

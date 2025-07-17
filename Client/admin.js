@@ -595,4 +595,17 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   });
   const data = await res.json();
   document.getElementById("uploadOutput").textContent = JSON.stringify(data.uploaded, null, 2);
+
+  //also call pdf/img -> txt
+  if (data.uploaded.length > 0) {
+    const res2 = await fetch("http://localhost:8000/convert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ files: data.uploaded })
+    });
+    const convertData = await res2.json();
+    document.getElementById("convertOutput").textContent = JSON.stringify(convertData, null, 2);
+  } else {
+    document.getElementById("convertOutput").textContent = "No files converted.";
+  }
 });
