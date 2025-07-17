@@ -18,6 +18,10 @@ class AdminPanel {
     this.menuForm = document.getElementById('menuForm');
     this.statusMessage = document.getElementById('statusMessage');
 
+    //scraper popup window items
+    this.loadUrlsBtn = document.getElementById('loadUrlsBtn');
+    this.saveUrlsBtn = document.getElementById('saveUrlsBtn');
+
     this.currentEditingId = null;
     this.menuData = {};//edits that is applied on DB
     this.draftMenuData = {};//edits yet to be saved
@@ -51,48 +55,6 @@ class AdminPanel {
     document.getElementById("closeScrapeWindow").addEventListener("click", () => {
       document.getElementById("scrapeWindow").classList.remove("active");
     });
-    document.getElementById("scrapeForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const status = document.getElementById("scrapeStatus");
-      const files = document.getElementById("fileUpload").files;
-      const url = document.getElementById("urlInput").value.trim();
-      const formData = new FormData();
-    
-      if (files.length > 0) {
-        for (let file of files) {
-          formData.append("files", file);
-        }
-      }
-    
-      if (url) {
-        formData.append("url", url);
-      }
-    
-      try {
-        const res = await fetch("http://localhost:8000/scrape", {
-          method: "POST",
-          body: formData
-        });
-    
-        const data = await res.json();
-        if (data.status === "success") {
-          status.textContent = "Scraping completed successfully!";
-          status.className = "status-message success show";
-        } else {
-          status.textContent = data.message || "Scraping failed.";
-          status.className = "status-message error show";
-        }
-      } catch (err) {
-        console.error("Scrape failed:", err);
-        status.textContent = "Error sending scrape request.";
-        status.className = "status-message error show";
-      }
-    
-      setTimeout(() => {
-        status.classList.remove("show");
-      }, 4000);
-    });
-    document.getElementById("scrapeForm").addEventListener("submit", (e) => this.handleScrapeForm(e));
 
     
     document.getElementById('closeWindow').addEventListener('click', () => this.closeMenuWindow());
@@ -115,53 +77,7 @@ class AdminPanel {
       }
     });
   }
-  async handleScrapeForm(e) {
-    e.preventDefault();
-    const status = document.getElementById("scrapeStatus");
-    const files = document.getElementById("fileUpload").files;
-    const url = document.getElementById("urlInput").value.trim();
-    const formData = new FormData();
-  
-    if (files.length > 0) {
-      for (let file of files) {
-        formData.append("files", file);
-      }
-    }
-  
-    if (url) {
-      formData.append("url", url);
-    }
-  
-    status.textContent = "Processing...";
-    status.className = "status-message info show";
-    status.style.display = "block";
-  
-    try {
-      const res = await fetch("http://localhost:8000/scrape", {
-        method: "POST",
-        body: formData
-      });
-  
-      const data = await res.json();
-  
-      if (data.status === "success") {
-        status.textContent = "Scraping completed successfully!";
-        status.className = "status-message success show";
-      } else {
-        status.textContent = data.message || "Scraping failed.";
-        status.className = "status-message error show";
-      }
-    } catch (err) {
-      console.error("Scrape failed:", err);
-      status.textContent = "Error sending scrape request.";
-      status.className = "status-message error show";
-    }
-  
-    setTimeout(() => {
-      status.classList.remove("show");
-      status.style.display = "none";
-    }, 4000);
-  }
+
   
   async checkAuthentication() {
     const isAuthenticated = sessionStorage.getItem('slu_admin_auth') === 'true';
@@ -575,41 +491,6 @@ document.getElementById("scrapeBtn").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("saveUrlsBtn").addEventListener("click", async () => {
-  const urls = document.getElementById("urlsInput").value;
-  try {
-    const res = await fetch("http://localhost:8000/scrape/urls", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ urls })
-    });
-    const data = await res.json();
-    alert(data.status);
-  } catch (err) {
-    console.error("Failed to save urls.txt:", err);
-  }
-});
-
-document.getElementById("runScraperBtn").addEventListener("click", async () => {
-  const output = document.getElementById("scrapeOutput");
-  output.textContent = "⏳ Running web scraper...";
-
-  try {
-    const res = await fetch("http://localhost:8000/scrape/run", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({}) // or remove if your API doesn’t expect a body
-    });
-
-    const data = await res.json();
-    output.textContent = data.status || "⚠️ No response.";
-  } catch (err) {
-    output.textContent = "❌ Web scraper failed to run.";
-    console.error("Scraper error:", err);
-  }
-});
 
 document.getElementById("closeScrapeWindow").addEventListener("click", () => {
   document.getElementById("scrapeWindow").classList.remove("active");
@@ -641,4 +522,77 @@ document.getElementById("donutCtrlBtn").addEventListener("click", () => {
   document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
   document.getElementById("donutWindow").style.display = "flex";
   document.getElementById("donutCtrlBtn").classList.add("slowBlinking");
+});
+
+//web scraper triggered, shows logger (run scrapper when form is submitted)
+document.getElementById("scrapeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const depth = document.getElementById("depth").value;
+  const output = document.getElementById("scrapeOutput");
+  output.textContent = "⏳ Running web scraper...";
+  try {
+    const res = await fetch("http://localhost:8000/trigger/scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ depth: parseInt(depth) })
+    });
+    const data = await res.json();
+    output.textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    output.textContent = "❌ Error during scraping.";
+    console.error(err);
+  }
+});
+
+//loads url when the load url button is clicked
+document.getElementById("loadUrlsBtn").addEventListener("click", async () => {
+  const output = document.getElementById("urlsStatus");
+  output.textContent = "⏳ Loading URLs...";
+  try {
+    const res = await fetch("http://localhost:8000/urls");
+    const data = await res.json();
+    document.getElementById("urlsEditor").value = data.urls.join("\n");
+    output.textContent = "✅ URLs loaded.";
+  } catch (err) {
+    output.textContent = "❌ Failed to load URLs.";
+    console.error(err);
+  }
+});
+// Save updated content to urls.txt
+document.getElementById("saveUrlsBtn").addEventListener("click", async () => {
+  const output = document.getElementById("urlsStatus");
+  const content = document.getElementById("urlsEditor").value
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.length > 0); // Remove empty lines
+
+  output.textContent = "⏳ Saving URLs...";
+  try {
+    const res = await fetch("http://localhost:8000/urls", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls: content })
+    });
+    const data = await res.json();
+    output.textContent = "✅ " + data.status;
+  } catch (err) {
+    output.textContent = "❌ Failed to save URLs.";
+    console.error(err);
+  }
+});
+
+//receive uploaded form
+document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = document.getElementById("uploadInput");
+  const formData = new FormData();
+  for (const file of input.files) {
+    formData.append("files", file);
+  }
+  const res = await fetch("http://localhost:8000/upload", {
+    method: "POST",
+    body: formData
+  });
+  const data = await res.json();
+  document.getElementById("uploadOutput").textContent = JSON.stringify(data.uploaded, null, 2);
 });

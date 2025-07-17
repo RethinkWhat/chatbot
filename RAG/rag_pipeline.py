@@ -242,21 +242,8 @@ Answer:
         print("LLM RESPONSE: ", response )
         return response
     
-# code regarding old JSONifier is deleted; New ones follow:
-def extract_json_from_txt(text, task_description="Convert this education document to structured JSON."):
-    prompt = f"{task_description}\n\n{text.strip()}\n\nJSON:"
-    
-    generator = pipeline("text-generation", model="gpt2", max_length=1536)
-    response = generator(prompt, do_sample=True, top_p=0.9, temperature=0.7)[0]['generated_text']
+# code regarding old JSONifier is deleted; New ones follow. See Main.py:
 
-    # Extract only JSON part (basic cleaning)
-    try:
-        json_start = response.index("{")
-        json_data = response[json_start:]
-        parsed = json.loads(json_data)
-        return parsed
-    except Exception as e:
-        return {"error": str(e), "raw_output": response}
 
 def batch_convert_txts_to_json(input_dir, output_dir):
     Path(output_dir).mkdir(parents=True, exist_ok=True)

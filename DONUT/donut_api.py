@@ -15,7 +15,7 @@ from train_donut import train_donut_model, classify_document_type,stitch_pdf_to_
 
 logging.basicConfig(level=logging.INFO)
 from datetime import datetime
-from inference import run_inference_batch
+from donut_inference import run_inference_batch
 
 app = FastAPI()
 DPI = 200

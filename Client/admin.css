@@ -610,3 +610,7 @@ body {
   color: #d00;
   border: 1px solid red;
 }
+
+form#uploadForm{
+    justify-items: center;
+}

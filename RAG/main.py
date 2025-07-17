@@ -69,6 +69,8 @@ os.makedirs("knowledge/cleaned", exist_ok=True)
 async def health_check():
     return {"status": "ok"}
 
+#===================================
+# CONTENT BELOW IS API ENDPT FOR ACCESSING BACKEND, DEDICATED FOR ADMIN CRUDS
 # The menu route
 @app.get("/menu")
 async def get_menu():
@@ -308,23 +310,41 @@ def get_txt_content(filename: str):
     with open(path, "r", encoding="utf-8") as f:
         return {"content": f.read()}
 
-@app.post("/trigger/jsonify/{filename}")
-def jsonify_single_file(filename: str):
-    input_path = f"knowledge/txt/{filename}"
-    output_path = f"knowledge/testJson/{filename.replace('.txt', '.json')}"
 
-    if not os.path.exists(input_path):
-        raise HTTPException(status_code=404, detail="File not found")
-    rag = RAGPipeline()
-    with open(input_path, "r", encoding="utf-8") as f:
-        raw_text = f.read()
+# JSONify txts
+# @app.post("/trigger/jsonify-txt/{filename}")
+# def jsonify_single_file(filename: str):
+#     input_path = f"knowledge/txt/{filename}"
+#     output_path = f"knowledge/testJson/{filename.replace('.txt', '.json')}"
 
-    result = rag.jsonifyTxt(raw_text)
+#     if not os.path.exists(input_path):
+#         raise HTTPException(status_code=404, detail="File not found")
+#     rag = RAGPipeline()
+#     with open(input_path, "r", encoding="utf-8") as f:
+#         raw_text = f.read()
 
-    with open(output_path, "w", encoding="utf-8") as out:
-        json.dump(result, out, indent=2, ensure_ascii=False)
+#     result = rag.jsonifyTxt(raw_text)
 
-    return {"status": "success", "json_file": output_path}
+#     with open(output_path, "w", encoding="utf-8") as out:
+#         json.dump(result, out, indent=2, ensure_ascii=False)
+
+#     return {"status": "success", "json_file": output_path}
+
+@app.post("/trigger/jsonify-txt")
+def batch_convert_txts_to_json(input_dir, output_dir):
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    for txt_file in Path(input_dir).glob("*.txt"):
+        with open(txt_file, "r", encoding="utf-8") as f:
+            text = f.read()
+
+        result = extract_json_from_txt(text)
+        out_path = Path(output_dir) / (txt_file.stem + ".json")
+
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+
+        print(f"✅ Processed {txt_file.name}")
+
 
 #upload files
 @app.post("/upload")
@@ -360,6 +380,13 @@ async def trigger_pdf_scanner():
 async def trigger_image_scanner():
     scan_images(folder="knowledge/txt")
     return {"status": "image scan done"}
+
+# are we still building index? Or are we weaviating?
+# @app.post("/trigger/index")
+# async def trigger_vector_index():
+#     builder = BuildVectorIndex()
+#     num_chunks = builder.build_index()  # Capture return value
+#     return {"status": "vector index built", "chunks": num_chunks}
 
 
 
