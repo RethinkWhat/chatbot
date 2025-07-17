@@ -7,7 +7,7 @@ from langchain_core.output_parsers import StrOutputParser
 import torch
 import uuid
 import posthog
-import requests, json, time, os, re
+import requests, json, time, os
 
 
 import weaviate
@@ -42,14 +42,14 @@ class RAGPipeline:
         #     grpc_secure=False
         # )
         # questions = client.collections.create(
-        #     name="NaviBot",
+        #     name="navibot45",
         #     vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
         #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
         #         model="nomic-embed-text",                               # The model to use
         #     ),
         #     generative_config=Configure.Generative.ollama(              # Configure the Ollama generative integration
         #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
-        #         model="llama3.2",                                       # The model to use
+        #         model="llama3:8b",                                       # The model to use
         #     )
         # )
         # client.close()  # Free up resources
@@ -63,7 +63,7 @@ class RAGPipeline:
         #     grpc_secure=False
         # )
 
-        # navibot = client.collections.get("NaviBot")
+        # navibot = client.collections.get("navibot45")
         # # Step 4: Read and parse all JSON files
         # data = []
         # for filename in os.listdir("knowledge/json"):
@@ -113,7 +113,7 @@ class RAGPipeline:
         #             print(f"First failed object: {failed_objects[0]}")
 
         #         # Fetch and print all objects
-        #         questions = client.collections.get("NaviBot")  # You can increase the limit as needed
+        #         questions = client.collections.get("navibot45")  # You can increase the limit as needed
         #         # Print nicely
         #         results = questions.query.fetch_objects(limit=100)
 
@@ -128,11 +128,11 @@ class RAGPipeline:
 
         try:
             # Select LLM backend
-            print("Using Ollama (llama3) as LLM")
+            print("Using Ollama (LLAMA3:8b) as LLM")
             self.llmModel = ChatOllama(
                 model="llama3:8b", 
                 base_url="http://ollama:11434",
-                temperature=0.4,
+                temperature=1,
                 streaming=True  # Enable streaming
                 )
             self.memory = ConversationBufferWindowMemory(k=0)
@@ -200,16 +200,16 @@ class RAGPipeline:
             grpc_secure=False
         )
 
-        questions = client.collections.get("NaviBot")
+        questions = client.collections.get("navibot45")
 
         response = questions.query.near_text(
                     query=question,
-                    limit=10,
+                    limit=3,
                  #   distance=0.50,
                     return_metadata=["distance"]  
         )
 
-        questions = client.collections.get("NaviBot")  # This should be the collection where you ingested the data
+        questions = client.collections.get("navibot45")  # This should be the collection where you ingested the data
 
 
         client.close()
@@ -217,123 +217,86 @@ class RAGPipeline:
 
 
         context = "\n\n".join([
-            f"{obj.properties['title'].split(' _ ')[-1]} - Document {i+1}:\n{obj.properties['answer']}  (Distance: {obj.metadata.distance:.4f}):"
+            f"Document {i+1}: {obj.properties['title'].split(' _ ')[-1]} - {obj.properties['answer']} \n"
             for i, obj in enumerate(response.objects)
         ])
 
         prompt = f"""
-You are a helpful assistant. Use the information provided below to answer the user's question directly and concisely. 
+You are a helpful assistant designed to answer questions only for students based strictly on the provided documents.
 
-- Do NOT say "Based on the documents" or "According to the text".
-- Do NOT refer to any documents, sources, or context.
-- Just answer as if you already know the information.
-- If the answer is not found, say {apologyMsg}. Do not add extra information.
 
-Information:
+- The current date is July 17, 2025.
+- Only use information that is explicitly stated in the documents.
+- Do not make assumptions or infer meaning beyond what is clearly written.
+- Job opportunities, descriptions, or objectives are not equivalent to subjects or course listings.
+- I expect you to answer on based off the documents.
+- Don't apologize.
+- If more than one document answers the question combine them to form an answer.
+- Always provide all relevant details from the documents in a clear and specific way. If multiple documents contain related facts, combine them into a single detailed response.
+- Do not mention the documents you used or say according to the context or based on the provided documents. Just give me the answer.  
+- When asked “Who is [person]?”, respond with their full name **and** any titles, roles, or affiliations mentioned in the documents. Do not omit available details.
+
+---
+
+DOCUMENTS:  
 {context}
 
-Question: {question}
 
-Answer:
+END OF DOCUMENTS
 
+QUESTION:  
+{question}
+
+ANSWER:
 """
-
         response = self.chain.predict(input=prompt)
         print("LLM RESPONSE: ", response )
-        return response
+        
+        #Validation
+        
+        prompt = f""""
+{question}
+
+Given the question above could this be a correct answer: {response}.
+
+Answer with "yes" or "no" ONLY.
+"""
+        ans = self.llmModel.invoke(prompt)
+        print("Validation answer: ", ans)
+        print("Validation answer: ", ans.content.lower())
+        if "yes" in ans.content.lower():
+            return response
+        else: return apologyMsg
     
-    def jsonifyTxt(self, text: str) -> dict:
-        """
-        Clean the input text and use LLM to convert it to structured JSON output.
-        """
-        cleaned_text = self._clean_text_for_jsonification(raw_text)
+    # def jsonifyTxt(self, text: str) -> dict:
+    #     system_prompt = (
+    #         "You are a document-to-JSON converter. Given an academic document, "
+    #         "extract structured JSON with balanced depth. Use flat keys for scalar fields, "
+    #         "but group similar items (e.g., objectives, learning outcomes) under common prefixes."
+    #     )
+    #     prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
 
-        system_prompt = (
-            "You are a document-to-JSON converter.\n"
-            "You must extract structured information from the document and return only a valid JSON object.\n"
-            "Make sure to retain full names (even if split across lines) and roles like Dean, Professor, Justice, etc.\n"
-            "Do NOT drop prefixes like 'DR.', 'PROF.', 'CA JUSTICE', or 'ATTY.'.\n"
-            "Do NOT include explanations, formatting hints, or markdown.\n"
-            "Do NOT wrap the output in triple backticks or say 'Here is the JSON'.\n"
-            "Avoid returning empty arrays or fields unless they are clearly needed.\n"
-            "Preserve factual details, and group items logically.\n"
-            "Only return valid JSON parseable by `json.loads()` in Python.\n"
-        )
-        prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
+    #     response = self.get_ollama_completion(prompt)
+        
+    #     try:
+    #         return json.loads(response)
+    #     except json.JSONDecodeError:
+    #         print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
+    #         return {"raw_output": response}
 
-        response = self.get_ollama_completion(instruction)
-        cleaned = self.extract_json_block(response)
+    # def get_ollama_completion(self, prompt: str) -> str:
+    #     if not self.llmModel:
+    #         raise RuntimeError("LLM is not initialized.")
 
-        # Try to extract valid JSON content
-        try:
-            parsed = json.loads(cleaned)
-            return parsed
-        except Exception as e:
-            print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
-            return {"raw_output": response, "error": str(e)}
-
-    def extract_json_block(self, text: str) -> str:
-        """
-        Try to extract a clean JSON block from a possibly messy LLM output.
-        """
-        # Remove triple backticks and preambles
-        text = re.sub(r"```(?:json)?", "", text)
-        text = re.sub(r"```", "", text)
-        text = text.strip()
-
-        # Try to locate a JSON object
-        match = re.search(r"{[\s\S]*}", text)
-        if match:
-            return match.group(0)
-
-        # Fallback: just return the full text
-        return text
-
-
-
-    def _clean_text_for_jsonification(self, text: str) -> str:
-        text = re.sub(r'[\x0c\f]+', '', text)  # Remove form feeds
-        text = re.sub(r'-\n', '', text)        # Join hyphenated breaks
-        text = re.sub(r'\s+\n', '\n', text)    # Clean trailing whitespace
-        text = re.sub(r'[^\S\r\n]{2,}', ' ', text)  # Collapse extra spaces
-        text = re.sub(r'\n{2,}', '\n\n', text)      # Normalize spacing
-
-        # Join numbered lists split on separate lines (e.g., "1.\n" to "1. ")
-        text = re.sub(r'\n(\d+)\.\s*\n', r'\n\1. ', text)
-
-        # Fix broken bullet-style lines without numbers
-        text = re.sub(r'(?<=[a-zA-Z0-9,;])\n(?=[a-zA-Z])', ' ', text)
-
-        # Remove fake spaced-out headings
-        text = re.sub(r'\b(?:[A-Z] ?){3,}\b', '', text)
-
-        return text.strip()
-
-
-    def _clean_llm_json_output(self, output: str) -> str:
-        output = re.sub(r"^```(?:json)?\\s*", "", output.strip(), flags=re.IGNORECASE)
-        output = re.sub(r"\\s*```$", "", output.strip())
-        output = re.sub(r"(?i)^here is.*json.*?:", "", output.strip())
-        return output.strip()
-    def get_ollama_completion(self, prompt: str) -> str:
-        if not self.llmModel:
-            raise RuntimeError("LLM is not initialized.")
-
-        try:
-            non_streaming_llm = ChatOllama(
-                model="llama3:8b",
-                base_url="http://ollama:11434",
-                temperature=0.4,
-                streaming=False  # Force non-streaming
-            )
-            response = non_streaming_llm.invoke(prompt)
-            if isinstance(response, str):
-                return response.strip()
-            if hasattr(response, "content"):
-                return response.content.strip()
-            if isinstance(response, dict) and "content" in response:
-                return response["content"].strip()
-            return str(response).strip()
-        except Exception as e:
-            print(f"[ERROR] Failed to get Ollama completion: {e}")
-            return ""
+    #     try:
+    #         non_streaming_llm = ChatOllama(
+    #             model="deepseek-coder:6.7b",
+    #             base_url="http://ollama:11434",
+    #             temperature=0.4,
+    #             streaming=False  # Force non-streaming
+    #         )
+    #         response = non_streaming_llm.invoke(prompt)
+    #         return response.content if hasattr(response, "content") else str(response)
+    #     except Exception as e:
+    #         print(f"[ERROR] Failed to get Ollama completion: {e}")
+    #         return ""

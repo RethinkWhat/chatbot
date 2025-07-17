@@ -1,4 +1,0 @@
-FROM llama3
-PARAMETER temperature 0.7
-PARAMETER top_p 0.9
-WEIGHTS ./models/tuned-model.gguf

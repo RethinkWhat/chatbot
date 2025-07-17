@@ -26,7 +26,7 @@
     "Adapt to new and emerging technologies in the pursuit of continuing professional growth.",
     "Practice Christian, Louisian, and Filipino values in their personal and professional endeavors and actively participate in the service of the community."
   ],
-  "Year 1 First Semester": [
+  "First Year First Semester": [
     {
       "Course No.": "CS 111",
       "Course Descriptive Title": "Introduction to Computing",
@@ -88,7 +88,7 @@
       "Pre-requisite": ""
     }
   ],
-  "Year 1 Short Term": [
+  "First Year Short Term": [
     {
       "Course No.": "CS 131",
       "Course Descriptive Title": "Software Modeling and Analysis",
@@ -102,7 +102,7 @@
       "Pre-requisite": ""
     }
   ],
-  "Year 1 Second Semester": [
+  "First Year Second Semester": [
     {
       "Course No.": "CS 121",
       "Course Descriptive Title": "Digital Logic Design",
@@ -164,7 +164,7 @@
       "Pre-requisite": ""
     }
   ],
-  "Year 2 First Semester": [
+  "Second Year First Semester": [
     {
       "Course No.": "CS 211",
       "Course Descriptive Title": "Data Structures",
@@ -226,7 +226,7 @@
       "Pre-requisite": ""
     }
   ],
-  "Year 2 Second Semester": [
+  "Second Year Second Semester": [
     {
       "Course No.": "CS 221",
       "Course Descriptive Title": "Information Management",
@@ -282,7 +282,7 @@
       "Pre-requisite": "CFE 103"
     }
   ],
-  "Year 3 First Semester": [
+  "Third Year First Semester": [
     {
       "Course No.": "CS 311",
       "Course Descriptive Title": "Applications Development",
@@ -338,7 +338,7 @@
       "Pre-requisite": "CFE 103, 104"
     }
   ],
-  "Year 3 Short Term": [
+  "Third Year Short Term": [
     {
       "Course No.": "CS 331",
       "Course Descriptive Title": "Practicum",
@@ -346,7 +346,7 @@
       "Pre-requisite": "3rd year standing"
     }
   ],
-  "Year 3 Second Semester": [
+  "Third Year Second Semester": [
     {
       "Course No.": "CS 321",
       "Course Descriptive Title": "Artificial Intelligence",
@@ -396,7 +396,7 @@
       "Pre-requisite": "CFE 105A"
     }
   ],
-  "Year 4 First Semester": [
+  "Fourth Year First Semester": [
     {
       "Course No.": "CS 411",
       "Course Descriptive Title": "Information Assurance and Security",
@@ -446,7 +446,7 @@
       "Pre-requisite": "CFE 105B"
     }
   ],
-  "Year 4 Second Semester": [
+  "Fourth Year Second Semester": [
     {
       "Course No.": "CS 421",
       "Course Descriptive Title": "Parallel and Distributed Computing",

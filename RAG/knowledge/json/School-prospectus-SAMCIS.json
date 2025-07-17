@@ -2,12 +2,12 @@
   "title": "School Prospectus School of Accountancy, Management, Computing, and Information Studies (SAMCIS)",
   "university": {
     "name": "Saint Louis University",
-    "location": "Baguio City, Philippines"
+    "location": "Maryheights Campus, Bakakeng, 2600 Baguio City, Philippines"
   },
   "school": {
-    "name": "School of Accountancy, Management, Computing, and Information Studies (SAMCIS)",
+    "name": "School of Accountancy, Management, Computing, and Information Studies",
     "motto": "Sapientia Aedificat – 'Wisdom Builds'",
-    "campus": "Maryheights Campus, Bakakeng, 2600 Baguio City, Philippines",
+    "campus location": "Maryheights Campus, Bakakeng, 2600 Baguio City, Philippines",
     "history": {
       "merged_from": [
         "School of Accountancy and Business Management (formerly College of Commerce, one of the original schools of Saint Louis College)",
