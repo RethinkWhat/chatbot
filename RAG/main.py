@@ -292,12 +292,12 @@ async def get_json_file(filename: str):
 
 @app.get("/knowledge/txt")
 def list_txt_files():
-    files = [f for f in os.listdir("knowledge/txt") if f.endswith(".txt")]
+    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt")]
     return {"files": files}
 
 @app.get("/knowledge/txt/{filename}")
 def get_txt_content(filename: str):
-    path = os.path.join("knowledge/txt", filename)
+    path = os.path.join("knowledge/raw", filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="File not found")
     with open(path, "r", encoding="utf-8") as f:
@@ -360,7 +360,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
 
 @app.post("/trigger/scrape")
 async def trigger_web_scraper():
-    run_scraper(urls_path="urls.txt", output_dir="knowledge/txt", depth=2)
+    run_scraper(urls_path="urls.txt", output_dir="knowledge/raw", depth=2)
     return {"status": "web scrape done"}
 
 @app.post("/trigger/pdf")
@@ -371,7 +371,7 @@ async def trigger_pdf_scanner():
 
 @app.post("/trigger/image")
 async def trigger_image_scanner():
-    scan_images(input_folder="knowledge/txt")
+    scan_images(input_folder="knowledge/raw")
     return {"status": "image scan done"}
 
 # are we still building index? Or are we weaviating?

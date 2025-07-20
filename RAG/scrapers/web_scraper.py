@@ -72,10 +72,10 @@ def get_internal_links(html, base_url):
     return links
 
 def crawl(url, depth=2):
-    with visited_lock:
-        if url in visited_urls or depth == 0:
-            return []
-        visited_urls.add(url)
+    # with visited_lock:
+    #     if url in visited_urls or depth == 0:
+    #         return []
+    #     visited_urls.add(url)
 
     print(f"Crawling: {url} (Depth: {depth})")
 
