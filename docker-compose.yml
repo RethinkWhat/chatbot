@@ -100,17 +100,17 @@ services:
     networks:
       - chatbot_network
 
-  donut:
-    build:
-      context: ./donut
-      dockerfile: Dockerfile.donut
-    container_name: DONUT-THE-JSONIFIER
-    ports:
-      - "8600:8600"
-    volumes:
-      - ./DONUT:/app
-      - ./RAG/knowledge/raw:/app/knowledge/raw
-      - ./RAG/knowledge/testJson:/app/knowledge/testJson
+  # donut:
+  #   build:
+  #     context: ./donut
+  #     dockerfile: Dockerfile.donut
+  #   container_name: DONUT-THE-JSONIFIER
+  #   ports:
+  #     - "8600:8600"
+  #   volumes:
+  #     - ./DONUT:/app
+  #     - ./RAG/knowledge/raw:/app/knowledge/raw
+  #     - ./RAG/knowledge/testJson:/app/knowledge/testJson
 
   smol:
     build:

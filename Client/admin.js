@@ -652,3 +652,21 @@ document.getElementById("jsonConvertBtn").addEventListener("click", async () => 
     console.error(err);
   }
 });
+
+//display JSONification progress
+document.getElementById("jsonConvertBtn").addEventListener("click", () => {
+  const output = document.getElementById("JSONifyOutput");
+  output.textContent = "Starting JSONification...\n";
+
+  const eventSource = new EventSource("http://localhost:8500/jsonify/stream");
+
+  eventSource.onmessage = function (event) {
+      output.textContent += event.data + "\n";
+      output.scrollTop = output.scrollHeight;  // Auto-scroll
+  };
+
+  eventSource.onerror = function (err) {
+      output.textContent += "\n[ERROR] Connection lost or server error.\n";
+      eventSource.close();
+  };
+});
