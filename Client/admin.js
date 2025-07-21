@@ -23,6 +23,7 @@ class AdminPanel {
     this.saveUrlsBtn = document.getElementById('saveUrlsBtn');
     this.jsonConvertBtn = document.getElementById('jsonConvertBtn');
     this.scrapeBtn = document.getElementById('scrapeBtn');
+    this.runBtn = document.getElementById('run');
 
     this.currentEditingId = null;
     this.menuData = {};//edits that is applied on DB
@@ -528,20 +529,26 @@ document.getElementById("scrapeForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const depth = document.getElementById("depth").value;
   const output = document.getElementById("scrapeOutput");
-  output.textContent = "⏳ Running web scraper...";
-  try {
-    const res = await fetch("http://localhost:8000/trigger/scrape", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ depth: parseInt(depth) })
-    });
-    const data = await res.json();
-    output.textContent = JSON.stringify(data, null, 2);
-  } catch (err) {
-    output.textContent = "❌ Error during scraping.";
-    console.error(err);
+  output.textContent = "⏳ Starting scraper...\n";
+
+  const res = await fetch("/run-scraper", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ depth: depth })
+  });
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    output.textContent += chunk.replace(/^data: /gm, "").trim() + "\n";
+    output.scrollTop = output.scrollHeight;
   }
 });
+
 
 //loads url when the load url button is clicked
 document.getElementById("loadUrlsBtn").addEventListener("click", async () => {
@@ -637,6 +644,9 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
 //   }
 // });
 
+//when scrape btn pressed...
+
+
 //jsonify using LLM (batch process)
 document.getElementById("jsonConvertBtn").addEventListener("click", async () => {
   const output = document.getElementById("JSONifyOutput");
@@ -670,3 +680,130 @@ document.getElementById("jsonConvertBtn").addEventListener("click", () => {
       eventSource.close();
   };
 });
+//the function
+function displayFileList(files) {
+  const list = document.getElementById("fileList");
+  const listContainer = document.getElementById("fileListContainer");
+  list.innerHTML = "";
+  files.forEach(file => {
+    const li = document.createElement("li");
+    li.textContent = file;
+    li.style.cursor = "pointer";
+    li.onclick = () => previewFile(file);
+    list.appendChild(li);
+  });
+  listContainer.style.opacity = "1";
+  listContainer.style.display = "block";
+}
+
+// 1. Load and filter file list
+document.getElementById("loadFileListBtn").addEventListener("click", async () => {
+  const res = await fetch("http://localhost:8000/list-txt-files");
+  const { files } = await res.json();
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const filtered = files.filter(name => name.toLowerCase().includes(search));
+  displayFileList(filtered);
+});
+
+//2.preview
+async function previewFile(filename) {
+  selectedFile = filename;
+
+  // Fade out file list container
+  const listContainer = document.getElementById("fileListContainer");
+  listContainer.style.transition = "opacity 0.3s ease";
+  listContainer.style.opacity = "0";
+  setTimeout(() => {
+    listContainer.style.display = "none";
+  }, 300); // match transition time
+
+
+  // Fetch preview
+  const res = await fetch(`http://localhost:8000/preview-txt?file=${encodeURIComponent(filename)}`);
+  const text = await res.text();
+  document.getElementById("filePreview").textContent = text;
+}
+
+
+
+// 3. JSONify selected
+async function jsonifyFile(filename) {
+  const res = await fetch(`/jsonify-one?file=${encodeURIComponent(filename)}`, { method: "POST" });
+  const data = await res.json();
+  alert(data.status || data.error);
+}
+
+//editting txt files
+let selectedFile = null;
+
+//editting ande deleting files
+async function displayFileList(files) {
+  const list = document.getElementById("fileList");
+  list.innerHTML = "";
+
+  files.forEach(name => {
+    const li = document.createElement("li");
+    li.textContent = name;
+
+    const previewBtn = document.createElement("button");
+    previewBtn.textContent = "👁️ Preview";
+    previewBtn.onclick = () => previewFile(name);
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "📝 Edit";
+    editBtn.onclick = () => openEditorModal(name);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "🗑️ Delete";
+    deleteBtn.onclick = () => deleteFile(name);
+
+    li.append(" ", previewBtn, " ", editBtn, " ", deleteBtn);
+    list.appendChild(li);
+  });
+}
+
+function openEditorModal(filename) {
+  fetch(`http://localhost:8000/preview-txt?file=${encodeURIComponent(filename)}`)
+    .then(res => res.text())
+    .then(text => {
+      document.getElementById("editorFilename").textContent = filename;
+      document.getElementById("fileEditorContent").value = text;
+      document.getElementById("fileEditorModal").classList.add("active");
+    });
+}
+
+function closeEditorModal() {
+  document.getElementById("fileEditorModal").classList.remove("active");
+}
+
+function saveEditedFile() {
+  const filename = document.getElementById("editorFilename").textContent;
+  const newContent = document.getElementById("fileEditorContent").value;
+
+  fetch("http://localhost:8000/save-txt-file", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename, content: newContent })
+  })
+    .then(res => res.json())
+    .then(data => {
+      showStatus("File saved!", "success");
+      closeEditorModal();
+    })
+    .catch(err => showStatus("Failed to save file", "error"));
+}
+function deleteFile(filename) {
+  if (!confirm(`Delete ${filename}?`)) return;
+
+  fetch("http://localhost:8000/delete-txt-file", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename })
+  })
+    .then(res => res.json())
+    .then(data => {
+      showStatus("File deleted", "success");
+      document.getElementById("loadFileListBtn").click();  // refresh
+    })
+    .catch(err => showStatus("Failed to delete file", "error"));
+}

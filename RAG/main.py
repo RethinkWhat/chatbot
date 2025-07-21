@@ -1,6 +1,6 @@
     #RAG SERVER
-from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile #for db access
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile, Query #for db access
+from fastapi.responses import JSONResponse, PlainTextResponse
 import os # used to get user choice of LLM saved in device environment variable
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware # middleware, allowing connection between client and server
@@ -245,12 +245,33 @@ async def save_urls(request: Request):
     return {"status": "✅ URLs saved to urls.txt"}
 
 @app.post("/scrape/run")
-def run_web_scraper():
-    try:
-        result = subprocess.run(["python3", "scrapers/web_scraper.py"], capture_output=True, text=True, check=True)
-        return {"status": "✅ Web scraping complete", "stdout": result.stdout}
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"❌ Scraping failed: {e.stderr}")
+async def run_web_scraper(request:Request):
+    data = await Request.json()
+    depth = int(data.get("depth", 2))
+
+    async def stream_logs():
+        yield f"data: Starting scrape (depth={depth})\n\n"
+
+        visited = set()
+        queue = [("https://example.com", 0)]
+
+        while queue:
+            url, d = queue.pop(0)
+            if url in visited or d > depth:
+                continue
+            visited.add(url)
+
+            yield f"data: Crawling {url} (depth={d})\n\n"
+            await asyncio.sleep(0.5)  # Simulate real work
+
+            # TODO: Actual fetching + parsing here...
+            new_links = ["https://example.com/page1", "https://example.com/page2"]
+            for link in new_links:
+                queue.append((link, d + 1))
+
+        yield "data: Done.\n\n"
+
+    return StreamingResponse(stream_logs(), media_type="text/event-stream")
 #========================================
 
 @app.get("/urls")
@@ -381,3 +402,42 @@ async def trigger_image_scanner():
 #     num_chunks = builder.build_index()  # Capture return value
 #     return {"status": "vector index built", "chunks": num_chunks}
 
+#
+RAW_TXT_DIR = Path("/app/knowledge/raw")
+@app.get("/list-txt-files")
+def list_txt_files():
+    files = [f.name for f in Path("knowledge/raw").glob("*.txt")]
+    return JSONResponse(content={"files": files})
+
+@app.delete("/delete-txt")
+def delete_txt(file: str):
+    file_path = RAW_TXT_DIR / file
+    if file_path.exists():
+        file_path.unlink()
+        return JSONResponse(content={"message": f"{file} deleted."})
+    return JSONResponse(content={"message": f"{file} not found."}, status_code=404)
+
+@app.get("/preview-txt")
+def preview_txt(file: str):
+    filepath = TXT_DIR / file
+    if filepath.exists():
+        return PlainTextResponse(filepath.read_text(encoding="utf-8"))
+    return JSONResponse({"error": "File not found"}, status_code=404)
+
+@app.post("/save-txt-file")
+async def save_txt(data: dict):
+    filename = data.get("filename")
+    content = data.get("content")
+    if filename:
+        (TXT_DIR / filename).write_text(content, encoding="utf-8")
+        return {"status": "saved"}
+    return JSONResponse({"error": "Missing filename"}, status_code=400)
+
+@app.post("/delete-txt-file")
+async def delete_txt(data: dict):
+    filename = data.get("filename")
+    path = TXT_DIR / filename
+    if path.exists():
+        path.unlink()
+        return {"status": "deleted"}
+    return JSONResponse({"error": "File not found"}, status_code=404)

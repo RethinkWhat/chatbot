@@ -614,3 +614,30 @@ body {
 form#uploadForm{
     justify-items: center;
 }
+/* json window */
+pre {
+    white-space: pre-wrap;
+}
+
+#fileList li {
+    padding: 8px;
+    margin-bottom: 4px;
+    background: var(--gray-100);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  
+  #fileList li:hover {
+    background: var(--gray-200);
+  }
+  
+  #fileList li.selected {
+    background: var(--blue);
+    color: white;
+  }
+  
+  #fileListContainer {
+    transition: opacity 0.3s ease;
+  }
+  

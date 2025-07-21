@@ -70,27 +70,29 @@ def get_internal_links(html, base_url):
             links.add(full_url)
 
     return links
-
+    
 def crawl(url, depth=2):
-    # with visited_lock:
-    #     if url in visited_urls or depth == 0:
-    #         return []
-    #     visited_urls.add(url)
+    if depth < 0:  # ✅ Prevent invalid recursion
+        return []
+
+    with visited_lock:
+        if url in visited_urls:
+            return []
+        visited_urls.add(url)
 
     print(f"Crawling: {url} (Depth: {depth})")
 
     html = fetch_html(url)
     if not html:
         return []
-    
-    # Download assets like PDFs and images, and save them to the output folder
+
     download_assets(html, url, output_folder="knowledge/raw")
 
     page_data = parse_html(html, url)
     sub_links = get_internal_links(html, url)
 
     sub_pages = []
-    with ThreadPoolExecutor(max_workers=15) as executor:  # Adjust the number of workers as needed
+    with ThreadPoolExecutor(max_workers=15) as executor:
         futures = [executor.submit(crawl, sub_url, depth - 1) for sub_url in sub_links]
         for future in futures:
             sub_pages.extend(future.result())
