@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from pathlib import Path
 from app.hf_llm import get_json_from_text, jsonify_stream, preprocess_text
-import json
+import json, re , traceback
 
 app = FastAPI()
 
@@ -55,9 +55,10 @@ async def txt2json(file: str = Query(...)):
         return JSONResponse({"error": f"Exception during processing: {str(e)}"}, status_code=500)
 
 
-@app.post("/batch-txt2json")
+@app.get("/batch-txt2json")
 async def batch_txt2json():
     return StreamingResponse(jsonify_stream(), media_type="text/event-stream")
+
 
 @app.get("/jsonify/stream")
 def stream_jsonify():

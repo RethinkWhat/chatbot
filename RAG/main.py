@@ -346,21 +346,6 @@ def get_txt_content(filename: str):
 
 #     return {"status": "success", "json_file": output_path}
 
-@app.post("/trigger/jsonify-txt")
-def batch_convert_txts_to_json(input_dir, output_dir):
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    for txt_file in Path(input_dir).glob("*.txt"):
-        with open(txt_file, "r", encoding="utf-8") as f:
-            text = f.read()
-
-        result = extract_json_from_txt(text)
-        out_path = Path(output_dir) / (txt_file.stem + ".json")
-
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
-
-        print(f"✅ Processed {txt_file.name}")
-
 
 #upload files
 @app.post("/upload")
@@ -435,24 +420,6 @@ def preview_txt(file: str):
             return PlainTextResponse(content)
     except Exception as e:
         return JSONResponse({"error": f"Failed to read file: {str(e)}"}, status_code=500)
-
-@app.post("/save-txt-file")
-async def save_txt(data: dict):
-    filename = data.get("filename")
-    content = data.get("content")
-    if filename:
-        (TXT_DIR / filename).write_text(content, encoding="utf-8")
-        return {"status": "saved"}
-    return JSONResponse({"error": "Missing filename"}, status_code=400)
-
-@app.post("/delete-txt-file")
-async def delete_txt(data: dict):
-    filename = data.get("filename")
-    path = TXT_DIR / filename
-    if path.exists():
-        path.unlink()
-        return {"status": "deleted"}
-    return JSONResponse({"error": "File not found"}, status_code=404)
 
 #admin changes creds
 @app.post("/api/admin/update")

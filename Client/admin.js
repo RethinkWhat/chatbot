@@ -647,47 +647,13 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
       }
 });
 
-//JSONify data using Hugging face LLM
-// document.getElementById("jsonConvertBtn").addEventListener("click", async () => {
-//   const output = document.getElementById("JSONifyOutput");
-//   output.textContent = "⏳ JSONifying data...";
-//   try {
-//     const res = await fetch("http://localhost:8000/jsonify", {
-//       method: "POST"
-//     });
-//     const data = await res.json();
-//     output.textContent = "✅ " + data.status;
-//   } catch (err) {
-//     output.textContent = "❌ Failed to JSONify data.";
-//     console.error(err);
-//   }
-// });
-
-//when scrape btn pressed...
-
-
-//jsonify using LLM (batch process)
-document.getElementById("jsonConvertBtn").addEventListener("click", async () => {
-  const output = document.getElementById("JSONifyOutput");
-  output.textContent = "⏳ JSONifying data...";
-  try {
-    const res = await fetch("http://localhost:8500/batch-txt2json", {
-      method: "POST"
-    });
-    const data = await res.json();
-    output.textContent = "✅ " + data.status;
-  } catch (err) {
-    output.textContent = "❌ Failed to JSONify data.";
-    console.error(err);
-  }
-});
 
 //display JSONification progress
 document.getElementById("jsonConvertBtn").addEventListener("click", () => {
   const output = document.getElementById("JSONifyOutput");
   output.textContent = "Starting JSONification...\n";
 
-  const eventSource = new EventSource("http://localhost:8500/jsonify/stream");
+  const eventSource = new EventSource("http://localhost:8500/batch-txt2json");
 
   eventSource.onmessage = function (event) {
       output.textContent += event.data + "\n";
