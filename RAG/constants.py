@@ -1,1 +1,1 @@
-apologyMsg = "I apologize, but as of now I cannot respond to your question. But I will be looking into the answer so that I can answer it for you next time!"
+apologyMsg = "I’m sorry, I couldn’t find that information in my current knowledge base. For more accurate assistance, please reach out to the University Information Office at uio@slu.edu.ph. They’ll be happy to help!"

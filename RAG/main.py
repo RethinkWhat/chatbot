@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List
 # local Imports
 from rag_pipeline import RAGPipeline  
-from build_vector_index import BuildVectorIndex
+#from build_vector_index import BuildVectorIndex
 import bcrypt, subprocess, shutil,json
 # Scraper functions
 from scrapers.web_scraper import run_scraper
@@ -51,7 +51,7 @@ app.add_middleware(
 # Utility: database connection
 def get_db_connection():
     return pymysql.connect(
-        host="host.docker.internal", 
+        host="ollama", 
         user="root",
         password="root",
         database="navi-bot",
@@ -326,93 +326,93 @@ def get_txt_content(filename: str):
     with open(path, "r", encoding="utf-8") as f:
         return {"content": f.read()}
 
-@app.post("/trigger/jsonify/{filename}")
-def jsonify_txt_file(filename: str):
-    rag = RAGPipeline()
-    path = os.path.join("knowledge/txt", filename)
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
-    with open(path, "r", encoding="utf-8") as f:
-        text = f.read()
-    result = rag.jsonifyTxt(text)
-    return {"filename": filename, "json": result}
+# @app.post("/trigger/jsonify/{filename}")
+# def jsonify_txt_file(filename: str):
+#     rag = RAGPipeline()
+#     path = os.path.join("knowledge/txt", filename)
+#     if not os.path.exists(path):
+#         raise HTTPException(status_code=404, detail="File not found")
+#     with open(path, "r", encoding="utf-8") as f:
+#         text = f.read()
+#     result = rag.jsonifyTxt(text)
+#     return {"filename": filename, "json": result}
 
-#upload files
-@app.post("/upload")
-async def upload_files(files: list[UploadFile] = File(...)):
-    upload_folder = "knowledge"
-    saved = []
+# #upload files
+# @app.post("/upload")
+# async def upload_files(files: list[UploadFile] = File(...)):
+#     upload_folder = "knowledge"
+#     saved = []
 
-    for file in files:
-        ext = file.filename.split(".")[-1].lower()
-        if ext in ["pdf", "png", "jpg", "jpeg", "txt"]:
-            save_path = os.path.join(upload_folder, file.filename)
-            with open(save_path, "wb") as f:
-                shutil.copyfileobj(file.file, f)
-            saved.append(file.filename)
-        else:
-            continue
+#     for file in files:
+#         ext = file.filename.split(".")[-1].lower()
+#         if ext in ["pdf", "png", "jpg", "jpeg", "txt"]:
+#             save_path = os.path.join(upload_folder, file.filename)
+#             with open(save_path, "wb") as f:
+#                 shutil.copyfileobj(file.file, f)
+#             saved.append(file.filename)
+#         else:
+#             continue
 
-    return {"uploaded": saved}
+#     return {"uploaded": saved}
 
 
-@app.post("/trigger/scrape")
-async def trigger_web_scraper():
-    run_scraper(urls_path="urls.txt", output_dir="knowledge/txt", depth=2)
-    return {"status": "web scrape done"}
+# @app.post("/trigger/scrape")
+# async def trigger_web_scraper():
+#     run_scraper(urls_path="urls.txt", output_dir="knowledge/txt", depth=2)
+#     return {"status": "web scrape done"}
 
-@app.post("/trigger/pdf")
-async def trigger_pdf_scanner():
-    scraper=PDFScraper()
-    scraper.scan_all_pdfs()
-    return {"status": "pdf scan done"}
+# @app.post("/trigger/pdf")
+# async def trigger_pdf_scanner():
+#     scraper=PDFScraper()
+#     scraper.scan_all_pdfs()
+#     return {"status": "pdf scan done"}
 
-@app.post("/trigger/image")
-async def trigger_image_scanner():
-    scan_images(folder="knowledge/txt")
-    return {"status": "image scan done"}
+# @app.post("/trigger/image")
+# async def trigger_image_scanner():
+#     scan_images(folder="knowledge/txt")
+#     return {"status": "image scan done"}
 
-@app.post("/trigger/clean")
-async def trigger_cleaning():
-    os.makedirs("knowledge/cleaned", exist_ok=True)
-    rag = RAGPipeline()
-    count = 0
-    for filename in os.listdir("knowledge/txt"):
-        if filename.endswith(".txt"):
-            with open(f"knowledge/txt/{filename}", "r", encoding="utf-8") as f:
-                raw = f.read()
-            cleaned = rag.paraphrase_with_ollama(raw, filename)
-            with open(f"knowledge/cleaned/{filename}", "w", encoding="utf-8") as f:
-                f.write(cleaned)
-            count += 1
-    return {"status": "cleaning complete", "files": count}
+# @app.post("/trigger/clean")
+# async def trigger_cleaning():
+#     os.makedirs("knowledge/cleaned", exist_ok=True)
+#     rag = RAGPipeline()
+#     count = 0
+#     for filename in os.listdir("knowledge/txt"):
+#         if filename.endswith(".txt"):
+#             with open(f"knowledge/txt/{filename}", "r", encoding="utf-8") as f:
+#                 raw = f.read()
+#             cleaned = rag.paraphrase_with_ollama(raw, filename)
+#             with open(f"knowledge/cleaned/{filename}", "w", encoding="utf-8") as f:
+#                 f.write(cleaned)
+#             count += 1
+#     return {"status": "cleaning complete", "files": count}
 
-@app.post("/trigger/jsonify")
-async def trigger_jsonify():
-    if not rag_pipeline:
-        return JSONResponse(status_code=500, content={"message": "RAG pipeline not initialized"})
+# @app.post("/trigger/jsonify")
+# async def trigger_jsonify():
+#     if not rag_pipeline:
+#         return JSONResponse(status_code=500, content={"message": "RAG pipeline not initialized"})
 
-    source_dir = "knowledge/txt"
-    output_dir = "knowledge/json"
-    os.makedirs(output_dir, exist_ok=True)
+#     source_dir = "knowledge/txt"
+#     output_dir = "knowledge/json"
+#     os.makedirs(output_dir, exist_ok=True)
 
-    converted = []
-    for fname in os.listdir(source_dir):
-        if fname.endswith(".txt"):
-            with open(os.path.join(source_dir, fname), "r", encoding="utf-8") as f:
-                content = f.read()
-            jsonified = rag_pipeline.jsonifyTxt(content)
-            if jsonified:
-                json_path = os.path.join(output_dir, Path(fname).stem + ".json")
-                with open(json_path, "w", encoding="utf-8") as out:
-                    json.dump(jsonified, out, indent=2)
-                converted.append(fname)
+#     converted = []
+#     for fname in os.listdir(source_dir):
+#         if fname.endswith(".txt"):
+#             with open(os.path.join(source_dir, fname), "r", encoding="utf-8") as f:
+#                 content = f.read()
+#             jsonified = rag_pipeline.jsonifyTxt(content)
+#             if jsonified:
+#                 json_path = os.path.join(output_dir, Path(fname).stem + ".json")
+#                 with open(json_path, "w", encoding="utf-8") as out:
+#                     json.dump(jsonified, out, indent=2)
+#                 converted.append(fname)
 
-    return {"status": "converted", "files": converted}
+#     return {"status": "converted", "files": converted}
 
-@app.post("/trigger/index")
-async def trigger_vector_index():
-    builder = BuildVectorIndex()
-    num_chunks = builder.build_index()  # Capture return value
-    return {"status": "vector index built", "chunks": num_chunks}
+# @app.post("/trigger/index")
+# async def trigger_vector_index():
+#     builder = BuildVectorIndex()
+#     num_chunks = builder.build_index()  # Capture return value
+#     return {"status": "vector index built", "chunks": num_chunks}
 
