@@ -3,16 +3,26 @@ from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
+# Check GPU
+print(f"CUDA available: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+
+# === Paths ===
 RAW_TXT_DIR = Path("/app/knowledge/raw")
 JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
 JSON_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# === Load SMOLLM3 ===
+# === Load model ===
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_NAME = "HuggingFaceTB/SmolLM3-3B"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to("cpu")
 
-# === Text Cleaning / Preprocessing ===
+print(f"[INIT] Loading model '{MODEL_NAME}' on {DEVICE}...")
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(DEVICE)
+print("[INIT] Model loaded.")
+
+# === Text Cleaning ===
 def clean_text(text: str) -> str:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = re.sub(r"\n{3,}", "\n\n", text)
@@ -21,20 +31,15 @@ def clean_text(text: str) -> str:
 
 def filter_relevant_lines(text: str) -> str:
     lines = text.split("\n")
-    filtered = []
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        if len(line) > 50 or line.endswith("?"):
-            filtered.append(line)
-    return "\n\n".join(filtered)
+    return "\n\n".join(
+        line for line in (l.strip() for l in lines)
+        if line and (len(line) > 50 or line.endswith("?"))
+    )
 
 def preprocess_text(text: str) -> str:
-    text = clean_text(text)
-    return filter_relevant_lines(text)
+    return filter_relevant_lines(clean_text(text))
 
-# === Extract clean JSON block ===
+# === JSON Extraction ===
 def extract_first_json_block(text: str) -> str:
     start = text.find('{')
     if start == -1:
@@ -47,10 +52,10 @@ def extract_first_json_block(text: str) -> str:
             brace_count -= 1
             if brace_count == 0:
                 return text[start:i+1]
-    print("[WARNING] Unbalanced JSON, returning best-effort block")
-    return text[start:]  # fallback to partial
+    print("[WARNING] Unbalanced braces. Returning partial JSON.")
+    return text[start:]
 
-# === Call LLM with strict prompt ===
+# === Call LLM ===
 def get_json_from_text(text: str) -> dict:
     prompt = (
         "You are a JSON generator. ONLY return a valid JSON object. "
@@ -63,34 +68,25 @@ def get_json_from_text(text: str) -> dict:
         messages, tokenize=False, add_generation_prompt=True
     )
 
-    inputs = tokenizer([formatted_prompt], return_tensors="pt").to("cpu")
+    inputs = tokenizer([formatted_prompt], return_tensors="pt").to(DEVICE)
     max_tokens = min(2048, 2048 - inputs["input_ids"].shape[-1])
 
-    try:
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=max_tokens,
-            temperature=0.2,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id
-        )
-        generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
-        response = tokenizer.decode(generated_ids, skip_special_tokens=True)
-        response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=max_tokens,
+        temperature=0.2,
+        do_sample=False,
+        pad_token_id=tokenizer.eos_token_id
+    )
+    generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
+    response = tokenizer.decode(generated_ids, skip_special_tokens=True)
+    response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
 
-        print(f"[DEBUG] Raw LLM output:\n{response[:500]}...\n")  # Log partial output
+    print(f"[DEBUG] Partial LLM output:\n{response[:300]}...\n")
 
-        json_block = extract_first_json_block(response)
-        return json.loads(json_block)
+    return json.loads(extract_first_json_block(response))
 
-    except json.JSONDecodeError as jde:
-        print(f"[JSON DECODE ERROR] {jde}")
-        raise
-    except Exception as e:
-        print(f"[GEN ERROR] Exception during generation: {e}")
-        raise
-
-# === Stream over all .txt files ===
+# === Stream inference per file ===
 def jsonify_stream():
     txt_files = list(RAW_TXT_DIR.glob("*.txt"))
     if not txt_files:
@@ -101,20 +97,22 @@ def jsonify_stream():
 
     for txt_path in txt_files:
         json_path = JSON_OUTPUT_DIR / (txt_path.stem + ".json")
+
         try:
             print(f"[Processing] {txt_path.name}")
             raw_text = txt_path.read_text(encoding="utf-8").strip()
+
             if not raw_text or len(raw_text) < 50:
                 yield f"data: [SKIP] {txt_path.name} is empty or too short.\n\n"
                 continue
 
-            clean_text = preprocess_text(raw_text)
-            if len(clean_text) < 100:
+            preprocessed = preprocess_text(raw_text)
+            if len(preprocessed) < 100:
                 yield f"data: [SKIP] {txt_path.name} contains no usable content.\n\n"
                 continue
 
             yield f"data: [START] Processing {txt_path.name}...\n\n"
-            json_data = get_json_from_text(clean_text)
+            json_data = get_json_from_text(preprocessed)
 
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(json_data, f, indent=2, ensure_ascii=False)

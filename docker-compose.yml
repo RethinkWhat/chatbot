@@ -123,6 +123,13 @@ services:
       - ./smol:/app
       - ./RAG/knowledge/raw:/app/knowledge/raw
       - ./RAG/knowledge/testJson:/app/knowledge/testJson
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
+
 
 
 volumes:
