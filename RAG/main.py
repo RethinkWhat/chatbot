@@ -8,6 +8,8 @@ import pymysql # for db access
 from pathlib import Path
 from pydantic import BaseModel
 from typing import Dict, List, Optional
+import asyncio
+import subprocess
 # local Imports
 from rag_pipeline import RAGPipeline  
 from build_vector_index import BuildVectorIndex
@@ -249,31 +251,27 @@ async def save_urls(request: Request):
     return {"status": "✅ URLs saved to urls.txt"}
 
 @app.post("/scrape/run")
-async def run_web_scraper(request:Request):
-    data = await Request.json()
+async def run_web_scraper(request: Request):
+    data = await request.json()
     depth = int(data.get("depth", 2))
 
     async def stream_logs():
-        yield f"data: Starting scrape (depth={depth})\n\n"
+        yield f"data: [START] Scraping at depth={depth}\n\n"
 
-        visited = set()
-        queue = [("https://example.com", 0)]
+        process = await asyncio.create_subprocess_exec(
+            "python", "scrapers/web_scraper.py", "--depth", str(depth),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
 
-        while queue:
-            url, d = queue.pop(0)
-            if url in visited or d > depth:
-                continue
-            visited.add(url)
+        while True:
+            line = await process.stdout.readline()
+            if not line:
+                break
+            yield f"data: {line.decode().strip()}\n\n"
 
-            yield f"data: Crawling {url} (depth={d})\n\n"
-            await asyncio.sleep(0.5)  # Simulate real work
-
-            # TODO: Actual fetching + parsing here...
-            new_links = ["https://example.com/page1", "https://example.com/page2"]
-            for link in new_links:
-                queue.append((link, d + 1))
-
-        yield "data: Done.\n\n"
+        await process.wait()
+        yield "data: [DONE] Scraping complete.\n\n"
 
     return StreamingResponse(stream_logs(), media_type="text/event-stream")
 #========================================

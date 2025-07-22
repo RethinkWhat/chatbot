@@ -52,6 +52,7 @@ services:
 
   ollama:
     image: ollama/ollama
+    #container_name: christian_ollama # for temp test
     container_name: ollama
     ports:
       - "11434:11434"  # Ollama API port

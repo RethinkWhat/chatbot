@@ -550,7 +550,7 @@ document.getElementById("scrapeForm").addEventListener("submit", async (e) => {
   const output = document.getElementById("scrapeOutput");
   output.textContent = "⏳ Starting scraper...\n";
 
-  const res = await fetch("/run-scraper", {
+  const res = await fetch("http://localhost:8000/scrape/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ depth: depth })
