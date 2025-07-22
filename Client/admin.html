@@ -138,6 +138,9 @@
                 <button id="donutCtrlBtn" class="toolbar-btn">
                     <span>🔄</span> Donut AI JSONifier
                 </button>
+                <button id = "adminCredsBtn" class="toolbar-btn">
+                    <span>🛠</span> Admin Credentials
+                </button>
             </div>
                 <div id="webScrapeWindow" class="popup" style="display: flex;">
                     <div class="section">
@@ -208,7 +211,28 @@
                     <button class="btn primary" onclick="saveEditedFile()">Save Changes</button>
                   </div>
                 </div>
-              </div>
+            </div>
+            <div id="adminCredsWindow" class="popup" style="display: none;">
+                <div class="window-content">
+                    <div class="window-header">
+                        <h2>🛠 Admin Credentials</h2>
+                      </div>
+                  <form id="adminCredsForm">
+                    <label for="newUsername">New Username:</label><br>
+                    <input type="text" id="newUsername" name="newUsername" placeholder="Enter new username"><br><br>
+              
+                    <label for="newPassword">New Password:</label><br>
+                    <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password"><br><br>
+              
+                    <label for="confirmPassword">Confirm Password:</label><br>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password"><br><br>
+              
+                    <button type="submit" class="toolbar-btn">✅ Save Changes</button>
+                  </form>
+                  <pre id="credsStatus" class="output-box"></pre>
+                </div>
+            </div>
+              
               
 
         </div>

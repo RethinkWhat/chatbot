@@ -1,12 +1,13 @@
     #RAG SERVER
-from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile, Query #for db access
+from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile, Query, Depends #for db access
 from fastapi.responses import JSONResponse, PlainTextResponse
 import os # used to get user choice of LLM saved in device environment variable
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware # middleware, allowing connection between client and server
 import pymysql # for db access
 from pathlib import Path
-from typing import Dict, List
+from pydantic import BaseModel
+from typing import Dict, List, Optional
 # local Imports
 from rag_pipeline import RAGPipeline  
 from build_vector_index import BuildVectorIndex
@@ -33,7 +34,10 @@ stop_lock = Lock()
 # Build Knowledge. Can comment out this section if knowledge already built
 #build_vector_index = BuildVectorIndex()
 #build_vector_index.run()
-
+# declaring class for admin creds changing
+class UpdateAdminModel(BaseModel):
+    newUsername: Optional[str] = None
+    newPassword: Optional[str] = None
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -313,7 +317,7 @@ async def get_json_file(filename: str):
 
 @app.get("/knowledge/txt")
 def list_txt_files():
-    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt")]
+    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt") and f.endswith(".json")]
     return {"files": files}
 
 @app.get("/knowledge/txt/{filename}")
@@ -419,10 +423,20 @@ def delete_txt(file: str):
 
 @app.get("/preview-txt")
 def preview_txt(file: str):
-    filepath = TXT_DIR / file
-    if filepath.exists():
-        return PlainTextResponse(filepath.read_text(encoding="utf-8"))
-    return JSONResponse({"error": "File not found"}, status_code=404)
+    filepath = RAW_TXT_DIR / file
+
+    if not filepath.exists():
+        return JSONResponse({"error": "File not found"}, status_code=404)
+
+    try:
+        if filepath.suffix == ".json":
+            content = json.loads(filepath.read_text(encoding="utf-8"))
+            return JSONResponse(content)
+        else:
+            content = filepath.read_text(encoding="utf-8")
+            return PlainTextResponse(content)
+    except Exception as e:
+        return JSONResponse({"error": f"Failed to read file: {str(e)}"}, status_code=500)
 
 @app.post("/save-txt-file")
 async def save_txt(data: dict):
@@ -441,3 +455,30 @@ async def delete_txt(data: dict):
         path.unlink()
         return {"status": "deleted"}
     return JSONResponse({"error": "File not found"}, status_code=404)
+
+#admin changes creds
+@app.post("/api/admin/update")
+async def update_admin_creds(data: UpdateAdminModel, request: Request):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if not data.newUsername and not data.newPassword:
+        return {"error": "No update data provided."}
+
+    try:
+        if data.newUsername:
+            cursor.execute("UPDATE accounts SET username = ? WHERE id = 1", (data.newUsername,))
+        
+        if data.newPassword:
+            hashed_pw = bcrypt.hash(data.newPassword)
+            cursor.execute("UPDATE accounts SET password = ? WHERE id = 1", (hashed_pw,))
+        
+        conn.commit()
+        return {"message": "Credentials updated."}
+    
+    except Exception as e:
+        print(f"[Error] Updating admin credentials: {e}")
+        return {"error": "Database error"}
+    
+    finally:
+        conn.close()

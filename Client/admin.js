@@ -24,6 +24,7 @@ class AdminPanel {
     this.jsonConvertBtn = document.getElementById('jsonConvertBtn');
     this.scrapeBtn = document.getElementById('scrapeBtn');
     this.runBtn = document.getElementById('run');
+    this.adminCredsBtn = document.getElementById('adminCredsBtn');
 
     this.currentEditingId = null;
     this.menuData = {};//edits that is applied on DB
@@ -504,6 +505,8 @@ document.getElementById("webScrapeBtn").addEventListener("click", () => {
   document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
   document.getElementById("donutWindow").style.display = "none";
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
+  document.getElementById("adminCredsWindow").style.display = "none";
+  document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
 });
 
 document.getElementById("fileUploadBtn").addEventListener("click", () => {
@@ -513,6 +516,8 @@ document.getElementById("fileUploadBtn").addEventListener("click", () => {
   document.getElementById("fileUploadBtn").classList.add("slowBlinking");
   document.getElementById("donutWindow").style.display = "none";
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
+  document.getElementById("adminCredsWindow").style.display = "none";
+  document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
 });
 
 document.getElementById("donutCtrlBtn").addEventListener("click", () => {
@@ -522,7 +527,21 @@ document.getElementById("donutCtrlBtn").addEventListener("click", () => {
   document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
   document.getElementById("donutWindow").style.display = "flex";
   document.getElementById("donutCtrlBtn").classList.add("slowBlinking");
+  document.getElementById("adminCredsWindow").style.display = "none";
+  document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
 });
+
+document.getElementById("adminCredsBtn").addEventListener("click", () => {
+  document.getElementById("webScrapeWindow").style.display = "none";
+  document.getElementById("webScrapeBtn").classList.remove("slowBlinking");
+  document.getElementById("uploadWindow").style.display = "none";
+  document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
+  document.getElementById("donutWindow").style.display = "none";
+  document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
+  document.getElementById("adminCredsWindow").style.display = "flex";
+  document.getElementById("adminCredsBtn").classList.add("slowBlinking");
+});
+
 
 //web scraper triggered, shows logger (run scrapper when form is submitted)
 document.getElementById("scrapeForm").addEventListener("submit", async (e) => {
@@ -728,7 +747,7 @@ async function previewFile(filename) {
 
 // 3. JSONify selected
 async function jsonifyFile(filename) {
-  const res = await fetch(`/jsonify-one?file=${encodeURIComponent(filename)}`, { method: "POST" });
+  const res = await fetch(`http://localhost:8500/txt2json?file=${encodeURIComponent(filename)}`, { method: "POST" });
   const data = await res.json();
   alert(data.status || data.error);
 }
@@ -807,3 +826,42 @@ function deleteFile(filename) {
     })
     .catch(err => showStatus("Failed to delete file", "error"));
 }
+
+//admin Creds Form
+document.getElementById("adminCredsForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const newUsername = document.getElementById("newUsername").value.trim();
+  const newPassword = document.getElementById("newPassword").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  const credsStatus = document.getElementById("credsStatus");
+
+  if (!newUsername && !newPassword) {
+    credsStatus.textContent = "Please provide a new username or password.";
+    return;
+  }
+
+  if (newPassword && newPassword !== confirmPassword) {
+    credsStatus.textContent = "Passwords do not match.";
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:8000/api/admin/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newUsername, newPassword })
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      credsStatus.textContent = "✅ Credentials updated. Reloading...";
+      setTimeout(() => window.location.reload(), 1500);  // force logout
+    } else {
+      credsStatus.textContent = `❌ ${result.error || "Update failed"}`;
+    }
+  } catch (err) {
+    credsStatus.textContent = "❌ Error updating credentials.";
+    console.error(err);
+  }
+});
