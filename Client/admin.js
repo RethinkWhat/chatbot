@@ -26,6 +26,24 @@ class AdminPanel {
     this.runBtn = document.getElementById('run');
     this.adminCredsBtn = document.getElementById('adminCredsBtn');
     this.userDataBtn = document.getElementById("userDataBtn");
+  
+    
+    //file manager popup window items
+    // Track selected file globally
+    let selectedFile = null;
+
+    // Get DOM references
+    this.loadDataFilesBtn = document.getElementById("loadDataFilesBtn");
+    this.fileTypeSelect = document.getElementById("fileTypeSelect") || document.getElementById("dataType");
+    this.userFileList = document.getElementById("userFileList");
+    this.userFilename = document.getElementById("userFilename");
+    this.userFileEditor = document.getElementById("userFileEditor");
+    this.editUserFileBtn = document.getElementById("editUserFileBtn");
+    this.saveUserFileBtn = document.getElementById("saveUserFileBtn");
+    this.deleteUserFileBtn = document.getElementById("deleteUserFileBtn");
+    this.userEditStatus = document.getElementById("userEditStatus");
+
+
 
     this.currentEditingId = null;
     this.menuData = {};//edits that is applied on DB
@@ -42,6 +60,9 @@ class AdminPanel {
 
     this.initializeEventListeners();
     this.checkAuthentication();
+
+    
+
   }
 
   initializeEventListeners() {
@@ -522,7 +543,7 @@ document.getElementById("webScrapeBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "none";
   document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
-  document.getElementById("userDataWindow".classList).style.display("none");
+  document.getElementById("userDataWindow").style.display = "none";
   document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
 
@@ -535,7 +556,7 @@ document.getElementById("fileUploadBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "none";
   document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
-  document.getElementById("userDataWindow".classList).style.display("none");
+  document.getElementById("userDataWindow").style.display = "none";
   document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
 
@@ -548,7 +569,7 @@ document.getElementById("donutCtrlBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.add("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "none";
   document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
-  document.getElementById("userDataWindow".classList).style.display("none");
+  document.getElementById("userDataWindow").style.display = "none";
   document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
 
@@ -561,7 +582,7 @@ document.getElementById("adminCredsBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "flex";
   document.getElementById("adminCredsBtn").classList.add("slowBlinking");
-  document.getElementById("userDataWindow".classList).style.display("none");
+  document.getElementById("userDataWindow").style.display = "none";
   document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
 
@@ -574,7 +595,7 @@ document.getElementById("userDataBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "none";
   document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
-  document.getElementById("userDataWindow".classList).style.display("flex");
+  document.getElementById("userDataWindow").style.display = "flex";
   document.getElementById("userDataBtn").classList.add("slowBlinking");
 });
 
@@ -701,133 +722,8 @@ document.getElementById("jsonConvertBtn").addEventListener("click", () => {
       eventSource.close();
   };
 });
-//the function
-function displayFileList(files) {
-  const list = document.getElementById("fileList");
-  const listContainer = document.getElementById("fileListContainer");
-  list.innerHTML = "";
-  files.forEach(file => {
-    const li = document.createElement("li");
-    li.textContent = file;
-    li.style.cursor = "pointer";
-    li.onclick = () => previewFile(file);
-    list.appendChild(li);
-  });
-  listContainer.style.opacity = "1";
-  listContainer.style.display = "block";
-}
-
-// 1. Load and filter file list
-document.getElementById("loadFileListBtn").addEventListener("click", async () => {
-  const res = await fetch("http://localhost:8000/list-txt-files");
-  const { files } = await res.json();
-  const search = document.getElementById("searchInput").value.toLowerCase();
-  const filtered = files.filter(name => name.toLowerCase().includes(search));
-  displayFileList(filtered);
-});
-
-//2.preview
-async function previewFile(filename) {
-  selectedFile = filename;
-
-  // Fade out file list container
-  const listContainer = document.getElementById("fileListContainer");
-  listContainer.style.transition = "opacity 0.3s ease";
-  listContainer.style.opacity = "0";
-  setTimeout(() => {
-    listContainer.style.display = "none";
-  }, 300); // match transition time
 
 
-  // Fetch preview
-  const res = await fetch(`http://localhost:8000/preview-txt?file=${encodeURIComponent(filename)}`);
-  const text = await res.text();
-  document.getElementById("filePreview").textContent = text;
-}
-
-
-
-// 3. JSONify selected
-async function jsonifyFile(filename) {
-  const res = await fetch(`http://localhost:8500/txt2json?file=${encodeURIComponent(filename)}`, { method: "POST" });
-  const data = await res.json();
-  alert(data.status || data.error);
-}
-
-//editting txt files
-let selectedFile = null;
-
-//editting ande deleting files
-async function displayFileList(files) {
-  const list = document.getElementById("fileList");
-  list.innerHTML = "";
-
-  files.forEach(name => {
-    const li = document.createElement("li");
-    li.textContent = name;
-
-    const previewBtn = document.createElement("button");
-    previewBtn.textContent = "👁️ Preview";
-    previewBtn.onclick = () => previewFile(name);
-
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "📝 Edit";
-    editBtn.onclick = () => openEditorModal(name);
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "🗑️ Delete";
-    deleteBtn.onclick = () => deleteFile(name);
-
-    li.append(" ", previewBtn, " ", editBtn, " ", deleteBtn);
-    list.appendChild(li);
-  });
-}
-
-function openEditorModal(filename) {
-  fetch(`http://localhost:8000/preview-txt?file=${encodeURIComponent(filename)}`)
-    .then(res => res.text())
-    .then(text => {
-      document.getElementById("editorFilename").textContent = filename;
-      document.getElementById("fileEditorContent").value = text;
-      document.getElementById("fileEditorModal").classList.add("active");
-    });
-}
-
-function closeEditorModal() {
-  document.getElementById("fileEditorModal").classList.remove("active");
-}
-
-function saveEditedFile() {
-  const filename = document.getElementById("editorFilename").textContent;
-  const newContent = document.getElementById("fileEditorContent").value;
-
-  fetch("http://localhost:8000/save-txt-file", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename, content: newContent })
-  })
-    .then(res => res.json())
-    .then(data => {
-      showStatus("File saved!", "success");
-      closeEditorModal();
-    })
-    .catch(err => showStatus("Failed to save file", "error"));
-}
-function deleteFile(filename) {
-  if (!confirm(`Delete ${filename}?`)) return;
-
-  fetch("http://localhost:8000/delete-txt-file", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename })
-  })
-    .then(res => res.json())
-    .then(data => {
-      showStatus("File deleted", "success");
-      document.getElementById("loadFileListBtn").click();  // refresh
-    })
-    .catch(err => showStatus("Failed to delete file", "error"));
-}
 
 //admin Creds Form
 document.getElementById("adminCredsForm").addEventListener("submit", async (e) => {
@@ -868,115 +764,148 @@ document.getElementById("adminCredsForm").addEventListener("submit", async (e) =
   }
 });
 
-//File Editor
-// 1. Load txt files from backend
-document.getElementById("loadFileListBtn").addEventListener("click", async () => {
-  const res = await fetch("http://localhost:8000/api/files?type=txt");
-  const { files } = await res.json();
-  const search = document.getElementById("searchInput").value.toLowerCase();
-  const filtered = files.filter(name => name.toLowerCase().includes(search));
-  displayFileList(filtered);
+//file Editor
+// Constants for pagination
+let selectedFile = "";
+let currentPage = 1;
+let filesPerPage = 10;
+let currentFileType = "txt";
+let fullFileList = [];
+
+// Load files button
+document.getElementById("loadDataFilesBtn").addEventListener("click", async () => {
+  currentFileType = document.getElementById("dataType").value || "txt";
+  currentPage = 1;
+  await fetchFiles();
 });
 
-// 📝 2. Display file list with edit/delete/preview buttons
-function displayFileList(files) {
-  const list = document.getElementById("fileList");
+async function fetchFiles() {
+  try {
+    const res = await fetch(`/api/files?type=${currentFileType}`);
+    const { files } = await res.json();
+    fullFileList = files;
+    displayPaginatedFiles();
+  } catch (err) {
+    userEditStatus.textContent = `❌ Failed to load files: ${err}`;
+  }
+}
+
+function displayPaginatedFiles() {
+  const start = (currentPage - 1) * filesPerPage;
+  const end = start + filesPerPage;
+  const paginatedFiles = fullFileList.slice(start, end);
+  renderFileList(paginatedFiles);
+  renderPaginationControls();
+}
+
+function renderFileList(files) {
+  const list = document.getElementById("userFileList");
   list.innerHTML = "";
-
-  files.forEach(name => {
+  files.forEach((name) => {
     const li = document.createElement("li");
-    li.textContent = name;
-
-    const previewBtn = document.createElement("button");
-    previewBtn.textContent = "👁️ Preview";
-    previewBtn.onclick = () => previewFile(name);
-
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "📝 Edit";
-    editBtn.onclick = () => openEditorModal(name);
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "🗑️ Delete";
-    deleteBtn.onclick = () => deleteFile(name);
-
-    li.append(" ", previewBtn, " ", editBtn, " ", deleteBtn);
+    li.innerHTML = `
+      ${name}
+      <button onclick="previewFile('${name}', '${currentFileType}')">👁️ Preview</button>
+      <button onclick="openEditorModal('${name}', '${currentFileType}')">📝 Edit</button>
+      <button onclick="deleteFile('${name}', '${currentFileType}')">🗑️ Delete</button>
+    `;
     list.appendChild(li);
   });
-
-  document.getElementById("fileListContainer").style.display = "block";
-  document.getElementById("fileListContainer").style.opacity = "1";
 }
 
-// 👁️ 3. Preview file
-async function previewFile(filename) {
-  selectedFile = filename;
-  const listContainer = document.getElementById("fileListContainer");
-  listContainer.style.transition = "opacity 0.3s ease";
-  listContainer.style.opacity = "0";
-  setTimeout(() => {
-    listContainer.style.display = "none";
-  }, 300);
+function renderPaginationControls() {
+  const totalPages = Math.ceil(fullFileList.length / filesPerPage);
+  const controls = document.getElementById("paginationControls") || document.createElement("div");
+  controls.id = "paginationControls";
+  controls.innerHTML = "";
 
-  const res = await fetch(`http://localhost:8000/api/file?type=txt&name=${encodeURIComponent(filename)}`);
-  const data = await res.json();
-  document.getElementById("filePreview").textContent = data.content;
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.disabled = i === currentPage;
+    btn.onclick = () => {
+      currentPage = i;
+      displayPaginatedFiles();
+    };
+    controls.appendChild(btn);
+  }
+
+  // Attach below the file list
+  document.getElementById("userFileList").after(controls);
 }
 
-// ✏️ 4. Open editor modal
-function openEditorModal(filename) {
-  fetch(`http://localhost:8000/api/file?type=txt&name=${encodeURIComponent(filename)}`)
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("editorFilename").textContent = filename;
-      document.getElementById("fileEditorContent").value = data.content;
-      document.getElementById("fileEditorModal").classList.add("active");
+// Search functionality
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  const query = e.target.value.toLowerCase();
+  const filtered = fullFileList.filter((f) => f.toLowerCase().includes(query));
+  renderFileList(filtered.slice(0, filesPerPage));
+});
+
+// Preview
+async function previewFile(name, type) {
+  selectedFile = name;
+  userFilename.textContent = name;
+  try {
+    const res = await fetch(`/api/file?type=${type}&name=${name}`);
+    const { content } = await res.json();
+    userFileEditor.value = content;
+    userFileEditor.style.display = "block";
+    saveUserFileBtn.style.display = "none";
+  } catch (err) {
+    userEditStatus.textContent = `❌ Failed to load content: ${err}`;
+  }
+}
+
+// Edit
+async function openEditorModal(name, type = "txt") {
+  selectedFile = name;
+  userFilename.textContent = name;
+  try {
+    const res = await fetch(`/api/file?type=${type}&name=${name}`);
+    const { content } = await res.json();
+    userFileEditor.value = content;
+    userFileEditor.style.display = "block";
+    saveUserFileBtn.style.display = "inline-block";
+  } catch (err) {
+    userEditStatus.textContent = `❌ Error: ${err}`;
+  }
+}
+
+// Save
+async function saveEditedFile() {
+  const content = userFileEditor.value;
+  const type = document.getElementById("dataType").value || "txt";
+  try {
+    const res = await fetch(`/api/file/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: selectedFile, type, content }),
     });
+    const result = await res.json();
+    userEditStatus.textContent = result.message || "✅ Saved successfully";
+    saveUserFileBtn.style.display = "none";
+  } catch (err) {
+    userEditStatus.textContent = `❌ Save failed: ${err}`;
+  }
 }
 
-// 💾 5. Save edited file
-function saveEditedFile() {
-  const filename = document.getElementById("editorFilename").textContent;
-  const newContent = document.getElementById("fileEditorContent").value;
-
-  fetch("http://localhost:8000/api/file/save", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type: "txt",
-      name: filename,
-      content: newContent
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      showStatus("✅ File saved!", "success");
-      closeEditorModal();
-    })
-    .catch(err => {
-      showStatus("❌ Failed to save file", "error");
-      console.error(err);
+// Delete
+async function deleteFile(name, type = "txt") {
+  if (!confirm(`Delete ${name}?`)) return;
+  try {
+    const res = await fetch(`/api/file?type=${type}&name=${name}`, {
+      method: "DELETE",
     });
+    const result = await res.json();
+    userEditStatus.textContent = result.message || "🗑️ Deleted successfully";
+    fetchFiles();
+  } catch (err) {
+    userEditStatus.textContent = `❌ Deletion failed: ${err}`;
+  }
 }
 
-// ❌ 6. Delete file
-function deleteFile(filename) {
-  if (!confirm(`Delete ${filename}?`)) return;
-
-  fetch(`http://localhost:8000/api/file?type=txt&name=${encodeURIComponent(filename)}`, {
-    method: "DELETE"
-  })
-    .then(res => res.json())
-    .then(data => {
-      showStatus("✅ File deleted", "success");
-      document.getElementById("loadFileListBtn").click(); // reload
-    })
-    .catch(err => {
-      showStatus("❌ Failed to delete file", "error");
-      console.error(err);
-    });
-}
-
-// ⛔ Close editor modal
+// Close editor
 function closeEditorModal() {
-  document.getElementById("fileEditorModal").classList.remove("active");
+  userFileEditor.style.display = "none";
+  userEditStatus.textContent = "";
 }

@@ -451,8 +451,8 @@ async def update_admin_creds(data: UpdateAdminModel, request: Request):
 # ==== admin: File manager page
 # Base paths
 BASE_PATHS = {
-    "txt": Path("RAG/knowledge/raw"),
-    "json": Path("RAG/knowledge/testJson")
+    "txt": Path("knowledge/raw"),
+    "json": Path("knowledge/testJson")
 }
 
 # Model for saving files
@@ -469,7 +469,7 @@ def list_files(type: str):
     path = BASE_PATHS[type]
     if not path.exists():
         raise HTTPException(status_code=404, detail="Directory not found")
-    files = [f.name for f in path.glob(f"*.{type}")]
+    files = [f.name for f in path.iterdir() if f.is_file() and f.suffix.lower() == f".{type}"]
     return {"files": files}
 
 @app.get("/api/file")
