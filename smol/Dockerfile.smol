@@ -1,7 +1,31 @@
+# Use PyTorch image with CUDA 12.1 + cuDNN 8 for GPU support
 FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
 
+ENV TRANSFORMERS_VERBOSITY=info
+ENV HF_HUB_DISABLE_PROGRESS_BARS=1
+
+# Set working directory
 WORKDIR /app
+
+# Install Git and basic utilities
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# (Optional) Preload the SmolLM3-3B model into cache
+# This speeds up first run in environments without volume cache
+RUN python -c "\
+from transformers import AutoTokenizer, AutoModelForCausalLM; \
+AutoTokenizer.from_pretrained('HuggingFaceTB/SmolLM3-3B'); \
+AutoModelForCausalLM.from_pretrained('HuggingFaceTB/SmolLM3-3B')"
+
+# App code
 COPY ./app ./app
+
+# Set environment variable for CUDA device visibility (if needed)
+ENV CUDA_VISIBLE_DEVICES=0
+
+# Expose port and run app
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8500"]

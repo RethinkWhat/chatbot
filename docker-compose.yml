@@ -124,6 +124,7 @@ services:
       - ./smol:/app
       - ./RAG/knowledge/raw:/app/knowledge/raw
       - ./RAG/knowledge/testJson:/app/knowledge/testJson
+      - ~/.cache/huggingface:/root/.cache/huggingface #persists the checkpoint, saves time
     deploy:
       resources:
         reservations:
