@@ -209,6 +209,12 @@ body {
     border-color: var(--red);
 }
 
+.toolbar-btn.creds {
+    background: var(--light-blue);
+    color: var(--white);
+    border-color: var(--red);
+}
+
 /* Menu List */
 .menu-list {
     display: grid;

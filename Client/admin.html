@@ -53,7 +53,10 @@
                     <span>🚪</span> Logout
                 </button>
                 <button id="scrapeBtn" class="toolbar-btn scrape">
-                    <span>🧹</span> Scrape
+                    <span>🧹</span> Scraper and JSONifier
+                </button>
+                <button id = "adminCredsBtn" class="toolbar-btn creds">
+                    <span>🛠</span> Admin Credentials
                 </button>
             </div>
 
@@ -138,8 +141,8 @@
                 <button id="donutCtrlBtn" class="toolbar-btn">
                     <span>🔄</span> Donut AI JSONifier
                 </button>
-                <button id = "adminCredsBtn" class="toolbar-btn">
-                    <span>🛠</span> Admin Credentials
+                <button id="userDataBtn" class="toolbar-btn">
+                    <span>📂</span> View User Data
                 </button>
             </div>
                 <div id="webScrapeWindow" class="popup" style="display: flex;">
@@ -233,6 +236,32 @@
                 </div>
             </div>
               
+            <div id="userDataWindow" class="popup" style="display: none;">
+                <div class="section">
+                    <h2>📂 Browse User Data</h2>
+                    <label for="dataType">Select Type:</label>
+                    <select id="dataType">
+                    <option value="txt">Text Files (.txt)</option>
+                    <option value="json">JSON Files (.json)</option>
+                    </select>
+                    <button id="loadDataFilesBtn" class="toolbar-btn">📄 Load Files</button>
+
+                    <ul id="userFileList"></ul>
+                </div>
+
+                <div class="section">
+                    <h3>📝 File Content</h3>
+                    <p id="userFilename">Select a file to preview</p>
+                    <textarea id="userFileEditor" rows="12" style="width: 100%; display: none;"></textarea>
+                    <div style="margin-top: 10px;">
+                    <button id="editUserFileBtn">📝 Edit</button>
+                    <button id="saveUserFileBtn" style="display: none;">💾 Save</button>
+                    <button id="deleteUserFileBtn">🗑️ Delete</button>
+                    </div>
+                    <pre id="userEditStatus" class="output-box"></pre>
+                </div>
+            </div>
+
               
 
         </div>

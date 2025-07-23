@@ -25,6 +25,7 @@ class AdminPanel {
     this.scrapeBtn = document.getElementById('scrapeBtn');
     this.runBtn = document.getElementById('run');
     this.adminCredsBtn = document.getElementById('adminCredsBtn');
+    this.userDataBtn = document.getElementById("userDataBtn");
 
     this.currentEditingId = null;
     this.menuData = {};//edits that is applied on DB
@@ -82,9 +83,21 @@ class AdminPanel {
   
   async checkAuthentication() {
     const isAuthenticated = sessionStorage.getItem('slu_admin_auth') === 'true';
-      if (isAuthenticated) {
+    if (!isAuthenticated) return;
+
+    try {
+      const res = await fetch("http://localhost:8000/admin/ping");
+      if (res.ok) {
         this.showAdminPanel();
+      } else {
+        throw new Error("Session invalid");
       }
+    } catch {
+      sessionStorage.removeItem('slu_admin_auth');
+      this.loginSection.style.display = 'flex';
+      this.adminContent.style.display = 'none';
+      this.showStatus("Session expired. Please log in again.", 'error');
+    }
   }
 
   async handleLogin(e) {
@@ -274,8 +287,9 @@ class AdminPanel {
   }
 
   generateNewId() {
-    const existingIds = Object.keys(this.menuData).map(id => parseInt(id));
-    return (Math.max(...existingIds, 0) + 1).toString();
+    const allIds = [...Object.keys(this.menuData), ...Object.keys(this.draftMenuData)];
+    const numericIds = allIds.map(id => parseInt(id)).filter(n => !isNaN(n));
+    return (Math.max(...numericIds, 0) + 1).toString();
   }
 
   deleteMenuItem(id) {
@@ -380,19 +394,18 @@ class AdminPanel {
 
 
   async saveAllChanges() {
+    const saveBtn = document.getElementById('saveAllBtn');
+    saveBtn.disabled = true;
     try {
       const entries = Object.entries(this.draftMenuData);
 
       for (const [id, item] of entries) {
         if (item.isDeleted) {
           if (!item.isNew) {
-            // Existing item marked for deletion
-            await fetch(`http://localhost:8000/admin/menu/${id}`, {
-              method: "DELETE"
-            });
+            await fetch(`http://localhost:8000/admin/menu/${id}`, { method: "DELETE" });
             console.log(`[ADMIN] Deleted item ${id}`);
           }
-          continue; // Skip to next
+          continue;
         }
 
         if (item.isNew) {
@@ -417,7 +430,6 @@ class AdminPanel {
       this.showStatus('All changes saved successfully!', 'success');
       this.markAsSaved();
 
-      // Reload saved state into both data objects
       await this.loadMenuData();
       this.draftMenuData = JSON.parse(JSON.stringify(this.menuData));
       this.renderMenuList();
@@ -425,8 +437,11 @@ class AdminPanel {
     } catch (error) {
       console.error("[ADMIN] Save error:", error);
       this.showStatus('Error saving changes to backend.', 'error');
+    } finally {
+      saveBtn.disabled = false;
     }
   }
+
 
   
   markAsUnsaved() {
@@ -507,6 +522,8 @@ document.getElementById("webScrapeBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "none";
   document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
+  document.getElementById("userDataWindow".classList).style.display("none");
+  document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
 
 document.getElementById("fileUploadBtn").addEventListener("click", () => {
@@ -518,6 +535,8 @@ document.getElementById("fileUploadBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "none";
   document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
+  document.getElementById("userDataWindow".classList).style.display("none");
+  document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
 
 document.getElementById("donutCtrlBtn").addEventListener("click", () => {
@@ -529,6 +548,8 @@ document.getElementById("donutCtrlBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.add("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "none";
   document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
+  document.getElementById("userDataWindow".classList).style.display("none");
+  document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
 
 document.getElementById("adminCredsBtn").addEventListener("click", () => {
@@ -540,6 +561,21 @@ document.getElementById("adminCredsBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "flex";
   document.getElementById("adminCredsBtn").classList.add("slowBlinking");
+  document.getElementById("userDataWindow".classList).style.display("none");
+  document.getElementById("userDataBtn").classList.remove("slowBlinking");
+});
+
+document.getElementById("userDataBtn").addEventListener("click", () => {
+  document.getElementById("webScrapeWindow").style.display = "none";
+  document.getElementById("webScrapeBtn").classList.remove("slowBlinking");
+  document.getElementById("uploadWindow").style.display = "none";
+  document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
+  document.getElementById("donutWindow").style.display = "none";
+  document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
+  document.getElementById("adminCredsWindow").style.display = "none";
+  document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
+  document.getElementById("userDataWindow".classList).style.display("flex");
+  document.getElementById("userDataBtn").classList.add("slowBlinking");
 });
 
 
@@ -831,3 +867,116 @@ document.getElementById("adminCredsForm").addEventListener("submit", async (e) =
     console.error(err);
   }
 });
+
+//File Editor
+// 1. Load txt files from backend
+document.getElementById("loadFileListBtn").addEventListener("click", async () => {
+  const res = await fetch("http://localhost:8000/api/files?type=txt");
+  const { files } = await res.json();
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const filtered = files.filter(name => name.toLowerCase().includes(search));
+  displayFileList(filtered);
+});
+
+// 📝 2. Display file list with edit/delete/preview buttons
+function displayFileList(files) {
+  const list = document.getElementById("fileList");
+  list.innerHTML = "";
+
+  files.forEach(name => {
+    const li = document.createElement("li");
+    li.textContent = name;
+
+    const previewBtn = document.createElement("button");
+    previewBtn.textContent = "👁️ Preview";
+    previewBtn.onclick = () => previewFile(name);
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "📝 Edit";
+    editBtn.onclick = () => openEditorModal(name);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "🗑️ Delete";
+    deleteBtn.onclick = () => deleteFile(name);
+
+    li.append(" ", previewBtn, " ", editBtn, " ", deleteBtn);
+    list.appendChild(li);
+  });
+
+  document.getElementById("fileListContainer").style.display = "block";
+  document.getElementById("fileListContainer").style.opacity = "1";
+}
+
+// 👁️ 3. Preview file
+async function previewFile(filename) {
+  selectedFile = filename;
+  const listContainer = document.getElementById("fileListContainer");
+  listContainer.style.transition = "opacity 0.3s ease";
+  listContainer.style.opacity = "0";
+  setTimeout(() => {
+    listContainer.style.display = "none";
+  }, 300);
+
+  const res = await fetch(`http://localhost:8000/api/file?type=txt&name=${encodeURIComponent(filename)}`);
+  const data = await res.json();
+  document.getElementById("filePreview").textContent = data.content;
+}
+
+// ✏️ 4. Open editor modal
+function openEditorModal(filename) {
+  fetch(`http://localhost:8000/api/file?type=txt&name=${encodeURIComponent(filename)}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("editorFilename").textContent = filename;
+      document.getElementById("fileEditorContent").value = data.content;
+      document.getElementById("fileEditorModal").classList.add("active");
+    });
+}
+
+// 💾 5. Save edited file
+function saveEditedFile() {
+  const filename = document.getElementById("editorFilename").textContent;
+  const newContent = document.getElementById("fileEditorContent").value;
+
+  fetch("http://localhost:8000/api/file/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "txt",
+      name: filename,
+      content: newContent
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      showStatus("✅ File saved!", "success");
+      closeEditorModal();
+    })
+    .catch(err => {
+      showStatus("❌ Failed to save file", "error");
+      console.error(err);
+    });
+}
+
+// ❌ 6. Delete file
+function deleteFile(filename) {
+  if (!confirm(`Delete ${filename}?`)) return;
+
+  fetch(`http://localhost:8000/api/file?type=txt&name=${encodeURIComponent(filename)}`, {
+    method: "DELETE"
+  })
+    .then(res => res.json())
+    .then(data => {
+      showStatus("✅ File deleted", "success");
+      document.getElementById("loadFileListBtn").click(); // reload
+    })
+    .catch(err => {
+      showStatus("❌ Failed to delete file", "error");
+      console.error(err);
+    });
+}
+
+// ⛔ Close editor modal
+function closeEditorModal() {
+  document.getElementById("fileEditorModal").classList.remove("active");
+}

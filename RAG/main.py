@@ -447,3 +447,63 @@ async def update_admin_creds(data: UpdateAdminModel, request: Request):
     
     finally:
         conn.close()
+        
+# ==== admin: File manager page
+# Base paths
+BASE_PATHS = {
+    "txt": Path("RAG/knowledge/raw"),
+    "json": Path("RAG/knowledge/testJson")
+}
+
+# Model for saving files
+class SaveFileRequest(BaseModel):
+    type: str
+    name: str
+    content: str
+    
+    
+@app.get("/api/files")
+def list_files(type: str):
+    if type not in BASE_PATHS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    path = BASE_PATHS[type]
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Directory not found")
+    files = [f.name for f in path.glob(f"*.{type}")]
+    return {"files": files}
+
+@app.get("/api/file")
+def get_file(type: str, name: str):
+    if type not in BASE_PATHS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    file_path = BASE_PATHS[type] / name
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        return {"name": name, "content": file_path.read_text(encoding="utf-8")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/file/save")
+def save_file(data: SaveFileRequest):
+    if data.type not in BASE_PATHS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    file_path = BASE_PATHS[data.type] / data.name
+    try:
+        file_path.write_text(data.content, encoding="utf-8")
+        return {"status": "success", "message": f"{data.name} saved successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/file")
+def delete_file(type: str, name: str):
+    if type not in BASE_PATHS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    file_path = BASE_PATHS[type] / name
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        file_path.unlink()
+        return {"status": "success", "message": f"{name} deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
