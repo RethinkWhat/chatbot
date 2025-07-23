@@ -846,7 +846,7 @@ async function previewFile(name, type) {
   selectedFile = name;
   userFilename.textContent = name;
   try {
-    const res = await fetch(`/api/file?type=${type}&name=${name}`);
+    const res = await fetch(`http://localhost:8000/api/file?type=${type}&name=${name}`);
     const { content } = await res.json();
     userFileEditor.value = content;
     userFileEditor.style.display = "block";
@@ -861,7 +861,7 @@ async function openEditorModal(name, type = "txt") {
   selectedFile = name;
   userFilename.textContent = name;
   try {
-    const res = await fetch(`/api/file?type=${type}&name=${name}`);
+    const res = await fetch(`http://localhost:8000/api/file?type=${type}&name=${name}`);
     const { content } = await res.json();
     userFileEditor.value = content;
     userFileEditor.style.display = "block";
@@ -876,7 +876,7 @@ async function saveEditedFile() {
   const content = userFileEditor.value;
   const type = document.getElementById("dataType").value || "txt";
   try {
-    const res = await fetch(`/api/file/save`, {
+    const res = await fetch(`http://localhost:8000/api/file/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: selectedFile, type, content }),
@@ -893,7 +893,7 @@ async function saveEditedFile() {
 async function deleteFile(name, type = "txt") {
   if (!confirm(`Delete ${name}?`)) return;
   try {
-    const res = await fetch(`/api/file?type=${type}&name=${name}`, {
+    const res = await fetch(`http://localhost:8000/api/file?type=${type}&name=${name}`, {
       method: "DELETE",
     });
     const result = await res.json();
