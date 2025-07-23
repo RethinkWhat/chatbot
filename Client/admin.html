@@ -175,26 +175,22 @@
             </div>
             <div id = "donutWindow" class="popup" style="display: none;">
                 <input type="text" id="searchInput" placeholder="Search .txt files..." />
-                <button id="loadFileListBtn">Search</button>
+                <button id="loadFileListBtn" class="toolbar-btn">Search</button>
                 <div id="fileListContainer">
                     <ul id="fileList"></ul>
                 </div>
                       
 
-                <pre id="filePreview">Select a file to preview</pre>
+                <pre id="filePreview">Select a file to JSONify</pre>
                 <textarea id="fileEditor" rows="12" style="width: 100%; display: none;"></textarea>
-                <div style="margin-top: 10px;">
-                    <button id="editFileBtn">📝 Edit</button>
-                    <button id="saveFileBtn" style="display: none;">💾 Save</button>
-                    <button id="deleteFileBtn">🗑️ Delete</button>
-                </div>
                 <pre id="editStatus" class="output-box"></pre>
 
                 <button class="toolbar-btn" onclick="jsonifyFile(selectedFile)">JSONify This File</button>
 
                     
                 <h2>AI JSONifier</h2>
-                <button id="jsonConvertBtn" class="toolbar-btn">🔄 JSONify data</button>
+                <button id="jsonConvertBtn" class="toolbar-btn">🔄 JSONify whole knowledge base</button>
+                <button id="weaviateBtn" class="toolbar-btn"> Weaviate to knowledge base</button>
                 <pre id="JSONifyOutput" class="output-box"></pre>
             </div>
             <div id="scrapeStatus" class="status-message"></div>
@@ -213,26 +209,6 @@
                         <button class="btn secondary" onclick="closeEditorModal()">Cancel</button>
                         <button class="btn primary" onclick="saveEditedFile()">Save Changes</button>
                     </div>
-                </div>
-            </div>
-            <div id="adminCredsWindow" class="popup" style="display: none;">
-                <div class="window-content">
-                    <div class="window-header">
-                        <h2>🛠 Admin Credentials</h2>
-                    </div>
-                    <form id="adminCredsForm">
-                        <label for="newUsername">New Username:</label><br>
-                        <input type="text" id="newUsername" name="newUsername" placeholder="Enter new username"><br><br>
-                
-                        <label for="newPassword">New Password:</label><br>
-                        <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password"><br><br>
-                
-                        <label for="confirmPassword">Confirm Password:</label><br>
-                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password"><br><br>
-                
-                        <button type="submit" class="toolbar-btn">✅ Save Changes</button>
-                    </form>
-                    <pre id="credsStatus" class="output-box"></pre>
                 </div>
             </div>
                 
@@ -262,19 +238,45 @@
                     </div>
 
                     <h3>📝 File Content</h3>
-                    <p id="userFilename">Select a file to preview</p>
+                    <p id="userFilename">the panel below shows the content of the selected file:</p>
                     <textarea id="userFileEditor" rows="12" style="width: 100%; display: none;"></textarea>
                     <div style="margin-top: 10px;">
-                        <button id="editUserFileBtn">📝 Edit</button>
                         <button id="saveUserFileBtn" style="display: none;">💾 Save</button>
-                        <button id="deleteUserFileBtn">🗑️ Delete</button>
                     </div>
                     <pre id="userEditStatus" class="output-box"></pre>
                 </div>
             </div>
-    
+        </div>
+        </div>
 
-    </div>
+        <!-- admin creds window -->
+        <div class="window" id="adminCredsWindow">
+            <div class="window-content">
+                <div class="window-header">
+                    <h2>🛠 Admin Credentials</h2>
+                    <button class="close-btn" id="closeAdminCredsWindow">&times;</button>
+                </div>
+                <div class="popup" id="adminCredsWindow">
+                    <div cass="window-content">
+                        <form id="adminCredsForm">
+                            <label for="newUsername">New Username:</label><br>
+                            <input type="text" id="newUsername" name="newUsername" placeholder="Enter new username"><br><br>
+                        
+                            <label for="newPassword">New Password:</label><br>
+                            <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password"><br><br>
+                        
+                            <label for="confirmPassword">Confirm Password:</label><br>
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password"><br><br>
+                        
+                            <button type="submit" class="toolbar-btn">✅ Save Changes</button>
+                        </form>
+                        <pre id="credsStatus" class="output-box"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+            
+        
   
 
     <script src="admin.js"></script>

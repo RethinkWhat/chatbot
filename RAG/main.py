@@ -121,6 +121,39 @@ async def predict_endpoint(request: Request):
     print("SENDING THIS REPLY: ", reply)
     return {"text": reply}
 
+# admin changes new creds
+class AdminUpdateRequest(BaseModel):
+    newUsername: str
+    newPassword: str
+
+@app.post("/api/admin/update-credentials")
+def update_admin_credentials(req: AdminUpdateRequest):
+    if not req.newUsername or not req.newPassword:
+        raise HTTPException(status_code=400, detail="Missing fields")
+
+    hashed_pw = bcrypt.hashpw(req.newPassword.encode(), bcrypt.gensalt()).decode()
+
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            sql = """
+                UPDATE accounts
+                SET username = %s, password = %s
+                WHERE id = 1
+            """
+            cursor.execute(sql, (req.newUsername, hashed_pw))
+            conn.commit()
+
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Admin account not found")
+
+        return {"message": "✅ Admin credentials updated."}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update: {e}")
+
+    finally:
+        conn.close()
 
 #when user clicks on stop button, stop RAG respose
 @app.post("/stop")
@@ -129,7 +162,6 @@ async def stop_generation():
         stop_signal["stop"] = True
     return {"status": "stop requested"}
 
-# admin login
 @app.post("/login")
 async def login(request: Request):
     body = await request.json()
@@ -144,10 +176,19 @@ async def login(request: Request):
         cursor.close()
         conn.close()
 
-        if user and bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
+        # Handle non-existing user
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # Check password
+        if bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
             return {"status": "success", "message": "Login successful"}
         else:
             raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    except HTTPException:
+        raise  # Let FastAPI handle raised HTTPExceptions directly
+
     except Exception as e:
         print("Login error:", e)
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -327,25 +368,6 @@ def get_txt_content(filename: str):
         return {"content": f.read()}
 
 
-# JSONify txts
-# @app.post("/trigger/jsonify-txt/{filename}")
-# def jsonify_single_file(filename: str):
-#     input_path = f"knowledge/txt/{filename}"
-#     output_path = f"knowledge/testJson/{filename.replace('.txt', '.json')}"
-
-#     if not os.path.exists(input_path):
-#         raise HTTPException(status_code=404, detail="File not found")
-#     rag = RAGPipeline()
-#     with open(input_path, "r", encoding="utf-8") as f:
-#         raw_text = f.read()
-
-#     result = rag.jsonifyTxt(raw_text)
-
-#     with open(output_path, "w", encoding="utf-8") as out:
-#         json.dump(result, out, indent=2, ensure_ascii=False)
-
-#     return {"status": "success", "json_file": output_path}
-
 
 #upload files
 @app.post("/upload")
@@ -420,6 +442,50 @@ def preview_txt(file: str):
             return PlainTextResponse(content)
     except Exception as e:
         return JSONResponse({"error": f"Failed to read file: {str(e)}"}, status_code=500)
+
+
+#weaviate data in testJson
+@app.post("/weaviate/upload")
+def upload_to_weaviate():
+    data = []
+    json_dir = "knowledge/testJson"
+
+    for filename in os.listdir(json_dir):
+        if filename.endswith(".json"):
+            filepath = os.path.join(json_dir, filename)
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    json_data = json.load(f)
+
+                    if isinstance(json_data, dict):
+                        title = json_data.get("title", filename)
+                        for key, value in json_data.items():
+                            if key == "title":
+                                continue
+
+                            if not value:
+                                continue
+
+                            chunk = {
+                                "title": f"{title} - {key}".strip(),
+                                "answer": json.dumps(value, indent=2),
+                                "category": filename
+                            }
+                            data.append(chunk)
+                            print(data)
+                    else:
+                        print(f"Skipping {filename}: not a valid JSON object.")
+            except json.JSONDecodeError as e:
+                print(f"Failed to decode {filename}: {e}")
+
+    # OPTIONAL: Insert into Weaviate here if needed
+    # weaviate_client.batch().add_data_objects(data, class_name="YourClass")
+
+    return {
+        "status": "✅ Uploaded to Weaviate",
+        "files_processed": len(data),
+        "sample": data[:3]  # preview a few items
+    }
 
 #admin changes creds
 @app.post("/api/admin/update")

@@ -647,3 +647,36 @@ pre {
     transition: opacity 0.3s ease;
   }
   
+  .selected-file {
+  background-color: #1e40af !important;
+  color: white !important;
+}
+
+  #userFileList li {
+    cursor: pointer;
+    padding: 6px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+  }
+
+@keyframes blinkHighlight {
+  0% { background-color: #dff0d8; }
+  50% { background-color: #c8e5bc; }
+  100% { background-color: #dff0d8; }
+}
+
+.status-message.blink {
+  animation: blinkHighlight 1s ease-in-out;
+  border-left: 4px solid green;
+  padding-left: 8px;
+  margin-top: 5px;
+}
+
+.output-box.flash {
+  animation: flash-success 1s ease;
+}
+
+@keyframes flash-success {
+  0% { background-color: #d4edda; }
+  100% { background-color: transparent; }
+}

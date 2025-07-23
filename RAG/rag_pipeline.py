@@ -243,18 +243,3 @@ Answer:
         return response
     
 # code regarding old JSONifier is deleted; New ones follow. See Main.py:
-
-
-def batch_convert_txts_to_json(input_dir, output_dir):
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    for txt_file in Path(input_dir).glob("*.txt"):
-        with open(txt_file, "r", encoding="utf-8") as f:
-            text = f.read()
-
-        result = extract_json_from_txt(text)
-        out_path = Path(output_dir) / (txt_file.stem + ".json")
-
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
-
-        print(f"✅ Processed {txt_file.name}")

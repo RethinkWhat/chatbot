@@ -22,10 +22,14 @@ class AdminPanel {
     this.loadUrlsBtn = document.getElementById('loadUrlsBtn');
     this.saveUrlsBtn = document.getElementById('saveUrlsBtn');
     this.jsonConvertBtn = document.getElementById('jsonConvertBtn');
+    this.weaviateBtn = document.getElementById('weaviateBtn');
     this.scrapeBtn = document.getElementById('scrapeBtn');
+    
     this.runBtn = document.getElementById('run');
     this.adminCredsBtn = document.getElementById('adminCredsBtn');
     this.userDataBtn = document.getElementById("userDataBtn");
+    window.jsonifyFile = jsonifyFile;
+
   
     
     //file manager popup window items
@@ -69,6 +73,7 @@ class AdminPanel {
     this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
     document.getElementById('addMenuBtn').addEventListener('click', () => this.showAddMenuWindow());
     document.getElementById('saveAllBtn').addEventListener('click', () => this.saveAllChanges());
+    document.getElementById("weaviateBtn").addEventListener("click", weaviate);
     document.getElementById('resetBtn').addEventListener('click', (e) => {
       const btn = e.currentTarget;
       if (btn.disabled) return;
@@ -78,6 +83,9 @@ class AdminPanel {
     document.getElementById("closeScrapeWindow").addEventListener("click", () => {
       document.getElementById("scrapeWindow").classList.remove("active");
     });
+    document.getElementById("closeAdminCredsWindow").addEventListener("click", (e) => {
+      document.getElementById("adminCredsWindow").classList.remove("active");
+    })
 
     
     document.getElementById('closeWindow').addEventListener('click', () => this.closeMenuWindow());
@@ -529,9 +537,16 @@ document.getElementById("scrapeBtn").addEventListener("click", async () => {
 });
 
 
+
 document.getElementById("closeScrapeWindow").addEventListener("click", () => {
   document.getElementById("scrapeWindow").classList.remove("active");
 });
+
+//open admin creds window
+document.getElementById("adminCredsBtn").addEventListener("click", async () => {
+  document.getElementById("adminCredsWindow").classList.add("active");
+});
+
 
 // add even listener for the btns inside scrap window popup:
 document.getElementById("webScrapeBtn").addEventListener("click", () => {
@@ -569,19 +584,6 @@ document.getElementById("donutCtrlBtn").addEventListener("click", () => {
   document.getElementById("donutCtrlBtn").classList.add("slowBlinking");
   document.getElementById("adminCredsWindow").style.display = "none";
   document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
-  document.getElementById("userDataWindow").style.display = "none";
-  document.getElementById("userDataBtn").classList.remove("slowBlinking");
-});
-
-document.getElementById("adminCredsBtn").addEventListener("click", () => {
-  document.getElementById("webScrapeWindow").style.display = "none";
-  document.getElementById("webScrapeBtn").classList.remove("slowBlinking");
-  document.getElementById("uploadWindow").style.display = "none";
-  document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
-  document.getElementById("donutWindow").style.display = "none";
-  document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
-  document.getElementById("adminCredsWindow").style.display = "flex";
-  document.getElementById("adminCredsBtn").classList.add("slowBlinking");
   document.getElementById("userDataWindow").style.display = "none";
   document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
@@ -723,48 +725,105 @@ document.getElementById("jsonConvertBtn").addEventListener("click", () => {
   };
 });
 
+//single JSONification
+async function jsonifyFile(filename) {
+  if (!filename) {
+    showUserMessage("❌ No file selected for JSONification", true);
+    return;
+  }
+
+  const statusBox = document.getElementById("editStatus");
+  statusBox.textContent = `🔄 Sending ${filename} to JSONifier...`;
+
+  try {
+    const res = await fetch(`http://localhost:8500/txt2json?file=${encodeURIComponent(filename)}`, {
+      method: "POST",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      statusBox.textContent = `❌ ${data.error || "Unknown error"}`;
+      return;
+    }
+
+    statusBox.textContent = data.status || "✅ JSONification completed.";
+  } catch (err) {
+    statusBox.textContent = `❌ Request failed: ${err.message}`;
+  }
+}
+
+//weaviate 
+async function weaviate() {
+  const output = document.getElementById("JSONifyOutput");
+  output.textContent = "📡 Uploading to Weaviate...";
+
+  try {
+    const res = await fetch("http://localhost:8000/weaviate/upload", {
+      method: "POST"
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      output.innerHTML =
+        `✅ Weaviation complete!\n` +
+        `Files processed: ${data.files_processed}\n\n` +
+        `Preview:\n${data.sample.map(entry => `• ${entry.title}`).join("\n")}`;
+    } else {
+      output.textContent = `❌ Upload failed: ${data.error || JSON.stringify(data)}`;
+    }
+  } catch (err) {
+    output.textContent = `❌ Error connecting to backend: ${err.message}`;
+  }
+}
+
+
 
 
 //admin Creds Form
 document.getElementById("adminCredsForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const newUsername = document.getElementById("newUsername").value.trim();
-  const newPassword = document.getElementById("newPassword").value;
-  const confirmPassword = document.getElementById("confirmPassword").value;
-  const credsStatus = document.getElementById("credsStatus");
+  const username = document.getElementById("newUsername").value.trim();
+  const password = document.getElementById("newPassword").value.trim();
+  const confirm = document.getElementById("confirmPassword").value.trim();
+  const statusBox = document.getElementById("credsStatus");
 
-  if (!newUsername && !newPassword) {
-    credsStatus.textContent = "Please provide a new username or password.";
+  if (!username || !password || !confirm) {
+    statusBox.textContent = "❌ All fields are required.";
     return;
   }
 
-  if (newPassword && newPassword !== confirmPassword) {
-    credsStatus.textContent = "Passwords do not match.";
+  if (password !== confirm) {
+    statusBox.textContent = "❌ Passwords do not match.";
     return;
   }
 
   try {
-    const response = await fetch("http://localhost:8000/api/admin/update", {
+    const res = await fetch("http://localhost:8000/api/admin/update-credentials", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ newUsername, newPassword })
+      body: JSON.stringify({ newUsername: username, newPassword: password })
     });
 
-    const result = await response.json();
-    if (response.ok) {
-      credsStatus.textContent = "✅ Credentials updated. Reloading...";
-      setTimeout(() => window.location.reload(), 1500);  // force logout
+    const data = await res.json();
+    if (!res.ok) {
+      statusBox.textContent = `❌ ${data.detail || "Unknown error"}`;
     } else {
-      credsStatus.textContent = `❌ ${result.error || "Update failed"}`;
+      statusBox.textContent = data.message || "✅ Credentials updated.";
+      document.getElementById("adminCredsForm").reset();
+      statusBox.classList.add("flash");
+      setTimeout(() => statusBox.classList.remove("flash"), 1000);
+
     }
   } catch (err) {
-    credsStatus.textContent = "❌ Error updating credentials.";
-    console.error(err);
+    statusBox.textContent = `❌ Request failed: ${err.message}`;
   }
 });
 
-//file Editor
+
+// PREVIEW,EDIT and DELETE function
 // Constants for pagination
 let selectedFile = "";
 let currentPage = 1;
@@ -781,7 +840,7 @@ document.getElementById("loadDataFilesBtn").addEventListener("click", async () =
 
 async function fetchFiles() {
   try {
-    const res = await fetch(`/api/files?type=${currentFileType}`);
+    const res = await fetch(`http://localhost:8000/api/files?type=${currentFileType}`);
     const { files } = await res.json();
     fullFileList = files;
     displayPaginatedFiles();
@@ -821,6 +880,7 @@ function renderPaginationControls() {
 
   for (let i = 1; i <= totalPages; i++) {
     const btn = document.createElement("button");
+    btn.classList.add("toolbar-btn");
     btn.textContent = i;
     btn.disabled = i === currentPage;
     btn.onclick = () => {
@@ -872,6 +932,8 @@ async function openEditorModal(name, type = "txt") {
 }
 
 // Save
+document.getElementById("saveUserFileBtn").addEventListener("click", saveEditedFile);
+
 async function saveEditedFile() {
   const content = userFileEditor.value;
   const type = document.getElementById("dataType").value || "txt";
@@ -882,7 +944,8 @@ async function saveEditedFile() {
       body: JSON.stringify({ name: selectedFile, type, content }),
     });
     const result = await res.json();
-    userEditStatus.textContent = result.message || "✅ Saved successfully";
+    userFileEditor.style.display = "none";
+    showUserMessage("✅ File saved and editor closed.");
     saveUserFileBtn.style.display = "none";
   } catch (err) {
     userEditStatus.textContent = `❌ Save failed: ${err}`;
@@ -897,7 +960,9 @@ async function deleteFile(name, type = "txt") {
       method: "DELETE",
     });
     const result = await res.json();
-    userEditStatus.textContent = result.message || "🗑️ Deleted successfully";
+    userFileEditor.style.display = "none";
+    showUserMessage("🗑️ File deleted and editor closed.");
+
     fetchFiles();
   } catch (err) {
     userEditStatus.textContent = `❌ Deletion failed: ${err}`;
@@ -908,4 +973,85 @@ async function deleteFile(name, type = "txt") {
 function closeEditorModal() {
   userFileEditor.style.display = "none";
   userEditStatus.textContent = "";
+}
+
+//animation: Edit status
+function showUserMessage(message, isError = false) {
+  const el = document.getElementById("userEditStatus");
+  el.textContent = message;
+  el.classList.remove("blink");
+  el.style.color = isError ? "red" : "green";
+  void el.offsetWidth; // Trigger reflow to restart animation
+  el.classList.add("blink");
+}
+
+
+// ==================FILE JSONIFICATION
+document.getElementById("loadFileListBtn").addEventListener("click", async () => {
+  const res = await fetch("http://localhost:8000/list-txt-files");
+  const { files } = await res.json();
+
+  const searchInput = document.getElementById("searchInput").value.trim().toLowerCase();
+
+  // Default behavior: if search is empty, show all
+  const filtered = searchInput
+    ? files.filter(name => name.toLowerCase().includes(searchInput))
+    : files;
+
+  currentPage = 1; // reset pagination
+  displayFileList(filtered);
+});
+
+
+// -- display what files to be JSONified
+function displayFileList(files, type = "txt") {
+  let currentPage = 1;
+  const filesPerPage = 10;
+  let filteredFiles = [];
+
+  const list = document.getElementById("fileList");
+  list.innerHTML = "";
+
+  filteredFiles = files; // store full filtered list
+  const startIndex = (currentPage - 1) * filesPerPage;
+  const endIndex = startIndex + filesPerPage;
+  const filesToShow = filteredFiles.slice(startIndex, endIndex);
+
+  filesToShow.forEach((name) => {
+    const li = document.createElement("li");
+    li.textContent = name;
+
+    if (name === selectedFile) li.classList.add("selected-file");
+
+    li.onclick = () => {
+      selectedFile = name;
+      displayFileList(filteredFiles, type);
+    };
+
+
+    list.appendChild(li);
+  });
+
+  renderJSONPaginationControls(); // show nav
+}
+
+function renderJSONPaginationControls() {
+  const totalPages = Math.ceil(fullFileList.length / filesPerPage);
+  const controls = document.getElementById("paginationControls") || document.createElement("div");
+  controls.id = "paginationControls";
+  controls.innerHTML = "";
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.disabled = i === currentPage;
+    btn.onclick = () => {
+      currentPage = i;
+      displayPaginatedFiles();
+    };
+    controls.appendChild(btn);
+  }
+
+  // Attach below the file list
+  document.getElementById("userFileList").after(controls);
 }

@@ -2,6 +2,7 @@ import json, re, time, traceback
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
+from datetime import datetime
 
 RAW_TXT_DIR = Path("/app/knowledge/raw")
 JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
@@ -60,16 +61,13 @@ def get_json_from_text(text: str) -> dict:
         "ONLY return valid JSON.\n\nInput text:\n" + text[:2000]
     )
 
-    # Format as chat for SmolLM3
     messages = [{"role": "user", "content": prompt}]
     formatted_prompt = tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
 
     inputs = tokenizer([formatted_prompt], return_tensors="pt").to("cuda")
-
-    # Dynamically adjust max tokens based on input
-    max_tokens = min(1536, 2048 - inputs["input_ids"].shape[-1])
+    max_tokens = min(2048, 4000 - inputs["input_ids"].shape[-1])
 
     try:
         outputs = model.generate(
@@ -84,7 +82,13 @@ def get_json_from_text(text: str) -> dict:
         response = tokenizer.decode(generated_ids, skip_special_tokens=True)
         response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
 
-        return json.loads(extract_first_json_block(response))
+        try:
+            json_str = extract_first_json_block(response)
+            return json.loads(json_str)
+        except Exception as e:
+            print(f"[PARSE ERROR] Could not extract valid JSON from LLM response.")
+            print(f"[RAW OUTPUT]\n{response}")
+            raise ValueError("Failed to parse JSON from model output.") from e
 
     except Exception as e:
         print(f"[GEN ERROR] Exception during generation: {e}")
@@ -100,7 +104,6 @@ def jsonify_stream():
     yield f"data: Found {len(txt_files)} file(s).\n\n"
 
     for txt_path in txt_files:
-        json_path = JSON_OUTPUT_DIR / (txt_path.stem + ".json")
         try:
             print(f"[Processing] {txt_path.name}")
             raw_text = txt_path.read_text(encoding="utf-8").strip()
@@ -112,10 +115,27 @@ def jsonify_stream():
 
             json_data = get_json_from_text(raw_text)
 
+            # === Inject metadata ===
+            date_str = datetime.today().strftime("%Y-%m-%d")
+            if isinstance(json_data, dict):
+                json_data.setdefault("metadata", {})["date_created"] = date_str
+            else:
+                json_data = {
+                    "content": json_data,
+                    "metadata": {
+                        "date_created": date_str
+                    }
+                }
+
+            # === Save JSON with date in filename ===
+            base_name = txt_path.stem
+            json_filename = f"{base_name}_{date_str}.json"
+            json_path = JSON_OUTPUT_DIR / json_filename
+
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(json_data, f, indent=2, ensure_ascii=False)
 
-            yield f"data: [DONE] Saved {json_path.name}\n\n"
+            yield f"data: [DONE] Saved {json_filename}\n\n"
 
         except Exception as e:
             tb = traceback.format_exc().replace("\n", " | ")

@@ -102,9 +102,18 @@ class PDFScraper:
                 logging.error(f"[Failed] No extractable text from: {filename}")
                 continue
 
-            for idx, chunk_text in enumerate(chunks, 1):
-                chunk_filename = f"{base_name}-{idx}.txt"
+            for chunk_index, chunk_text in enumerate(chunks):
+                start_page = chunk_index * self.pages_per_chunk + 1
+                end_page = min((chunk_index + 1) * self.pages_per_chunk, len(chunks) * self.pages_per_chunk)
+
+                if start_page == end_page:
+                    suffix = f"-Page{start_page}"
+                else:
+                    suffix = f"-Page{start_page}-{end_page}"
+
+                chunk_filename = f"{base_name}{suffix}.txt"
                 output_path = os.path.join(self.output_dir, chunk_filename)
+
 
                 with open(output_path, "w", encoding="utf-8") as out:
                     out.write(chunk_text)
