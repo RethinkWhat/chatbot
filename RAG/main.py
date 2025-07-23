@@ -12,7 +12,7 @@ import asyncio
 import subprocess
 # local Imports
 from rag_pipeline import RAGPipeline  
-from build_vector_index import BuildVectorIndex
+#from build_vector_index import BuildVectorIndex
 import bcrypt, subprocess, shutil,json
 # Scraper functions
 from scrapers.web_scraper import run_scraper
@@ -57,7 +57,7 @@ app.add_middleware(
 # Utility: database connection
 def get_db_connection():
     return pymysql.connect(
-        host="host.docker.internal", 
+        host="ollama", 
         user="root",
         password="root",
         database="navi-bot",
@@ -405,6 +405,7 @@ async def trigger_image_scanner():
     return {"status": "image scan done"}
 
 # are we still building index? Or are we weaviating?
+
 # @app.post("/trigger/index")
 # async def trigger_vector_index():
 #     builder = BuildVectorIndex()

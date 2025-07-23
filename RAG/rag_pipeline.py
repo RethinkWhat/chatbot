@@ -1,6 +1,5 @@
 from sklearn import base
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
 from langchain_ollama import ChatOllama
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
@@ -12,6 +11,7 @@ import posthog
 import requests, json, time, os, re, subprocess
 
 
+
 import weaviate
 from weaviate import WeaviateClient
 from weaviate.classes.config import Configure
@@ -19,6 +19,7 @@ import time
 import textwrap # for paraphrasing the knowledge base
 
 from constants import apologyMsg
+import re
 
 
 llmModel = None  # Initialize llmModel to be used later in the class
@@ -34,102 +35,102 @@ class RAGPipeline:
         
     #     comment out the section if it is already run once.
     #   --------------------------------  START ------------------------------------------------------
-        # client = weaviate.connect_to_custom(
-        #     http_host="weaviate",         # your Docker service name or localhost
-        #     http_port=8080,
-        #     http_secure=False,
-        #     grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
-        #     grpc_port=50051,
-        #     grpc_secure=False
-        # )
-        # questions = client.collections.create(
-        #     name="NaviBot",
-        #     vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
-        #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
-        #         model="nomic-embed-text",                               # The model to use
-        #     ),
-        #     generative_config=Configure.Generative.ollama(              # Configure the Ollama generative integration
-        #         api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
-        #         model="llama3.2",                                       # The model to use
-        #     )
-        # )
-        # client.close()  # Free up resources
+        client = weaviate.connect_to_custom(
+            http_host="weaviate",         # your Docker service name or localhost
+            http_port=8080,
+            http_secure=False,
+            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+            grpc_port=50051,
+            grpc_secure=False
+        )
+        questions = client.collections.create(
+            name="navibot10",
+            vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
+                api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
+                model="nomic-embed-text",                               # The model to use
+            ),
+            generative_config=Configure.Generative.ollama(              # Configure the Ollama generative integration
+                api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
+                model="llama3:8b",                                       # The model to use
+            )
+        )
+        client.close()  # Free up resources
 
-        # client = weaviate.connect_to_custom(
-        #     http_host="weaviate",         # your Docker service name or localhost
-        #     http_port=8080,
-        #     http_secure=False,
-        #     grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
-        #     grpc_port=50051,
-        #     grpc_secure=False
-        # )
+        client = weaviate.connect_to_custom(
+            http_host="weaviate",         # your Docker service name or localhost
+            http_port=8080,
+            http_secure=False,
+            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+            grpc_port=50051,
+            grpc_secure=False
+        )
 
-        # navibot = client.collections.get("NaviBot")
-        # # Step 4: Read and parse all JSON files
-        # data = []
-        # for filename in os.listdir("knowledge/json"):
-        #     if filename.endswith(".json"):
-        #         filepath = os.path.join("knowledge/json", filename)
-        #         try:
-        #             with open(filepath, "r", encoding="utf-8") as f:
-        #                 json_data = json.load(f)
+        navibot = client.collections.get("navibot10")
+        # Step 4: Read and parse all JSON files
+        data = []
+        for filename in os.listdir("knowledge/json"):
+            if filename.endswith(".json"):
+                filepath = os.path.join("knowledge/json", filename)
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        json_data = json.load(f)
 
-        #                 if isinstance(json_data, dict):
-        #                     title = json_data.get("title", filename)
-        #                     for key, value in json_data.items():
-        #                         if key == "title":
-        #                             continue  # Already stored as 'title'
+                        if isinstance(json_data, dict):
+                            title = json_data.get("title", filename)
+                            for key, value in json_data.items():
+                                if key == "title":
+                                    continue  # Already stored as 'title'
 
-        #                         # Skip empty content
-        #                         if not value:
-        #                             continue
+                                # Skip empty content
+                                if not value:
+                                    continue
 
-        #                         chunk = {
-        #                             "title": f"{title} - {key}".strip(),
-        #                             "answer": json.dumps(value, indent=2),
-        #                             "category": filename
-        #                         }
-        #                         data.append(chunk)
-        #                 else:
-        #                     print(f"Skipping {filename}: not a valid JSON object.")
+                                chunk = {
+                                    "title": f"{title} - {key}".strip(),
+                                    "answer": json.dumps(value, indent=2),
+                                    "category": filename
+                                }
+                                data.append(chunk)
+                        else:
+                            print(f"Skipping {filename}: not a valid JSON object.")
 
-        #         except json.JSONDecodeError as e:
-        #             print(f"Failed to decode {filename}: {e}")
+                except json.JSONDecodeError as e:
+                    print(f"Failed to decode {filename}: {e}")
 
-        # # Insert chunks in batches
-        # with navibot.batch.fixed_size(batch_size=200) as batch:
-        #     for item in data:
-        #         batch.add_object({
-        #             "title": item["title"][:300],
-        #             "answer": item["answer"],
-        #             "category": item["category"]
-        #         })
-        #         if batch.number_errors > 10:
-        #             print("Batch import stopped due to excessive errors.")
-        #             break
+        # Insert chunks in batches
+        with navibot.batch.fixed_size(batch_size=200) as batch:
+            for item in data:
+                batch.add_object({
+                    "title": item["title"][:300],
+                    "answer": item["answer"],
+                    "category": item["category"]
+                })
+                if batch.number_errors > 10:
+                    print("Batch import stopped due to excessive errors.")
+                    break
 
-        #         failed_objects = navibot.batch.failed_objects
-        #         if failed_objects:
-        #             print(f"Number of failed imports: {len(failed_objects)}")
-        #             print(f"First failed object: {failed_objects[0]}")
+                failed_objects = navibot.batch.failed_objects
+                if failed_objects:
+                    print(f"Number of failed imports: {len(failed_objects)}")
+                    print(f"First failed object: {failed_objects[0]}")
 
-        #         # Fetch and print all objects
-        #         questions = client.collections.get("NaviBot")  # You can increase the limit as needed
-        #         # Print nicely
-        #         results = questions.query.fetch_objects(limit=100)
+                # Fetch and print all objects
+                questions = client.collections.get("navibot10")  # You can increase the limit as needed
+                # Print nicely
+                results = questions.query.fetch_objects(limit=100)
 
-        #         # for obj in results.objects:
-        #         #     print("UUID:", obj.uuid)
-        #         #     print("Properties:", obj.properties)
-        #         #     print("-" * 40)
+                # for obj in results.objects:
+                #     print("UUID:", obj.uuid)
+                #     print("Properties:", obj.properties)
+                #     print("-" * 40)
 
-        # client.close()  # Free up resources
+        client.close()  # Free up resources
 
         #--------------------------------  END ------------------------------------------------------
 
         try:
             # Select LLM backend
-            print("Using Ollama (llama3) as LLM")
+            print("Using Ollama (LLAMA3:8b) as LLM")
             self.llmModel = ChatOllama(
                 model="llama3:8b", 
                 base_url="http://ollama:11434",
@@ -200,16 +201,16 @@ class RAGPipeline:
             grpc_secure=False
         )
 
-        questions = client.collections.get("NaviBot")
+        questions = client.collections.get("navibot10")
 
         response = questions.query.near_text(
                     query=question,
-                    limit=10,
-                 #   distance=0.50,
+                    limit=15,
+                    distance=0.50,
                     return_metadata=["distance"]  
         )
 
-        questions = client.collections.get("NaviBot")  # This should be the collection where you ingested the data
+        questions = client.collections.get("navibot10")  # This should be the collection where you ingested the data
 
 
         client.close()
@@ -217,29 +218,47 @@ class RAGPipeline:
 
 
         context = "\n\n".join([
-            f"{obj.properties['title'].split(' _ ')[-1]} - Document {i+1}:\n{obj.properties['answer']}  (Distance: {obj.metadata.distance:.4f}):"
+            f"{obj.properties['title'].split(' _ ')[-1]} - {obj.properties['answer']} \n"
             for i, obj in enumerate(response.objects)
         ])
 
+
+        print("THIS IS THE CONTEXT: ", context)
+        if not re.search(r'[a-zA-Z]', context):
+            return apologyMsg
         prompt = f"""
-You are a helpful assistant. Use the information provided below to answer the user's question directly and concisely. 
+You are a helpful assistant designed to answer questions only for students based strictly on the provided documents.
 
-- Do NOT say "Based on the documents" or "According to the text".
-- Do NOT refer to any documents, sources, or context.
-- Just answer as if you already know the information.
-- If the answer is not found, say {apologyMsg}. Do not add extra information.
 
-Information:
+- The current date is July 17, 2025.
+- Only use information that is explicitly stated.
+- Job opportunities, descriptions, or objectives are not equivalent to subjects or course listings.
+- I expect you to answer on based off the information I give you.
+- Don't apologize.
+- Always provide all relevant details from the infomration provided in a clear and specific way. Provide a single detailed response.
+- Do not say "According to the context", "Based on the provided documents", just simply provide an answer.
+- NEVER say phrases like "the provided documents", "according to the context", or "based on the source". Just answer plainly. 
+If the answer is not known, respond ONLY with "{apologyMsg}" Do NOT elaborate or mention the documents at all.
+- When asked “Who is [person]?”, respond with their full name **and** any titles, roles, or affiliations mentioned in the documents. Do not omit available details.
+- Collate all of the related information and give it to me.
+---
+
 {context}
 
-Question: {question}
 
-Answer:
+QUESTION:  
+{question}
 
+
+Output format rule: Answers MUST NOT contain phrases referencing the source such as "documents", "context", or "provided materials".
+
+ANSWER:
 """
-
         response = self.chain.predict(input=prompt)
         print("LLM RESPONSE: ", response )
+        
         return response
     
-# code regarding old JSONifier is deleted; New ones follow. See Main.py:
+
+# code regarding old JSONifier is deleted; New ones follow. See Main.py, and go ahead and checkout API endpoint within "smol" container/dolfer
+

@@ -9,6 +9,8 @@ services:
       - ./RAG:/app
       - ./RAG/knowledge:/app/knowledge
       - ./Client:/app/Client
+    environment:
+      OLLAMA_URL: http://ollama:11434
     networks:
       - chatbot_network
 
@@ -50,18 +52,18 @@ services:
     volumes:
       - ./client:/usr/share/nginx/html
 
-  ollama:
-    image: ollama/ollama
-    #container_name: christian_ollama # for temp test
-    container_name: ollama
-    ports:
-      - "11434:11434"  # Ollama API port
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    command: serve
-    networks:
-      - chatbot_network
+  # ollama:
+  #   image: ollama/ollama
+  #   container_name: ollama
+  #   ports:
+  #     - "11434:11434"  # Ollama API port
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+  #   command: serve
+  #   networks:
+  #     - chatbot_network
+
   db:
     image: mysql:8.0
     restart: always
@@ -123,10 +125,11 @@ services:
 
 
 volumes:
-  ollama_data:
+  #ollama_data:
   db_data:
   rasa_models:
   weaviate_data:
 
 networks:
   chatbot_network:
+    external: true
