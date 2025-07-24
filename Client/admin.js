@@ -556,8 +556,6 @@ document.getElementById("webScrapeBtn").addEventListener("click", () => {
   document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
   document.getElementById("donutWindow").style.display = "none";
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
-  document.getElementById("adminCredsWindow").style.display = "none";
-  document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
   document.getElementById("userDataWindow").style.display = "none";
   document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
@@ -569,8 +567,6 @@ document.getElementById("fileUploadBtn").addEventListener("click", () => {
   document.getElementById("fileUploadBtn").classList.add("slowBlinking");
   document.getElementById("donutWindow").style.display = "none";
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
-  document.getElementById("adminCredsWindow").style.display = "none";
-  document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
   document.getElementById("userDataWindow").style.display = "none";
   document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
@@ -582,8 +578,6 @@ document.getElementById("donutCtrlBtn").addEventListener("click", () => {
   document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
   document.getElementById("donutWindow").style.display = "flex";
   document.getElementById("donutCtrlBtn").classList.add("slowBlinking");
-  document.getElementById("adminCredsWindow").style.display = "none";
-  document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
   document.getElementById("userDataWindow").style.display = "none";
   document.getElementById("userDataBtn").classList.remove("slowBlinking");
 });
@@ -595,8 +589,6 @@ document.getElementById("userDataBtn").addEventListener("click", () => {
   document.getElementById("fileUploadBtn").classList.remove("slowBlinking");
   document.getElementById("donutWindow").style.display = "none";
   document.getElementById("donutCtrlBtn").classList.remove("slowBlinking");
-  document.getElementById("adminCredsWindow").style.display = "none";
-  document.getElementById("adminCredsBtn").classList.remove("slowBlinking");
   document.getElementById("userDataWindow").style.display = "flex";
   document.getElementById("userDataBtn").classList.add("slowBlinking");
 });

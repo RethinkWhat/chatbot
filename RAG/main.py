@@ -57,7 +57,7 @@ app.add_middleware(
 # Utility: database connection
 def get_db_connection():
     return pymysql.connect(
-        host="ollama", 
+        host="host.docker.internal", 
         user="root",
         password="root",
         database="navi-bot",
@@ -372,7 +372,7 @@ def get_txt_content(filename: str):
 #upload files
 @app.post("/upload")
 async def upload_files(files: list[UploadFile] = File(...)):
-    upload_folder = "knowledge"
+    upload_folder = "knowledge/raw"
     saved = []
 
     for file in files:
