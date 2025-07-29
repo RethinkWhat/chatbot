@@ -12,10 +12,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* \
     && pip install uvicorn
 
-# Set up a virtual environment (optional)
-RUN python -m venv /app/venv
-ENV PATH="/app/venv/bin:$PATH"
-
 # Copy and install Python dependencies from requirements.txt
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
@@ -40,3 +36,4 @@ ENV CUDA_VISIBLE_DEVICES=0
 
 # Expose port and run the app using uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8500"]
+
