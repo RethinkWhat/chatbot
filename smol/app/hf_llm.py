@@ -3,6 +3,10 @@ from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from datetime import datetime
+import torch.nn as nn
+if not hasattr(nn, "RMSNorm"):
+    from transformers.models.llama.modeling_llama import LlamaRMSNorm
+    nn.RMSNorm = LlamaRMSNorm
 
 RAW_TXT_DIR = Path("/app/knowledge/raw")
 JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")

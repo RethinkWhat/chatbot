@@ -30,13 +30,6 @@ RUN python -c "import transformers; print(f'Transformers version: {transformers.
 # Copy app code first
 COPY ./app ./app
 
-# Preload the SmolLM3-3B model with RMSNorm patch
-RUN python -c "\
-import app.rms_patch; \
-from transformers import AutoTokenizer, AutoModelForCausalLM; \
-AutoTokenizer.from_pretrained('HuggingFaceTB/SmolLM3-3B'); \
-AutoModelForCausalLM.from_pretrained('HuggingFaceTB/SmolLM3-3B')"
-
 # Set environment variable for CUDA device visibility (optional)
 ENV CUDA_VISIBLE_DEVICES=0
 
