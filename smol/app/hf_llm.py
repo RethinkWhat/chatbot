@@ -62,7 +62,7 @@ def preprocess_text(text: str) -> str:
 def get_json_from_text(text: str) -> dict:
     prompt = (
         "You are a JSON generator. Convert the following raw text into structured JSON file.\n\n"
-        "ONLY return valid JSON.\n\nInput text:\n" + text[:2000]
+        "ONLY return valid JSON.\n\nInput text:\n" + text
     )
 
     use_extended_thinking = False  # toggle this based on your config

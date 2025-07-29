@@ -68,7 +68,7 @@ def stream_jsonify():
 
 @app.post("/jsonify-one", response_class=JSONResponse)
 def jsonify_one(file: str = Query(...)):
-    RAW_TXT_DIR = Path("/app/knowledge/raw")
+    RAW_TXT_DIR = Path("/app/knowledge/txt")
     JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
     file_path = RAW_TXT_DIR / file
     if not file_path.exists():
