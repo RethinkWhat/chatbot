@@ -63,6 +63,7 @@ services:
   #   command: serve
   #   networks:
   #     - chatbot_network
+
   db:
     image: mysql:8.0
     restart: always
@@ -101,6 +102,28 @@ services:
       CLUSTER_HOSTNAME: 'node1'
     networks:
       - chatbot_network
+
+  smol:
+    build:
+      context: ./smol
+      dockerfile: Dockerfile.smol
+    container_name: smollm3
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./smol:/app
+      - ./RAG/knowledge/raw:/app/knowledge/raw
+      - ./RAG/knowledge/testJson:/app/knowledge/testJson
+      - ~/.cache/huggingface:/root/.cache/huggingface #persists the checkpoint, saves time
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
+
+
+
 volumes:
   #ollama_data:
   db_data:

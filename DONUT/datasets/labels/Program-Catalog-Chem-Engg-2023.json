@@ -1,0 +1,179 @@
+{
+    "title" : "Program Catalog Chemical Engineering",
+  "university": "Saint Louis University",
+  "location": "Baguio City, Philippines",
+  "slu_vision_mission": "We envision Saint Louis University as an excellent missionary and transformative educational institution zealous in developing locally responsive, globally competitive, and empowered human resources who are creative, competent, socially involved, and imbued with Christian spirit.",
+  "school": {
+    "name": "School of Engineering and Architecture",
+    "vision_mission": "The School of Engineering and Architecture (SEA) envisions herself as an exemplary educational institution for engineering and architecture dedicated to elevating instruction, research, and extension to a higher level of competence and creativity committed to shaping the socio-technical environment founded on Christian values."
+  },
+  "program": "Chemical Engineering",
+  "program_educational_objectives": [
+    "Demonstrate technical competence in the analysis of problems and design of systems, considering all dimensions (technical, professional, societal, environmental, economic, and ethical).",
+    "Apply their talents and potentials in the practice of their profession, guided by Christian values.",
+    "Uphold honesty, service, dedication, and a deep sense of moral responsibility.",
+    "Pursue advanced education, research, and creative efforts in science and technology.",
+    "Participate actively in addressing social, technical, and business challenges for national progress."
+  ],
+  "program_learning_outcomes": [
+    "Apply knowledge of mathematics, natural sciences, and engineering fundamentals to complex problems.",
+    "Conduct investigations using research-based knowledge and methods.",
+    "Design systems, components, or processes with considerations for health, safety, culture, society, and the environment.",
+    "Work effectively in diverse and multidisciplinary teams.",
+    "Analyze complex engineering problems using principles of mathematics and sciences.",
+    "Apply ethical principles and commit to professional ethics.",
+    "Communicate effectively with engineering and non-engineering audiences.",
+    "Evaluate the sustainability and societal/environmental impact of engineering solutions.",
+    "Engage in independent and life-long learning.",
+    "Assess societal, health, safety, legal, and cultural issues in engineering.",
+    "Use modern engineering and IT tools effectively, acknowledging their limitations.",
+    "Apply knowledge of engineering management and economics in team and project settings.",
+    "Practice Christian values in their personal and professional life."
+  ],
+  "first_year_curriculum": [
+    "Mathematics in the Modern World",
+    "Chemistry for Engineers (Lec & Lab)",
+    "Pre-Calculus",
+    "Physical Activity (Health & Wellness)",
+    "NSTP-CWTS 1 & 2",
+    "Computer Fundamentals and Programming",
+    "The Contemporary World",
+    "Understanding the Self",
+    "Readings in Philippine History",
+    "Engineering Math 1-2"
+  ],
+  "second_year_curriculum": [
+    "Chemical Engineering Calculations 1 & 2 (Lec & Lab)",
+    "Analytical Chemistry (Lec & Lab)",
+    "Organic Chemistry (Lec & Lab)",
+    "Physical Chemistry for Engineers (Lec & Lab)",
+    "Differential Equations",
+    "Computer-Aided Drafting",
+    "Ethics",
+    "Science, Technology, and Society",
+    "Physical Activity (Sports)",
+    "Engineering Data Analysis"
+  ],
+  "third_year_curriculum": [
+    "Momentum Transfer (Lec & Lab)",
+    "Heat and Mass Transfer (Lec & Lab)",
+    "Particle Technology (Lec & Lab)",
+    "Environmental Science and Engineering",
+    "Electrical and Electronics Engineering (Lec & Lab)",
+    "Materials Science and Engineering",
+    "The CICM Creative Mission",
+    "Justice, Peace, and Indigenous Peoples",
+    "Chemical Engineering Immersion"
+  ],
+  "fourth_year_curriculum": [
+    "Separation Processes (Lec & Lab)",
+    "Chemical Reaction Engineering",
+    "Chemical Engineering Lab 1 & 2",
+    "Engineering Economics",
+    "Process Dynamics and Control (Lec & Lab)",
+    "Methods of Research (Lec & Lab)",
+    "Chemical Engineering Design 1 & 2",
+    "Chemical Process Industries (Lec & Lab)",
+    "Laws and Ethics",
+    "Computer Applications in ChE (Lec & Lab)",
+    "Integration Course for ChE",
+    "Plant Inspection & Seminar",
+    "ChE Electives",
+    "Management and Disaster Risk Reduction",
+    "Technopreneurship",
+    "Entrepreneurship"
+  ],
+  "electives_specializations": {
+    "biochemical_engineering": [
+      "Enzyme Technologies"
+    ],
+    "petrochemical_engineering": [
+      "Introduction to Petrochemical Engineering",
+      "Polymer Technology",
+      "Plastics Technology"
+    ],
+    "energy_engineering": [
+      "Renewable Energy Technologies",
+      "Energy Management",
+      "Green Boiler Technology"
+    ],
+    "food_and_drug_manufacturing": [
+      "Food Processing Technologies",
+      "Packaging Principles",
+      "Packaging Materials"
+    ],
+    "paints_and_coatings": [
+      "Paints and Coating",
+      "Ink Technology"
+    ],
+    "materials_science_and_engineering": [
+      "Microelectronic Materials",
+      "Nanotechnology",
+      "Energy Resources and Technology",
+      "Nuclear Engineering",
+      "Instrumental Methods of Chemical Analysis (Lec & Lab)"
+    ]
+  },
+  "admission_policies": {
+    "undergraduate_freshmen": [
+      "Must pass the SLU-CEE and qualify for the course.",
+      "SLU-CEE held Oct–Dec, admissions start mid-April."
+    ],
+    "transfer_students": [
+      "Qualifying Exam, Personality Test, and Interview required.",
+      "Foreign transfers must take English Proficiency Test (EPT)."
+    ],
+    "graduate_program_students": [
+      "Must have the appropriate baccalaureate/master’s degree.",
+      "EPT required for non-native English speakers."
+    ],
+    "foreign_students": [
+      "Apply 6 months before the academic term.",
+      "Must take EPT and other admission exams."
+    ]
+  },
+  "fees": {
+    "BS_Chemical_Engineering": {
+      "partial": "₱9,400.00",
+      "full": "₱25,069.00",
+      "note": "Fees are per semester and subject to change."
+    }
+  },
+  "job_opportunities": [
+    "Chemical Process Engineer",
+    "Colour Technologist",
+    "Energy Engineer",
+    "Nuclear Engineer",
+    "Petroleum Engineer",
+    "Product/Process Development Scientist",
+    "Environmental Engineer",
+    "Manufacturing Engineer",
+    "Production Manager",
+    "Quality Manager",
+    "Waste Management Officer",
+    "Water Engineer",
+    "Materials Development Engineer"
+  ],
+  "department_head": {
+    "name": "Engr. Melissa May M. Boado, MS EnE",
+    "title": "Department Head",
+    "phone": "(074) 4432001 loc. 391",
+    "mobile": "+63 927 124 7124",
+    "email": [
+      "mmmboado@slu.edu.ph",
+      "cheemdh@slu.edu.ph"
+    ]
+  },
+  "bsche_evaluator": {
+    "name": "Mr. Eric R. Perlas",
+    "title": "BSCHE Evaluator",
+    "phone": "(074) 4432001 loc. 243",
+    "email": "erperlas@slu.edu.ph"
+  },
+  "sea_head_secretary": {
+    "name": "Mr. Alexander J. Pascua",
+    "title": "SEA Head Secretary",
+    "phone": "(074) 4432001 loc. 242",
+    "email": "ajpascua@slu.edu.ph"
+  }
+}

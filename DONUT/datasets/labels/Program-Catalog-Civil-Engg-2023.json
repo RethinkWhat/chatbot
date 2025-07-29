@@ -1,0 +1,107 @@
+{
+  "title" : "Program Catalog Civil Engineering",
+  "university": {
+    "name": "Saint Louis University",
+    "location": "Baguio City, Philippines"
+  },
+  "school": {
+    "name": "School of Engineering and Architecture"
+  },
+  "program_name": "Bachelor of Science in Civil Engineering",
+  "total_units": "222 units",
+  "slu_vision_mission": "Saint Louis University envisions itself as an excellent missionary and transformative educational institution, developing globally competitive, locally responsive, and empowered individuals who are competent, creative, socially involved, and imbued with the Christian spirit.",
+  "school_vision_mission": "The School of Engineering and Architecture aims to be an exemplary institution in engineering and architecture, committed to elevating instruction, research, and community extension, and shaping the socio-technical environment through Christian values.",
+  "educational_objectives": [
+    "Demonstrate technical competence in solving engineering problems with consideration for professional, societal, environmental, and ethical factors.",
+    "Practice their profession guided by honesty, service, dedication, and moral responsibility.",
+    "Pursue graduate studies, research, and technological innovation.",
+    "Participate in addressing social, technical, and business challenges for national development."
+  ],
+  "learning_outcomes": [
+    "Apply knowledge of math, science, and engineering fundamentals.",
+    "Conduct research-based investigations and experiments.",
+    "Design systems that consider health, safety, culture, and the environment.",
+    "Work effectively in multidisciplinary and diverse teams.",
+    "Identify and solve complex engineering problems using scientific principles.",
+    "Uphold ethical responsibilities in professional practice.",
+    "Communicate effectively with engineering and general audiences.",
+    "Evaluate sustainability and societal impact of engineering work.",
+    "Engage in lifelong learning.",
+    "Assess legal, social, and cultural aspects of engineering solutions.",
+    "Use modern tools and information technology effectively within limitations.",
+    "Apply management and economic principles in projects.",
+    "Demonstrate competence in a specialized Civil Engineering field.",
+    "Practice Christian values in professional life."
+  ],
+  "curriculum_key_subjects": [
+    "Engineering Math and Physics",
+    "Surveying, Geology",
+    "Statics, Dynamics",
+    "Hydraulics, Mechanics of Deformable Bodies",
+    "Structural Theory and Design",
+    "Geotechnical Engineering",
+    "Engineering Utilities 1 and 2",
+    "Construction Materials and Management",
+    "Quantity Surveying",
+    "Technopreneurship",
+    "Disaster Risk and Environmental Planning",
+    "On-the-Job Training (240 hours minimum)"
+  ],
+  "specializations": {
+    "structural_engineering": [
+      "Reinforced Concrete Design",
+      "Foundation and Retaining Wall Design",
+      "Steel Structures Design",
+      "Bridge Engineering"
+    ],
+    "geotechnical_engineering": [
+      "Geotechnical Earthquake Engineering",
+      "Foundation Engineering",
+      "Rock Mechanics",
+      "Ground Improvement"
+    ]
+  },
+  "admission_policies": {
+    "freshmen": "Must pass Saint Louis University College Entrance Examination.",
+    "transferees": "Must pass Qualifying Examination, Personality Test, and Interview.",
+    "graduate_students": "Must hold relevant undergraduate or graduate degrees.",
+    "foreign_students": [
+      "Must apply 6 months before term start.",
+      "Must pass English Proficiency Test and entrance examinations.",
+      "Must secure a valid Student Visa."
+    ]
+  },
+  "tuition_and_fees": {
+    "partial": "₱14,200.00",
+    "full": "₱32,614.00",
+    "note": "Subject to change without prior notice"
+  },
+  "job_opportunities": [
+    "Structural Engineer",
+    "Design Engineer",
+    "Construction Manager",
+    "Geotechnical Engineer",
+    "Transportation Engineer",
+    "Water Resources Engineer",
+    "Building Engineer"
+  ],
+  "department_head": {
+    "name": "Engineer Yuriko Lynn A. Suba",
+    "title": "Department Head",
+    "phone": "(074) 4432001, loc. 317",
+    "mobile": "+639257404913",
+    "email": "ylasuba@slu.edu.ph"
+  },
+  "secretary": {
+    "name": "Mr. Alexander J. Pascua",
+    "title": "School of Engineering and Architecture Head Secretary",
+    "phone": "(074) 4432001, loc. 242",
+    "email": "ajpascua@slu.edu.ph"
+  },
+  "evaluator": {
+    "name": "Ms. Graciel A. Tampican",
+    "title": "Bachelor of Science in Civil Engineering Evaluator",
+    "phone": "(074) 4432001, loc. 243",
+    "email": "gatampican@slu.edu.ph"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "title": "Program Catalog Information Technology",
+  "university": {
+    "name": "Saint Louis University",
+    "location": "Baguio City, Philippines"
+  },
+  "school": {
+    "name": "School of Accountancy, Management, Computing, and Information Studies (SAMCIS)"
+  },
+  "program_name": "Bachelor of Science in Information Technology",
+  "slu_vision_mission": "Saint Louis University is envisioned as an excellent missionary and transformative educational institution zealous in developing human resources imbued with Christian Spirit and who are creative, competent and socially involved.",
+  "school_vision_mission": "The School of Accountancy, Management, Computing and Information Studies (SAMCIS) is envisioned as the center of excellence in Business, Management, and Information Technology Education, committed to the creative, competent, and Christian formation of individuals, who can be agents of progress in the changing local and international business and information technology environments.",
+  "educational_objectives": [
+    "Demonstrate knowledge and skills in the work environment, utilizing current trends in information technology, and adapting effectively to the fast-paced developments in the field.",
+    "Exemplify Christian values in the practice of one’s profession while working ethically and with integrity.",
+    "Apply creative skills to advance one’s profession through innovative research works or projects that forward sustainable development goals and contribute to the advancement of lifelong learning.",
+    "Participate actively in formulating solutions to computing problems that impact one’s immediate social milieu or society at large by implementing emerging frameworks and technologies."
+  ],
+  "learning_outcomes": [
+    "Manifest understanding of computing, mathematical, and scientific concepts related to the IT discipline.",
+    "Use the appropriate tools, technologies, and best practices in addressing the IT-related needs of an organization or community.",
+    "Assess technical and user requirements in the analysis of computing problems and provide IT solutions suitable to the problem domain.",
+    "Implement IT solutions using current standards, tools, and technologies, while considering user needs, technical environment, and best practices.",
+    "Communicate effectively across a wide range of contexts and media.",
+    "Function effectively as an accountable individual and as a team player in multicultural and multidisciplinary environments.",
+    "Act in accordance with ethical, legal, and social responsibilities as an IT professional, recognizing the local and global impacts of technology.",
+    "Adapt to emerging technologies for professional growth.",
+    "Practice Christian, Louisian, and Filipino values in both personal and professional life, and actively serve the community."
+  ],
+  "admission_policies": {
+    "freshmen": "Must pass the SLU College Entrance Examination (SLU-CEE), conducted from mid-October to mid-December. Admission starts mid-April.",
+    "transferees": "Accepted into all programs except Bachelor in Medical Laboratory Science. Must pass the Qualifying Examination (QE), Personality Test, and Interview. Foreign transfers must pass the English Proficiency Test (EPT).",
+    "graduate_students": "For Master’s programs: must hold a Baccalaureate degree. For Doctorate programs: must hold a Master's degree in a related field.",
+    "foreign_students": [
+      "Apply at least 6 months before the start of the term.",
+      "Must arrive in Baguio at least 4 weeks before start of classes.",
+      "Must take and pass: EPT, SLU-CEE/QE/GPEE, and Personality Test.",
+      "Must secure a valid Student Visa.",
+      "Undergo preadmission processing at the Student Affairs Office."
+    ]
+  },
+  "tuition_and_fees": {
+    "partial": "₱17,800.00",
+    "full": "₱31,706.00",
+    "note": "Subject to change without prior notice"
+  },
+  "job_opportunities": [
+    "Applications Developer",
+    "Technical Support Specialist",
+    "Network Engineer",
+    "Business Analyst",
+    "Information and Cybersecurity Specialist",
+    "Database Administrator"
+  ],
+  "department_head": {
+    "name": "Kasima Rose M. Mendoza",
+    "title": "Department Head – BSIT Program",
+    "email": "krmmendoza@slu.edu.ph"
+  }
+}

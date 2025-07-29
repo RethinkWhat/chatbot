@@ -1,12 +1,15 @@
+from sklearn import base
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_core.output_parsers import StrOutputParser
+from pathlib import Path
 import torch
 import uuid
 import posthog
-import requests, json, time, os
+import requests, json, time, os, re, subprocess
+
 
 
 import weaviate
@@ -17,7 +20,6 @@ import textwrap # for paraphrasing the knowledge base
 
 from constants import apologyMsg
 import re
-
 
 
 llmModel = None  # Initialize llmModel to be used later in the class
@@ -149,7 +151,6 @@ class RAGPipeline:
         except Exception as e:
                 raise RuntimeError("Ollama is not running. Please start it with `ollama run llama3`") from e
         
-        
     def task(self, distinct_id, input, output, event="llm-task", timestamp=None, session_id=None, properties=None):
         props = properties if properties else {}
         props["$llm_input"] = input
@@ -258,35 +259,6 @@ ANSWER:
         
         return response
     
-    # def jsonifyTxt(self, text: str) -> dict:
-    #     system_prompt = (
-    #         "You are a document-to-JSON converter. Given an academic document, "
-    #         "extract structured JSON with balanced depth. Use flat keys for scalar fields, "
-    #         "but group similar items (e.g., objectives, learning outcomes) under common prefixes."
-    #     )
-    #     prompt = f"{system_prompt}\n\nDocument:\n{text.strip()}\n\nOutput a single well-formatted JSON."
 
-    #     response = self.get_ollama_completion(prompt)
-        
-    #     try:
-    #         return json.loads(response)
-    #     except json.JSONDecodeError:
-    #         print("[ERROR] JSON decoding failed. Raw LLM output returned instead.")
-    #         return {"raw_output": response}
+# code regarding old JSONifier is deleted; New ones follow. See Main.py, and go ahead and checkout API endpoint within "smol" container/dolfer
 
-    # def get_ollama_completion(self, prompt: str) -> str:
-    #     if not self.llmModel:
-    #         raise RuntimeError("LLM is not initialized.")
-
-    #     try:
-    #         non_streaming_llm = ChatOllama(
-    #             model="deepseek-coder:6.7b",
-    #             base_url="http://ollama:11434",
-    #             temperature=0.4,
-    #             streaming=False  # Force non-streaming
-    #         )
-    #         response = non_streaming_llm.invoke(prompt)
-    #         return response.content if hasattr(response, "content") else str(response)
-    #     except Exception as e:
-    #         print(f"[ERROR] Failed to get Ollama completion: {e}")
-    #         return ""
