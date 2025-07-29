@@ -61,7 +61,16 @@ def get_json_from_text(text: str) -> dict:
         "ONLY return valid JSON.\n\nInput text:\n" + text[:2000]
     )
 
-    messages = [{"role": "user", "content": prompt}]
+    use_extended_thinking = False  # toggle this based on your config
+
+    messages = []
+    if not use_extended_thinking:
+        messages.append({"role": "system", "content": "/no_think"})
+    else:
+        messages.append({"role": "system", "content": "/think"})
+
+    messages.append({"role": "user", "content": prompt})
+
     formatted_prompt = tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )

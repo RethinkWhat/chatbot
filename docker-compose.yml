@@ -114,13 +114,16 @@ services:
       - ./smol:/app
       - ./RAG/knowledge/raw:/app/knowledge/raw
       - ./RAG/knowledge/testJson:/app/knowledge/testJson
-      - ~/.cache/huggingface:/root/.cache/huggingface #persists the checkpoint, saves time
+      - .hf_cache:/app/hf_cache
+
+      # - ~/.cache/huggingface:/root/.cache/huggingface #persists the checkpoint, saves time
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
-    runtime: nvidia
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
 
 
 

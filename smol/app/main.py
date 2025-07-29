@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from pathlib import Path
 from app.hf_llm import get_json_from_text, jsonify_stream, preprocess_text
 import json, re , traceback
+import app.rms_patch
+
 
 app = FastAPI()
 
