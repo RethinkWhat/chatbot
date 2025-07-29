@@ -1,6 +1,7 @@
 # Use PyTorch image with CUDA 12.1 + cuDNN 8 for GPU support
-FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
 
+# Set environment variables
 ENV TRANSFORMERS_VERBOSITY=info
 ENV HF_HUB_DISABLE_PROGRESS_BARS=1
 
@@ -10,11 +11,21 @@ WORKDIR /app
 # Install Git and basic utilities
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# Python dependencies
+# Set up a virtual environment (optional)
+RUN python -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# (Optional) Preload the SmolLM3-3B model into cache
+# Verify PyTorch version (should be >= 2.1.0)
+RUN python -c "import torch; print(f'Torch version: {torch.__version__}')"
+
+# Verify Transformers version
+RUN python -c "import transformers; print(f'Transformers version: {transformers.__version__}')"
+
+# Preload the SmolLM3-3B model into cache
 # This speeds up first run in environments without volume cache
 RUN python -c "\
 from transformers import AutoTokenizer, AutoModelForCausalLM; \

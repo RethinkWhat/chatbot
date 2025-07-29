@@ -356,7 +356,7 @@ async def get_json_file(filename: str):
 
 @app.get("/knowledge/txt")
 def list_txt_files():
-    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt") and f.endswith(".json")]
+    files = [f for f in os.listdir("knowledge/txt") if f.endswith(".txt") and f.endswith(".json")]
     return {"files": files}
 
 @app.get("/knowledge/txt/{filename}")
@@ -390,7 +390,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
 
 @app.post("/trigger/scrape")
 async def trigger_web_scraper():
-    run_scraper(urls_path="urls.txt", output_dir="knowledge/raw", depth=2)
+    run_scraper(urls_path="urls.txt", output_dir="knowledge/txt", depth=2)
     return {"status": "web scrape done"}
 
 @app.post("/trigger/pdf")
@@ -413,10 +413,10 @@ async def trigger_image_scanner():
 #     return {"status": "vector index built", "chunks": num_chunks}
 
 #
-RAW_TXT_DIR = Path("/app/knowledge/raw")
+RAW_TXT_DIR = Path("/app/knowledge/txt")
 @app.get("/list-txt-files")
 def list_txt_files():
-    files = [f.name for f in Path("knowledge/raw").glob("*.txt")]
+    files = [f.name for f in Path("knowledge/txt").glob("*.txt")]
     return JSONResponse(content={"files": files})
 
 @app.delete("/delete-txt")
@@ -518,7 +518,7 @@ async def update_admin_creds(data: UpdateAdminModel, request: Request):
 # ==== admin: File manager page
 # Base paths
 BASE_PATHS = {
-    "txt": Path("knowledge/raw"),
+    "txt": Path("knowledge/txt"),
     "json": Path("knowledge/testJson")
 }
 

@@ -119,9 +119,9 @@ def download_assets(html, base_url, output_folder="knowledge/raw"):
                 logging.warning(f"Failed to download {file_url}: {e}")
 
 # Save parsed data to txt
-def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge/raw"):
+def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge/txt"):
     
-    output_dir = os.path.join("knowledge/raw")
+    output_dir = os.path.join("knowledge/txt")
     os.makedirs(output_dir, exist_ok=True)
 
     filepath = os.path.join(output_dir, f"{domain_name}.txt")
