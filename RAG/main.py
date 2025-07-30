@@ -448,6 +448,14 @@ def preview_txt(file: str):
 #weaviate data in testJson
 @app.post("/weaviate/upload")
 def upload_to_weaviate():
+    client = weaviate.connect_to_custom(
+            http_host="weaviate",         # your Docker service name or localhost
+            http_port=8080,
+            http_secure=False,
+            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+            grpc_port=50051,
+            grpc_secure=False
+        )
     data = []
     json_dir = "knowledge/testJson"
 
@@ -478,6 +486,34 @@ def upload_to_weaviate():
                         print(f"Skipping {filename}: not a valid JSON object.")
             except json.JSONDecodeError as e:
                 print(f"Failed to decode {filename}: {e}")
+# Insert chunks in batches
+    with navibot.batch.fixed_size(batch_size=200) as batch:
+        for item in data:
+            batch.add_object({
+                "title": item["title"][:300],
+                "answer": item["answer"],
+                "category": item["category"]
+            })
+            if batch.number_errors > 10:
+                print("Batch import stopped due to excessive errors.")
+                break
+
+            failed_objects = navibot.batch.failed_objects
+            if failed_objects:
+                print(f"Number of failed imports: {len(failed_objects)}")
+                print(f"First failed object: {failed_objects[0]}")
+
+            # Fetch and print all objects
+            questions = client.collections.get("navibot10")  # You can increase the limit as needed
+            # Print nicely
+            results = questions.query.fetch_objects(limit=100)
+
+            # for obj in results.objects:
+            #     print("UUID:", obj.uuid)
+            #     print("Properties:", obj.properties)
+            #     print("-" * 40)
+
+    client.close()  # Free up resources    
 
     # OPTIONAL: Insert into Weaviate here if needed
     # weaviate_client.batch().add_data_objects(data, class_name="YourClass")

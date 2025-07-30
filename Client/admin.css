@@ -652,12 +652,21 @@ pre {
   color: white !important;
 }
 
-  #userFileList li {
-    cursor: pointer;
-    padding: 6px;
-    margin-bottom: 5px;
-    border-radius: 5px;
-  }
+#userFileList{
+    max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: #f9f9f9;
+}
+
+#userFileList li {
+  cursor: pointer;
+  padding: 6px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
 
 @keyframes blinkHighlight {
   0% { background-color: #dff0d8; }

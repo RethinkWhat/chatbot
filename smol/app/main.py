@@ -25,7 +25,7 @@ class Prompt(BaseModel):
 # Single file JSONifdication
 @app.post("/txt2json")
 async def txt2json(file: str = Query(...)):
-    RAW_TXT_DIR = Path("/app/knowledge/raw")
+    RAW_TXT_DIR = Path("/app/knowledge/txt")
     txt_path = RAW_TXT_DIR / file
     JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
     json_path = JSON_OUTPUT_DIR / (txt_path.stem + ".json")

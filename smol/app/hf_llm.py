@@ -32,32 +32,40 @@ def extract_first_json_block(text: str) -> str:
                 return text[start:i+1]
     raise ValueError("Unbalanced JSON.")
 
-#preprocess raw txt
+# Clean output from LLM before parsing
+def clean_llm_output(output: str) -> str:
+    output = re.sub(r"<think>.*?</think>", "", output, flags=re.DOTALL)
+    output = output.strip()
+
+    # Remove markdown block wrappers
+    if output.startswith("```") and "{" in output:
+        output = output[output.find("{"):]  # cut off everything before first {
+    output = re.sub(r"```.*", "", output, flags=re.DOTALL).strip()
+    return output
+
+# Preprocess raw txt
 
 def clean_text(text: str) -> str:
-    """Removes excess whitespace and normalizes newlines."""
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"\n{3,}", "\n\n", text)  # Reduce 3+ line breaks to 2
-    text = re.sub(r"[ \t]+", " ", text)     # Replace multiple spaces/tabs with single space
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r"[ \t]+", " ", text)
     return text.strip()
 
 def filter_relevant_lines(text: str) -> str:
-    """Filters out short or empty lines unless they are questions."""
     lines = text.split("\n")
     filtered = []
     for line in lines:
         line = line.strip()
         if not line:
             continue
-        if len(line) > 50 or line.endswith("?"):  # Keep long lines or questions
+        if len(line) > 50 or line.endswith("?"):
             filtered.append(line)
     return "\n\n".join(filtered)
 
 def preprocess_text(text: str) -> str:
-    """Clean and filter text before feeding into the LLM."""
     return filter_relevant_lines(clean_text(text))
 
-#JSONification
+# JSONification
 
 def get_json_from_text(text: str) -> dict:
     prompt = (
@@ -65,14 +73,12 @@ def get_json_from_text(text: str) -> dict:
         "ONLY return valid JSON.\n\nInput text:\n" + text
     )
 
-    use_extended_thinking = False  # toggle this based on your config
-
+    use_extended_thinking = False
     messages = []
     if not use_extended_thinking:
         messages.append({"role": "system", "content": "/no_think"})
     else:
         messages.append({"role": "system", "content": "/think"})
-
     messages.append({"role": "user", "content": prompt})
 
     formatted_prompt = tokenizer.apply_chat_template(
@@ -93,14 +99,14 @@ def get_json_from_text(text: str) -> dict:
 
         generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
         response = tokenizer.decode(generated_ids, skip_special_tokens=True)
-        response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
+        cleaned_response = clean_llm_output(response)
 
         try:
-            json_str = extract_first_json_block(response)
+            json_str = extract_first_json_block(cleaned_response)
             return json.loads(json_str)
         except Exception as e:
             print(f"[PARSE ERROR] Could not extract valid JSON from LLM response.")
-            print(f"[RAW OUTPUT]\n{response}")
+            print(f"[RAW OUTPUT]\n{cleaned_response}")
             raise ValueError("Failed to parse JSON from model output.") from e
 
     except Exception as e:

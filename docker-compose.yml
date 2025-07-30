@@ -112,6 +112,7 @@ services:
       - "8500:8500"
     volumes:
       - ./smol:/app
+      - ./RAG/knowledge/txt:/app/knowledge/txt
       - ./RAG/knowledge/raw:/app/knowledge/raw
       - ./RAG/knowledge/testJson:/app/knowledge/testJson
       - .hf_cache:/app/hf_cache
@@ -124,7 +125,7 @@ services:
           - driver: nvidia
             count: all
             capabilities: [gpu]
-    runtime: nvidia
+    #runtime: nvidia
 
 
 
