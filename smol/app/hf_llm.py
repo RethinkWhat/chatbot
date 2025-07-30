@@ -75,8 +75,10 @@ def preprocess_text(text: str) -> str:
 
 def get_json_from_text(text: str) -> dict:
     prompt = (
-        "You are a JSON generator. Convert the following raw text into structured JSON file.\n\n"
-        "ONLY return valid JSON.\n\nInput text:\n" + text
+        "Convert the following raw text into a structured JSON file. "
+        "The JSON MUST start with a top-level field called \"title\", representing either the title of the document or the author's name if more appropriate. "
+        "Only output a valid JSON object.\n\n"
+        "Text:\n" + text
     )
 
     use_extended_thinking = False
@@ -92,7 +94,7 @@ def get_json_from_text(text: str) -> dict:
     )
 
     inputs = tokenizer([formatted_prompt], return_tensors="pt").to(device)
-    max_tokens = min(2048, 4000 - inputs["input_ids"].shape[-1])
+    max_tokens = min(1024, 6000 - inputs["input_ids"].shape[-1])
 
     try:
         outputs = model.generate(
