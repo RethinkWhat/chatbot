@@ -125,7 +125,7 @@ services:
           - driver: nvidia
             count: all
             capabilities: [gpu]
-    #runtime: nvidia
+    runtime: nvidia
 
 
 
@@ -137,4 +137,4 @@ volumes:
 
 networks:
   chatbot_network:
-     driver: bridge
+     external: true

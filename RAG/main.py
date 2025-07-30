@@ -1,4 +1,5 @@
     #RAG SERVER
+from xmlrpc import client
 from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile, Query, Depends #for db access
 from fastapi.responses import JSONResponse, PlainTextResponse
 import os # used to get user choice of LLM saved in device environment variable
@@ -487,6 +488,7 @@ def upload_to_weaviate():
             except json.JSONDecodeError as e:
                 print(f"Failed to decode {filename}: {e}")
 # Insert chunks in batches
+    navibot = client.collections.get("navibot10")
     with navibot.batch.fixed_size(batch_size=200) as batch:
         for item in data:
             batch.add_object({
