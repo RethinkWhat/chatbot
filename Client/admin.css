@@ -703,11 +703,35 @@ pre {
   word-break: break-word;
 }
 #userFileList li {
+  padding: 8px;
+    margin-bottom: 4px;
+    background: var(--gray-100);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* pagination ctrls */
+.paginationControls {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: start;
+  scroll-behavior: smooth;
+}
+
+.paginationControls button {
+  flex-shrink: 0; /* prevent buttons from shrinking */
+  min-width: 2.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  background: white;
   cursor: pointer;
-  padding: 6px;
-  margin-bottom: 5px;
-  border-radius: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  transition: background 0.2s;
+}
+
+.paginationControls button:hover {
+  background: #e0e0e0;
 }
