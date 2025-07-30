@@ -822,6 +822,8 @@ let currentPage = 1;
 let filesPerPage = 10;
 let currentFileType = "txt";
 let fullFileList = [];
+let filteredFileList = [];  // Subset of fullFileList matching search
+
 
 // Load files button
 document.getElementById("loadDataFilesBtn").addEventListener("click", async () => {
@@ -841,13 +843,90 @@ async function fetchFiles() {
   }
 }
 
-function displayPaginatedFiles() {
-  const start = (currentPage - 1) * filesPerPage;
-  const end = start + filesPerPage;
-  const paginatedFiles = fullFileList.slice(start, end);
-  renderFileList(paginatedFiles);
-  renderPaginationControls();
+function displayPaginatedFiles(type = "txt") {
+  const startIdx = (currentPage - 1) * filesPerPage;
+  const endIdx = startIdx + filesPerPage;
+  const currentFiles = filteredFileList.slice(startIdx, endIdx);
+
+  const fileListEl = document.getElementById('userFileList');
+  fileListEl.innerHTML = '';
+
+  currentFiles.forEach(filename => {
+    const li = document.createElement('li');
+    li.textContent = filename;
+
+    // Preview Button
+    const previewBtn = document.createElement('button');
+    previewBtn.textContent = '👁 Preview';
+    previewBtn.onclick = () => previewFile(filename, type);
+
+    // Edit Button
+    const editBtn = document.createElement('button');
+    editBtn.textContent = '✏️ Edit';
+    editBtn.onclick = () => openEditorModal(filename, type);
+
+    // Delete Button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '🗑 Delete';
+    deleteBtn.onclick = () => deleteFile(filename, type);
+
+    li.append(previewBtn, editBtn, deleteBtn);
+    fileListEl.appendChild(li);
+  });
+
+  updatePageIndicator();
 }
+
+
+function updatePageIndicator() {
+  const pageCount = Math.ceil(filteredFileList.length / filesPerPage);
+  document.getElementById('pageIndicator').textContent = `Page ${currentPage} of ${pageCount}`;
+
+  document.getElementById('prevPageBtn').disabled = currentPage === 1;
+  document.getElementById('nextPageBtn').disabled = currentPage === pageCount || pageCount === 0;
+}
+
+document.getElementById('prevPageBtn').onclick = () => {
+  if (currentPage > 1) {
+    currentPage--;
+    displayPaginatedFiles();
+  }
+};
+
+document.getElementById('nextPageBtn').onclick = () => {
+  const pageCount = Math.ceil(fullFileList.length / filesPerPage);
+  if (currentPage < pageCount) {
+    currentPage++;
+    displayPaginatedFiles();
+  }
+};
+
+async function loadUserFiles() {
+  const fileType = document.getElementById('dataType').value || "txt";
+  const res = await fetch(`http://localhost:8000/api/files?type=${fileType}`);
+  const data = await res.json();
+
+  fullFileList = data.files || [];
+  filteredFileList = [...fullFileList];
+  currentPage = 1;
+  displayPaginatedFiles(fileType);  // Pass fileType here
+}
+
+
+
+
+//user enters text in searchbar
+document.getElementById('userFileSearch').addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase();
+  filteredFileList = fullFileList.filter(name => name.toLowerCase().includes(query));
+  currentPage = 1;
+  displayPaginatedFiles();
+});
+
+
+document.getElementById('loadDataFilesBtn').onclick = loadUserFiles;
+
+
 
 function renderFileList(files) {
   const list = document.getElementById("userFileList");
