@@ -1126,3 +1126,111 @@ function renderJSONPaginationControls() {
   // Attach below the file list
   document.getElementById("userFileList").after(controls);
 }
+
+//pagination for JSONification page
+let allJsonFiles = [];
+let filteredJsonFiles = [];
+let currentJsonPage = 1;
+const filesPerJsonPage = 10;
+
+document.getElementById('loadFileListBtn').addEventListener('click', () => {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  filteredJsonFiles = allJsonFiles.filter(file => file.toLowerCase().includes(query));
+  currentJsonPage = 1;
+  displayJsonifierFiles();
+});
+
+async function fetchJsonifierFiles() {
+  try {
+    const res = await fetch("http://localhost:8000/api/files?type=txt");
+    const data = await res.json();
+    allJsonFiles = data.files || [];
+    filteredJsonFiles = [...allJsonFiles];
+    currentJsonPage = 1;
+    displayJsonifierFiles();
+  } catch (err) {
+    document.getElementById('fileList').innerHTML = `<li>❌ Error loading files: ${err}</li>`;
+  }
+}
+
+function displayJsonifierFiles() {
+  const startIdx = (currentJsonPage - 1) * filesPerJsonPage;
+  const endIdx = startIdx + filesPerJsonPage;
+  const currentFiles = filteredJsonFiles.slice(startIdx, endIdx);
+
+  const fileListEl = document.getElementById('fileList');
+  fileListEl.innerHTML = '';
+
+  currentFiles.forEach(file => {
+    const li = document.createElement('li');
+    li.textContent = file;
+    li.style.cursor = "pointer";
+    li.onclick = () => {
+      selectedFile = file;
+      document.querySelectorAll('#fileList li').forEach(el => el.style.background = '');
+      li.style.background = '#ddd';
+      previewJsonFile(file);
+    };
+    fileListEl.appendChild(li);
+  });
+
+  renderJsonPaginationControls();
+}
+
+function renderJsonPaginationControls() {
+  let controls = document.getElementById('jsonPaginationControls');
+  if (!controls) {
+    controls = document.createElement('div');
+    controls.id = 'jsonPaginationControls';
+    controls.style.marginTop = "10px";
+    controls.style.display = "flex";
+    controls.style.gap = "10px";
+    document.getElementById('fileListContainer').appendChild(controls);
+  }
+
+  const totalPages = Math.ceil(filteredJsonFiles.length / filesPerJsonPage);
+  controls.innerHTML = '';
+
+  const prevBtn = document.createElement('button');
+  prevBtn.textContent = '⬅️ Prev';
+  prevBtn.className = 'toolbar-btn';
+  prevBtn.disabled = currentJsonPage === 1;
+  prevBtn.onclick = () => {
+    if (currentJsonPage > 1) {
+      currentJsonPage--;
+      displayJsonifierFiles();
+    }
+  };
+  controls.appendChild(prevBtn);
+
+  const pageIndicator = document.createElement('span');
+  pageIndicator.textContent = `Page ${currentJsonPage} of ${totalPages}`;
+  controls.appendChild(pageIndicator);
+
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = '➡️ Next';
+  nextBtn.className = 'toolbar-btn';
+  nextBtn.disabled = currentJsonPage === totalPages;
+  nextBtn.onclick = () => {
+    if (currentJsonPage < totalPages) {
+      currentJsonPage++;
+      displayJsonifierFiles();
+    }
+  };
+  controls.appendChild(nextBtn);
+}
+
+async function previewJsonFile(name) {
+  const previewEl = document.getElementById('filePreview');
+  previewEl.textContent = "Loading preview...";
+  try {
+    const res = await fetch(`http://localhost:8000/api/file?type=txt&name=${name}`);
+    const { content } = await res.json();
+    previewEl.textContent = content;
+  } catch (err) {
+    previewEl.textContent = `❌ Failed to load file content: ${err}`;
+  }
+}
+
+// Initial load (when popup opens)
+document.getElementById("donutWindow").addEventListener("show", fetchJsonifierFiles);

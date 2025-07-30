@@ -8,14 +8,20 @@ if not hasattr(nn, "RMSNorm"):
     from transformers.models.llama.modeling_llama import LlamaRMSNorm
     nn.RMSNorm = LlamaRMSNorm
 
-RAW_TXT_DIR = Path("/app/knowledge/raw")
+RAW_TXT_DIR = Path("/app/knowledge/txt")
 JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
 JSON_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load SMOL
 MODEL_NAME = "HuggingFaceTB/SmolLM3-3B"
+# Detect device
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Load model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to("cuda")
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(device)
+
+print(f"Model loaded on {device}")
 
 
 def extract_first_json_block(text: str) -> str:
@@ -85,7 +91,7 @@ def get_json_from_text(text: str) -> dict:
         messages, tokenize=False, add_generation_prompt=True
     )
 
-    inputs = tokenizer([formatted_prompt], return_tensors="pt").to("cuda")
+    inputs = tokenizer([formatted_prompt], return_tensors="pt").to(device)
     max_tokens = min(2048, 4000 - inputs["input_ids"].shape[-1])
 
     try:
