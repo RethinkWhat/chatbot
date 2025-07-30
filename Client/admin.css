@@ -661,12 +661,7 @@ pre {
   background: #f9f9f9;
 }
 
-#userFileList li {
-  cursor: pointer;
-  padding: 6px;
-  margin-bottom: 5px;
-  border-radius: 5px;
-}
+
 
 @keyframes blinkHighlight {
   0% { background-color: #dff0d8; }
@@ -688,4 +683,31 @@ pre {
 @keyframes flash-success {
   0% { background-color: #d4edda; }
   100% { background-color: transparent; }
+}
+
+#donutWindow .window-content {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+#userDataWindow .window-content {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+#userFileList {
+  overflow-x: hidden;
+  word-break: break-word;
+}
+#userFileList li {
+  cursor: pointer;
+  padding: 6px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
