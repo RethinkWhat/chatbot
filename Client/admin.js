@@ -38,6 +38,7 @@ class AdminPanel {
 
     // Get DOM references
     this.loadDataFilesBtn = document.getElementById("loadDataFilesBtn");
+    this.loadFileListBtn = document.getElementById("loadFileListBtn");
     this.fileTypeSelect = document.getElementById("fileTypeSelect") || document.getElementById("dataType");
     this.userFileList = document.getElementById("userFileList");
     this.userFilename = document.getElementById("userFilename");
@@ -513,6 +514,11 @@ class AdminPanel {
     });
   }
 }
+  //pagination for JSONification page
+  let allJsonFiles = [];
+  let filteredJsonFiles = [];
+  let currentJsonPage = 1;
+  const filesPerJsonPage = 10;
 
 // Instantiate and expose for inline onclick handlers
 document.addEventListener('DOMContentLoaded', () => {
@@ -916,12 +922,13 @@ async function loadUserFiles() {
 
 
 //user enters text in searchbar
-document.getElementById('userFileSearch').addEventListener('input', (e) => {
-  const query = e.target.value.toLowerCase();
+document.getElementById("userFileSearch").addEventListener("input", () => {
+  const query = document.getElementById("userFileSearch").value.toLowerCase().trim();
   filteredFileList = fullFileList.filter(name => name.toLowerCase().includes(query));
   currentPage = 1;
   displayPaginatedFiles();
 });
+
 
 
 document.getElementById('loadDataFilesBtn').onclick = loadUserFiles;
@@ -966,11 +973,13 @@ function renderPaginationControls() {
 }
 
 // Search functionality
-document.getElementById("searchInput").addEventListener("input", (e) => {
-  const query = e.target.value.toLowerCase();
-  const filtered = fullFileList.filter((f) => f.toLowerCase().includes(query));
-  renderFileList(filtered.slice(0, filesPerPage));
+document.getElementById("searchInput").addEventListener("input", () => {
+  const query = document.getElementById("searchInput").value.toLowerCase().trim();
+  filteredJsonFiles = allJsonFiles.filter(name => name.toLowerCase().includes(query));
+  currentJsonPage = 1;
+  displayJsonifierFiles();
 });
+
 
 // Preview
 async function previewFile(name, type) {
@@ -1058,87 +1067,50 @@ function showUserMessage(message, isError = false) {
 
 
 // ==================FILE JSONIFICATION
-document.getElementById("loadFileListBtn").addEventListener("click", async () => {
-  const res = await fetch("http://localhost:8000/list-txt-files");
-  const { files } = await res.json();
+// document.getElementById("loadFileListBtn").addEventListener("click", async () => {
+//   const res = await fetch("http://localhost:8000/list-txt-files");
+//   const { files } = await res.json();
 
-  const searchInput = document.getElementById("searchInput").value.trim().toLowerCase();
+//   const searchInput = document.getElementById("searchInput").value.trim().toLowerCase();
 
-  // Default behavior: if search is empty, show all
-  const filtered = searchInput
-    ? files.filter(name => name.toLowerCase().includes(searchInput))
-    : files;
+//   // Default behavior: if search is empty, show all
+//   const filtered = searchInput
+//     ? files.filter(name => name.toLowerCase().includes(searchInput))
+//     : files;
 
-  currentPage = 1; // reset pagination
-  displayFileList(filtered);
+//   currentPage = 1; // reset pagination
+//   displayFileList(filtered);
+// });
+document.getElementById("loadFileListBtn").addEventListener("click", () => {
+  loadJsonifierFileList();
+  document.getElementById("donutWindow").style.display = "block";
 });
 
 
-// -- display what files to be JSONified
-function displayFileList(files, type = "txt") {
-  let currentPage = 1;
-  const filesPerPage = 10;
-  let filteredFiles = [];
 
-  const list = document.getElementById("fileList");
-  list.innerHTML = "";
-
-  filteredFiles = files; // store full filtered list
-  const startIndex = (currentPage - 1) * filesPerPage;
-  const endIndex = startIndex + filesPerPage;
-  const filesToShow = filteredFiles.slice(startIndex, endIndex);
-
-  filesToShow.forEach((name) => {
-    const li = document.createElement("li");
-    li.textContent = name;
-
-    if (name === selectedFile) li.classList.add("selected-file");
-
-    li.onclick = () => {
-      selectedFile = name;
-      displayFileList(filteredFiles, type);
-    };
-
-
-    list.appendChild(li);
-  });
-
-  renderJSONPaginationControls(); // show nav
-}
-
-function renderJSONPaginationControls() {
-  const totalPages = Math.ceil(fullFileList.length / filesPerPage);
-  const controls = document.getElementById("paginationControls") || document.createElement("div");
-  controls.id = "paginationControls";
-  controls.innerHTML = "";
-
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    btn.disabled = i === currentPage;
-    btn.onclick = () => {
-      currentPage = i;
-      displayPaginatedFiles();
-    };
-    controls.appendChild(btn);
-  }
-
-  // Attach below the file list
-  document.getElementById("userFileList").after(controls);
-}
-
-//pagination for JSONification page
-let allJsonFiles = [];
-let filteredJsonFiles = [];
-let currentJsonPage = 1;
-const filesPerJsonPage = 10;
-
-document.getElementById('loadFileListBtn').addEventListener('click', () => {
-  const query = document.getElementById('searchInput').value.toLowerCase();
-  filteredJsonFiles = allJsonFiles.filter(file => file.toLowerCase().includes(query));
+//user clicks load files btn
+document.getElementById("searchInput").addEventListener("input", () => {
+  const query = document.getElementById("searchInput").value.toLowerCase().trim();
+  filteredJsonFiles = allJsonFiles.filter(name => name.toLowerCase().includes(query));
   currentJsonPage = 1;
   displayJsonifierFiles();
 });
+
+async function loadJsonifierFileList() {
+  try {
+    const res = await fetch('http://localhost:8000/api/files?type=txt');
+    const data = await res.json();
+    allJsonFiles = data.files || [];
+    filteredJsonFiles = [...allJsonFiles];
+    currentJsonPage = 1;
+    displayJsonifierFiles();
+  } catch (err) {
+    console.error("Failed to load files:", err);
+  }
+}
+
+
+
 
 async function fetchJsonifierFiles() {
   try {
@@ -1177,6 +1149,8 @@ function displayJsonifierFiles() {
   renderJsonPaginationControls();
 }
 
+
+
 function renderJsonPaginationControls() {
   let controls = document.getElementById('jsonPaginationControls');
   if (!controls) {
@@ -1188,7 +1162,7 @@ function renderJsonPaginationControls() {
     document.getElementById('fileListContainer').appendChild(controls);
   }
 
-  const totalPages = Math.ceil(filteredJsonFiles.length / filesPerJsonPage);
+  const totalPages = Math.max(1, Math.ceil(filteredJsonFiles.length / filesPerJsonPage));
   controls.innerHTML = '';
 
   const prevBtn = document.createElement('button');
