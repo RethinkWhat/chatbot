@@ -113,7 +113,8 @@ services:
     volumes:
       - ./smol:/app
       - ./RAG/knowledge/raw:/app/knowledge/raw
-      - ./RAG/knowledge/testJson:/app/knowledge/testJson
+      - ./RAG/knowledge/txt:/app/knowledge/txt
+      - ./RAG/knowledge/Json:/app/knowledge/Json
       - ~/.cache/huggingface:/root/.cache/huggingface #persists the checkpoint, saves time
     deploy:
       resources:

@@ -1,7 +1,7 @@
 import pymysql
 
 conn = pymysql.connect(
-    host="localhost",
+    host="124.105.98.204",
     user="root",
     password="root",
     database="navi-bot",

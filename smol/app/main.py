@@ -23,9 +23,9 @@ class Prompt(BaseModel):
 # Single file JSONifdication
 @app.post("/txt2json")
 async def txt2json(file: str = Query(...)):
-    RAW_TXT_DIR = Path("/app/knowledge/raw")
+    RAW_TXT_DIR = Path("/app/knowledge/txt")
     txt_path = RAW_TXT_DIR / file
-    JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
+    JSON_OUTPUT_DIR = Path("/app/knowledge/Json")
     json_path = JSON_OUTPUT_DIR / (txt_path.stem + ".json")
 
     if not txt_path.exists():
@@ -66,8 +66,8 @@ def stream_jsonify():
 
 @app.post("/jsonify-one", response_class=JSONResponse)
 def jsonify_one(file: str = Query(...)):
-    RAW_TXT_DIR = Path("/app/knowledge/raw")
-    JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
+    RAW_TXT_DIR = Path("/app/knowledge/txt")
+    JSON_OUTPUT_DIR = Path("/app/knowledge/Json")
     file_path = RAW_TXT_DIR / file
     if not file_path.exists():
         return JSONResponse({"error": "File not found"}, status_code=404)

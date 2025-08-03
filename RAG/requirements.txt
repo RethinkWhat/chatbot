@@ -107,7 +107,6 @@ pluggy==1.6.0
 poetry==1.8.5
 poetry-core==1.9.1
 poetry-plugin-export==1.8.0
-posthog
 prompt_toolkit==3.0.51
 propcache==0.3.2
 ptyprocess==0.7.0

@@ -331,7 +331,7 @@ nlu:
     - Can I enroll in a different block?
     - Will more blocks show up soon?
 
-- intent: change_blocking_schedules
+- intent: change_block_schedule
   examples: |
     - Can I change my blocking or schedules?
     - Is it possible to modify my blocking or schedules?

@@ -24,6 +24,8 @@ from scrapers.image_scraper import scan_images
 from threading import Lock
 
 
+from fastapi.staticfiles import StaticFiles
+
 import weaviate
 from weaviate import WeaviateClient
 from weaviate.classes.config import Configure
@@ -47,7 +49,7 @@ app = FastAPI()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # You can use ["*"] for dev
+    allow_origins=["*"],  # You can use ["*"] for dev
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,7 +59,7 @@ app.add_middleware(
 # Utility: database connection
 def get_db_connection():
     return pymysql.connect(
-        host="host.docker.internal", 
+        host="db", 
         user="root",
         password="root",
         database="navi-bot",
@@ -259,6 +261,8 @@ async def delete_menu_item(item_id: int):
         print("Delete error:", e)
         raise HTTPException(status_code=500, detail="Failed to delete menu item")
   
+app.mount("/admin/static", StaticFiles(directory="Client"), name="admin_static")
+
 @app.get("/admin")
 async def serve_admin():
     return FileResponse("Client/admin.html")    
@@ -356,12 +360,12 @@ async def get_json_file(filename: str):
 
 @app.get("/knowledge/txt")
 def list_txt_files():
-    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt") and f.endswith(".json")]
+    files = [f for f in os.listdir("knowledge/txt") if f.endswith(".txt") and f.endswith(".json")]
     return {"files": files}
 
 @app.get("/knowledge/txt/{filename}")
 def get_txt_content(filename: str):
-    path = os.path.join("knowledge/raw", filename)
+    path = os.path.join("knowledge/txt", filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="File not found")
     with open(path, "r", encoding="utf-8") as f:
@@ -413,10 +417,10 @@ async def trigger_image_scanner():
 #     return {"status": "vector index built", "chunks": num_chunks}
 
 #
-RAW_TXT_DIR = Path("/app/knowledge/raw")
+RAW_TXT_DIR = Path("/app/knowledge/txt")
 @app.get("/list-txt-files")
 def list_txt_files():
-    files = [f.name for f in Path("knowledge/raw").glob("*.txt")]
+    files = [f.name for f in Path("knowledge/txt").glob("*.txt")]
     return JSONResponse(content={"files": files})
 
 @app.delete("/delete-txt")
@@ -445,11 +449,11 @@ def preview_txt(file: str):
         return JSONResponse({"error": f"Failed to read file: {str(e)}"}, status_code=500)
 
 
-#weaviate data in testJson
+#weaviate data in Json
 @app.post("/weaviate/upload")
 def upload_to_weaviate():
     data = []
-    json_dir = "knowledge/testJson"
+    json_dir = "knowledge/Json"
 
     for filename in os.listdir(json_dir):
         if filename.endswith(".json"):
@@ -478,9 +482,45 @@ def upload_to_weaviate():
                         print(f"Skipping {filename}: not a valid JSON object.")
             except json.JSONDecodeError as e:
                 print(f"Failed to decode {filename}: {e}")
+        client = weaviate.connect_to_custom(
+            http_host="weaviate",         # your Docker service name or localhost
+            http_port=8080,
+            http_secure=False,
+            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+            grpc_port=50051,
+            grpc_secure=False
+        )
+        #Change name if necessary
+        navibot = client.collections.get("navibot")
 
-    # OPTIONAL: Insert into Weaviate here if needed
-    # weaviate_client.batch().add_data_objects(data, class_name="YourClass")
+        # Insert chunks in batches
+        with navibot.batch.fixed_size(batch_size=200) as batch:
+            for item in data:
+                batch.add_object({
+                    "title": item["title"][:300],
+                    "answer": item["answer"],
+                    "category": item["category"]
+                })
+                if batch.number_errors > 10:
+                    print("Batch import stopped due to excessive errors.")
+                    break
+
+                failed_objects = navibot.batch.failed_objects
+                if failed_objects:
+                    print(f"Number of failed imports: {len(failed_objects)}")
+                    print(f"First failed object: {failed_objects[0]}")
+
+                # Fetch and print all objects
+                questions = client.collections.get("navibot")  # You can increase the limit as needed
+                # Print nicely
+                results = questions.query.fetch_objects(limit=100)
+
+                # for obj in results.objects:
+                #     print("UUID:", obj.uuid)
+                #     print("Properties:", obj.properties)
+                #     print("-" * 40)
+
+        client.close()  # Free up resources
 
     return {
         "status": "✅ Uploaded to Weaviate",
@@ -518,8 +558,8 @@ async def update_admin_creds(data: UpdateAdminModel, request: Request):
 # ==== admin: File manager page
 # Base paths
 BASE_PATHS = {
-    "txt": Path("knowledge/raw"),
-    "json": Path("knowledge/testJson")
+    "txt": Path("knowledge/txt"),
+    "json": Path("knowledge/Json")
 }
 
 # Model for saving files

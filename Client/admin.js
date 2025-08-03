@@ -38,6 +38,7 @@ class AdminPanel {
 
     // Get DOM references
     this.loadDataFilesBtn = document.getElementById("loadDataFilesBtn");
+    this.loadFileListBtn = document.getElementById("loadFileListBtn");
     this.fileTypeSelect = document.getElementById("fileTypeSelect") || document.getElementById("dataType");
     this.userFileList = document.getElementById("userFileList");
     this.userFilename = document.getElementById("userFilename");
@@ -115,7 +116,7 @@ class AdminPanel {
     if (!isAuthenticated) return;
 
     try {
-      const res = await fetch("http://localhost:8000/admin/ping");
+      const res = await fetch("http://124.105.98.204:8000/admin/ping");
       if (res.ok) {
         this.showAdminPanel();
       } else {
@@ -135,7 +136,7 @@ class AdminPanel {
             const password = document.getElementById('password').value;
 
             try {
-                const res = await fetch("http://localhost:8000/login", {
+                const res = await fetch("http://124.105.98.204:8000/login", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ username, password })
@@ -181,7 +182,7 @@ class AdminPanel {
         
   async loadMenuData() {
     try {
-      const res = await fetch("http://localhost:8000/admin/menu");
+      const res = await fetch("http://124.105.98.204:8000/admin/menu");
       const data = await res.json();
       this.menuData = {};
       for (const item of data.menu) {
@@ -355,7 +356,7 @@ class AdminPanel {
     if (this.pendingAction === 'delete' && this.pendingDeleteId) {
       this.confirmWindow.classList.remove('active');
       try {
-        const res = await fetch(`http://localhost:8000/admin/menu/${this.pendingDeleteId}`, {
+        const res = await fetch(`http://124.105.98.204:8000/admin/menu/${this.pendingDeleteId}`, {
           method: "DELETE"
         });
         console.log(`[ADMIN] Deleted item ${this.pendingDeleteId}:`, await res.json());
@@ -431,14 +432,14 @@ class AdminPanel {
       for (const [id, item] of entries) {
         if (item.isDeleted) {
           if (!item.isNew) {
-            await fetch(`http://localhost:8000/admin/menu/${id}`, { method: "DELETE" });
+            await fetch(`http://124.105.98.204:8000/admin/menu/${id}`, { method: "DELETE" });
             console.log(`[ADMIN] Deleted item ${id}`);
           }
           continue;
         }
 
         if (item.isNew) {
-          const res = await fetch("http://localhost:8000/admin/menu", {
+          const res = await fetch("http://124.105.98.204:8000/admin/menu", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(item)
@@ -446,7 +447,7 @@ class AdminPanel {
           const result = await res.json();
           console.log(`[ADMIN] Created item:`, result);
         } else {
-          const res = await fetch(`http://localhost:8000/admin/menu/${id}`, {
+          const res = await fetch(`http://124.105.98.204:8000/admin/menu/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(item)
@@ -513,6 +514,11 @@ class AdminPanel {
     });
   }
 }
+  //pagination for JSONification page
+  let allJsonFiles = [];
+  let filteredJsonFiles = [];
+  let currentJsonPage = 1;
+  const filesPerJsonPage = 10;
 
 // Instantiate and expose for inline onclick handlers
 document.addEventListener('DOMContentLoaded', () => {
@@ -528,7 +534,7 @@ document.getElementById("scrapeBtn").addEventListener("click", async () => {
   document.getElementById("scrapeWindow").classList.add("active");
 
   try {
-    const res = await fetch("http://localhost:8000/scrape/urls");
+    const res = await fetch("http://124.105.98.204:8000/scrape/urls");
     const data = await res.json();
     document.getElementById("urlsEditor").value = data.urls.join("\n");
   } catch (err) {
@@ -601,7 +607,7 @@ document.getElementById("scrapeForm").addEventListener("submit", async (e) => {
   const output = document.getElementById("scrapeOutput");
   output.textContent = "⏳ Starting scraper...\n";
 
-  const res = await fetch("http://localhost:8000/scrape/run", {
+  const res = await fetch("http://124.105.98.204:8000/scrape/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ depth: depth })
@@ -625,7 +631,7 @@ document.getElementById("loadUrlsBtn").addEventListener("click", async () => {
   const output = document.getElementById("urlsStatus");
   output.textContent = "⏳ Loading URLs...";
   try {
-    const res = await fetch("http://localhost:8000/urls");
+    const res = await fetch("http://124.105.98.204:8000/urls");
     const data = await res.json();
     document.getElementById("urlsEditor").value = data.urls.join("\n");
     output.textContent = "✅ URLs loaded.";
@@ -644,7 +650,7 @@ document.getElementById("saveUrlsBtn").addEventListener("click", async () => {
 
   output.textContent = "⏳ Saving URLs...";
   try {
-    const res = await fetch("http://localhost:8000/urls", {
+    const res = await fetch("http://124.105.98.204:8000/urls", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ urls: content })
@@ -665,7 +671,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   for (const file of input.files) {
     formData.append("files", file);
   }
-  const res = await fetch("http://localhost:8000/upload", {
+  const res = await fetch("http://124.105.98.204:8000/upload", {
     method: "POST",
     body: formData
   });
@@ -676,7 +682,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   const output = document.getElementById("uploadOutput");
       output.textContent = "⏳ Scanning PDFs...";
       try {
-        const res = await fetch("http://localhost:8000/trigger/pdf", {
+        const res = await fetch("http://124.105.98.204:8000/trigger/pdf", {
           method: "POST"
         });
         const data = await res.json();
@@ -687,7 +693,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
       }
     
       try{
-        const res = await fetch("http://localhost:8000/trigger/image", {
+        const res = await fetch("http://124.105.98.204:8000/trigger/image", {
           method: "POST"
         });
         const data = await res.json();
@@ -704,7 +710,7 @@ document.getElementById("jsonConvertBtn").addEventListener("click", () => {
   const output = document.getElementById("JSONifyOutput");
   output.textContent = "Starting JSONification...\n";
 
-  const eventSource = new EventSource("http://localhost:8500/batch-txt2json");
+  const eventSource = new EventSource("http://124.105.98.204:8500/batch-txt2json");
 
   eventSource.onmessage = function (event) {
       output.textContent += event.data + "\n";
@@ -728,7 +734,7 @@ async function jsonifyFile(filename) {
   statusBox.textContent = `🔄 Sending ${filename} to JSONifier...`;
 
   try {
-    const res = await fetch(`http://localhost:8500/txt2json?file=${encodeURIComponent(filename)}`, {
+    const res = await fetch(`http://124.105.98.204:8500/txt2json?file=${encodeURIComponent(filename)}`, {
       method: "POST",
     });
 
@@ -751,7 +757,7 @@ async function weaviate() {
   output.textContent = "📡 Uploading to Weaviate...";
 
   try {
-    const res = await fetch("http://localhost:8000/weaviate/upload", {
+    const res = await fetch("http://124.105.98.204:8000/weaviate/upload", {
       method: "POST"
     });
 
@@ -793,7 +799,7 @@ document.getElementById("adminCredsForm").addEventListener("submit", async (e) =
   }
 
   try {
-    const res = await fetch("http://localhost:8000/api/admin/update-credentials", {
+    const res = await fetch("http://124.105.98.204:8000/api/admin/update-credentials", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ newUsername: username, newPassword: password })
@@ -822,6 +828,8 @@ let currentPage = 1;
 let filesPerPage = 10;
 let currentFileType = "txt";
 let fullFileList = [];
+let filteredFileList = [];  // Subset of fullFileList matching search
+
 
 // Load files button
 document.getElementById("loadDataFilesBtn").addEventListener("click", async () => {
@@ -832,7 +840,7 @@ document.getElementById("loadDataFilesBtn").addEventListener("click", async () =
 
 async function fetchFiles() {
   try {
-    const res = await fetch(`http://localhost:8000/api/files?type=${currentFileType}`);
+    const res = await fetch(`http://124.105.98.204:8000/api/files?type=${currentFileType}`);
     const { files } = await res.json();
     fullFileList = files;
     displayPaginatedFiles();
@@ -841,13 +849,91 @@ async function fetchFiles() {
   }
 }
 
-function displayPaginatedFiles() {
-  const start = (currentPage - 1) * filesPerPage;
-  const end = start + filesPerPage;
-  const paginatedFiles = fullFileList.slice(start, end);
-  renderFileList(paginatedFiles);
-  renderPaginationControls();
+function displayPaginatedFiles(type = "txt") {
+  const startIdx = (currentPage - 1) * filesPerPage;
+  const endIdx = startIdx + filesPerPage;
+  const currentFiles = filteredFileList.slice(startIdx, endIdx);
+
+  const fileListEl = document.getElementById('userFileList');
+  fileListEl.innerHTML = '';
+
+  currentFiles.forEach(filename => {
+    const li = document.createElement('li');
+    li.textContent = filename;
+
+    // Preview Button
+    const previewBtn = document.createElement('button');
+    previewBtn.textContent = '👁 Preview';
+    previewBtn.onclick = () => previewFile(filename, type);
+
+    // Edit Button
+    const editBtn = document.createElement('button');
+    editBtn.textContent = '✏️ Edit';
+    editBtn.onclick = () => openEditorModal(filename, type);
+
+    // Delete Button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '🗑 Delete';
+    deleteBtn.onclick = () => deleteFile(filename, type);
+
+    li.append(previewBtn, editBtn, deleteBtn);
+    fileListEl.appendChild(li);
+  });
+
+  updatePageIndicator();
 }
+
+
+function updatePageIndicator() {
+  const pageCount = Math.ceil(filteredFileList.length / filesPerPage);
+  document.getElementById('pageIndicator').textContent = `Page ${currentPage} of ${pageCount}`;
+
+  document.getElementById('prevPageBtn').disabled = currentPage === 1;
+  document.getElementById('nextPageBtn').disabled = currentPage === pageCount || pageCount === 0;
+}
+
+document.getElementById('prevPageBtn').onclick = () => {
+  if (currentPage > 1) {
+    currentPage--;
+    displayPaginatedFiles();
+  }
+};
+
+document.getElementById('nextPageBtn').onclick = () => {
+  const pageCount = Math.ceil(fullFileList.length / filesPerPage);
+  if (currentPage < pageCount) {
+    currentPage++;
+    displayPaginatedFiles();
+  }
+};
+
+async function loadUserFiles() {
+  const fileType = document.getElementById('dataType').value || "txt";
+  const res = await fetch(`http://124.105.98.204:8000/api/files?type=${fileType}`);
+  const data = await res.json();
+
+  fullFileList = data.files || [];
+  filteredFileList = [...fullFileList];
+  currentPage = 1;
+  displayPaginatedFiles(fileType);  // Pass fileType here
+}
+
+
+
+
+//user enters text in searchbar
+document.getElementById("userFileSearch").addEventListener("input", () => {
+  const query = document.getElementById("userFileSearch").value.toLowerCase().trim();
+  filteredFileList = fullFileList.filter(name => name.toLowerCase().includes(query));
+  currentPage = 1;
+  displayPaginatedFiles();
+});
+
+
+
+document.getElementById('loadDataFilesBtn').onclick = loadUserFiles;
+
+
 
 function renderFileList(files) {
   const list = document.getElementById("userFileList");
@@ -887,18 +973,20 @@ function renderPaginationControls() {
 }
 
 // Search functionality
-document.getElementById("searchInput").addEventListener("input", (e) => {
-  const query = e.target.value.toLowerCase();
-  const filtered = fullFileList.filter((f) => f.toLowerCase().includes(query));
-  renderFileList(filtered.slice(0, filesPerPage));
+document.getElementById("searchInput").addEventListener("input", () => {
+  const query = document.getElementById("searchInput").value.toLowerCase().trim();
+  filteredJsonFiles = allJsonFiles.filter(name => name.toLowerCase().includes(query));
+  currentJsonPage = 1;
+  displayJsonifierFiles();
 });
+
 
 // Preview
 async function previewFile(name, type) {
   selectedFile = name;
   userFilename.textContent = name;
   try {
-    const res = await fetch(`http://localhost:8000/api/file?type=${type}&name=${name}`);
+    const res = await fetch(`http://124.105.98.204:8000/api/file?type=${type}&name=${name}`);
     const { content } = await res.json();
     userFileEditor.value = content;
     userFileEditor.style.display = "block";
@@ -913,7 +1001,7 @@ async function openEditorModal(name, type = "txt") {
   selectedFile = name;
   userFilename.textContent = name;
   try {
-    const res = await fetch(`http://localhost:8000/api/file?type=${type}&name=${name}`);
+    const res = await fetch(`http://124.105.98.204:8000/api/file?type=${type}&name=${name}`);
     const { content } = await res.json();
     userFileEditor.value = content;
     userFileEditor.style.display = "block";
@@ -930,7 +1018,7 @@ async function saveEditedFile() {
   const content = userFileEditor.value;
   const type = document.getElementById("dataType").value || "txt";
   try {
-    const res = await fetch(`http://localhost:8000/api/file/save`, {
+    const res = await fetch(`http://124.105.98.204:8000/api/file/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: selectedFile, type, content }),
@@ -948,7 +1036,7 @@ async function saveEditedFile() {
 async function deleteFile(name, type = "txt") {
   if (!confirm(`Delete ${name}?`)) return;
   try {
-    const res = await fetch(`http://localhost:8000/api/file?type=${type}&name=${name}`, {
+    const res = await fetch(`http://124.105.98.204:8000/api/file?type=${type}&name=${name}`, {
       method: "DELETE",
     });
     const result = await res.json();
@@ -979,71 +1067,144 @@ function showUserMessage(message, isError = false) {
 
 
 // ==================FILE JSONIFICATION
-document.getElementById("loadFileListBtn").addEventListener("click", async () => {
-  const res = await fetch("http://localhost:8000/list-txt-files");
-  const { files } = await res.json();
+// document.getElementById("loadFileListBtn").addEventListener("click", async () => {
+//   const res = await fetch("http://localhost:8000/list-txt-files");
+//   const { files } = await res.json();
 
-  const searchInput = document.getElementById("searchInput").value.trim().toLowerCase();
+//   const searchInput = document.getElementById("searchInput").value.trim().toLowerCase();
 
-  // Default behavior: if search is empty, show all
-  const filtered = searchInput
-    ? files.filter(name => name.toLowerCase().includes(searchInput))
-    : files;
+//   // Default behavior: if search is empty, show all
+//   const filtered = searchInput
+//     ? files.filter(name => name.toLowerCase().includes(searchInput))
+//     : files;
 
-  currentPage = 1; // reset pagination
-  displayFileList(filtered);
+//   currentPage = 1; // reset pagination
+//   displayFileList(filtered);
+// });
+document.getElementById("loadFileListBtn").addEventListener("click", () => {
+  loadJsonifierFileList();
+  document.getElementById("donutWindow").style.display = "block";
 });
 
 
-// -- display what files to be JSONified
-function displayFileList(files, type = "txt") {
-  let currentPage = 1;
-  const filesPerPage = 10;
-  let filteredFiles = [];
 
-  const list = document.getElementById("fileList");
-  list.innerHTML = "";
+//user clicks load files btn
+document.getElementById("searchInput").addEventListener("input", () => {
+  const query = document.getElementById("searchInput").value.toLowerCase().trim();
+  filteredJsonFiles = allJsonFiles.filter(name => name.toLowerCase().includes(query));
+  currentJsonPage = 1;
+  displayJsonifierFiles();
+});
 
-  filteredFiles = files; // store full filtered list
-  const startIndex = (currentPage - 1) * filesPerPage;
-  const endIndex = startIndex + filesPerPage;
-  const filesToShow = filteredFiles.slice(startIndex, endIndex);
+async function loadJsonifierFileList() {
+  try {
+    const res = await fetch('http://124.105.98.204:8000/api/files?type=txt');
+    const data = await res.json();
+    allJsonFiles = data.files || [];
+    filteredJsonFiles = [...allJsonFiles];
+    currentJsonPage = 1;
+    displayJsonifierFiles();
+  } catch (err) {
+    console.error("Failed to load files:", err);
+  }
+}
 
-  filesToShow.forEach((name) => {
-    const li = document.createElement("li");
-    li.textContent = name;
 
-    if (name === selectedFile) li.classList.add("selected-file");
 
+
+async function fetchJsonifierFiles() {
+  try {
+    const res = await fetch("http://124.105.98.204:8000/api/files?type=txt");
+    const data = await res.json();
+    allJsonFiles = data.files || [];
+    filteredJsonFiles = [...allJsonFiles];
+    currentJsonPage = 1;
+    displayJsonifierFiles();
+  } catch (err) {
+    document.getElementById('fileList').innerHTML = `<li>❌ Error loading files: ${err}</li>`;
+  }
+}
+
+function displayJsonifierFiles() {
+  const startIdx = (currentJsonPage - 1) * filesPerJsonPage;
+  const endIdx = startIdx + filesPerJsonPage;
+  const currentFiles = filteredJsonFiles.slice(startIdx, endIdx);
+
+  const fileListEl = document.getElementById('fileList');
+  fileListEl.innerHTML = '';
+
+  currentFiles.forEach(file => {
+    const li = document.createElement('li');
+    li.textContent = file;
+    li.style.cursor = "pointer";
     li.onclick = () => {
-      selectedFile = name;
-      displayFileList(filteredFiles, type);
+      selectedFile = file;
+      document.querySelectorAll('#fileList li').forEach(el => el.style.background = '');
+      li.style.background = '#ddd';
+      previewJsonFile(file);
     };
-
-
-    list.appendChild(li);
+    fileListEl.appendChild(li);
   });
 
-  renderJSONPaginationControls(); // show nav
+  renderJsonPaginationControls();
 }
 
-function renderJSONPaginationControls() {
-  const totalPages = Math.ceil(fullFileList.length / filesPerPage);
-  const controls = document.getElementById("paginationControls") || document.createElement("div");
-  controls.id = "paginationControls";
-  controls.innerHTML = "";
 
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    btn.disabled = i === currentPage;
-    btn.onclick = () => {
-      currentPage = i;
-      displayPaginatedFiles();
-    };
-    controls.appendChild(btn);
+
+function renderJsonPaginationControls() {
+  let controls = document.getElementById('jsonPaginationControls');
+  if (!controls) {
+    controls = document.createElement('div');
+    controls.id = 'jsonPaginationControls';
+    controls.style.marginTop = "10px";
+    controls.style.display = "flex";
+    controls.style.gap = "10px";
+    document.getElementById('fileListContainer').appendChild(controls);
   }
 
-  // Attach below the file list
-  document.getElementById("userFileList").after(controls);
+  const totalPages = Math.max(1, Math.ceil(filteredJsonFiles.length / filesPerJsonPage));
+  controls.innerHTML = '';
+
+  const prevBtn = document.createElement('button');
+  prevBtn.textContent = '⬅️ Prev';
+  prevBtn.className = 'toolbar-btn';
+  prevBtn.disabled = currentJsonPage === 1;
+  prevBtn.onclick = () => {
+    if (currentJsonPage > 1) {
+      currentJsonPage--;
+      displayJsonifierFiles();
+    }
+  };
+  controls.appendChild(prevBtn);
+
+  const pageIndicator = document.createElement('span');
+  pageIndicator.textContent = `Page ${currentJsonPage} of ${totalPages}`;
+  controls.appendChild(pageIndicator);
+
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = '➡️ Next';
+  nextBtn.className = 'toolbar-btn';
+  nextBtn.disabled = currentJsonPage === totalPages;
+  nextBtn.onclick = () => {
+    if (currentJsonPage < totalPages) {
+      currentJsonPage++;
+      displayJsonifierFiles();
+    }
+  };
+  controls.appendChild(nextBtn);
 }
+
+async function previewJsonFile(name) {
+  const previewEl = document.getElementById('filePreview');
+  previewEl.textContent = "Loading preview...";
+  try {
+    const res = await fetch(`http://124.105.98.204:8000/api/file?type=txt&name=${name}`);
+    const { content } = await res.json();
+    previewEl.textContent = content;
+  } catch (err) {
+    previewEl.textContent = `❌ Failed to load file content: ${err}`;
+  }
+}
+
+// Initial load (when popup opens)
+document.getElementById("donutWindow").addEventListener("show", fetchJsonifierFiles);

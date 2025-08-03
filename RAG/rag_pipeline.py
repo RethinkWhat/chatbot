@@ -1,19 +1,10 @@
-from sklearn import base
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
-from langchain_core.output_parsers import StrOutputParser
-from pathlib import Path
-import torch
-import uuid
-import posthog
-import requests, json, time, os, re, subprocess
 
-
+import json, time, os, re
 
 import weaviate
-from weaviate import WeaviateClient
 from weaviate.classes.config import Configure
 import time
 import textwrap # for paraphrasing the knowledge base
@@ -27,12 +18,7 @@ llmModel = None  # Initialize llmModel to be used later in the class
 
 class RAGPipeline:
     def __init__(self, llm_backend: str = "ollama"):
-        try:
-            posthog.api_key = "phc_eZjTrWqsuZNwwsm6hURdjgrFeRMSdSD1Rjx8i3uHZFu" #"phx_hNGq3WucDTsZWAlzpj2WdJV2H5hFGbHroGnyuaQG7fGq25C" #os.environ["POSTHOG_API_KEY"]
-            posthog.host = "https://app.posthog.com" #os.environ['POSTHOG_HOST'] 
-        except KeyError:
-            raise ValueError("Please set POSTHOG_API_KEY and POSTHOG_HOST environment variables")
-        
+
     #     comment out the section if it is already run once.
     #   --------------------------------  START ------------------------------------------------------
         client = weaviate.connect_to_custom(
@@ -44,7 +30,7 @@ class RAGPipeline:
             grpc_secure=False
         )
         questions = client.collections.create(
-            name="navibot10",
+            name="navibot15",
             vectorizer_config=Configure.Vectorizer.text2vec_ollama(     # Configure the Ollama embedding integration
                 api_endpoint="http://host.docker.internal:11434",       # Allow Weaviate from within a Docker container to contact your Ollama instance
                 model="nomic-embed-text",                               # The model to use
@@ -65,7 +51,7 @@ class RAGPipeline:
             grpc_secure=False
         )
 
-        navibot = client.collections.get("navibot10")
+        navibot = client.collections.get("navibot15")
         # Step 4: Read and parse all JSON files
         data = []
         for filename in os.listdir("knowledge/json"):
@@ -115,7 +101,7 @@ class RAGPipeline:
                     print(f"First failed object: {failed_objects[0]}")
 
                 # Fetch and print all objects
-                questions = client.collections.get("navibot10")  # You can increase the limit as needed
+                questions = client.collections.get("navibot15")  # You can increase the limit as needed
                 # Print nicely
                 results = questions.query.fetch_objects(limit=100)
 
@@ -134,10 +120,10 @@ class RAGPipeline:
             self.llmModel = ChatOllama(
                 model="llama3:8b", 
                 base_url="http://ollama:11434",
-                temperature=0.4,
+                temperature=0.2,
                 streaming=True  # Enable streaming
                 )
-            self.memory = ConversationBufferWindowMemory(k=0)
+            self.memory = ConversationBufferWindowMemory(k=0) # Number of recent chats to include in convversation chain
             self.chain = ConversationChain(
                 llm=self.llmModel,
                 memory=self.memory,
@@ -158,14 +144,8 @@ class RAGPipeline:
 
         if session_id:
             props["$session_id"] = session_id
-
-        posthog.capture(
-            distinct_id=distinct_id, event=event, properties=props, timestamp=timestamp, disable_geoip=False
-        )
-
     
     def predict(self, message: str, distinct_id: str, session_id: str, query: str) -> str:
-        # 1. Call Rasa
         try:
             # 2. Extract Rasa response
             reply_text = self.get_ollama_stream(question=message)
@@ -173,21 +153,7 @@ class RAGPipeline:
             print(f"Error calling Rasa: {e}")
             return "Sorry, I couldn't reach the assistant."
 
-        # 3. Track in PostHog
-        try:
-            self.task(
-                distinct_id=distinct_id,
-                input=message,
-                output=reply_text,
-                session_id=session_id,
-                properties={"source": "rasa-web-client"}
-            )
-        except Exception as e:
-            print(f"PostHog tracking failed: {e}")
-
         return reply_text
-    
-
 
     def get_ollama_stream(self, question: str):
         start = time.time()
@@ -201,17 +167,16 @@ class RAGPipeline:
             grpc_secure=False
         )
 
-        questions = client.collections.get("navibot10")
+        questions = client.collections.get("navibot15")
 
         response = questions.query.near_text(
                     query=question,
-                    limit=15,
-                    distance=0.50,
+                    limit=10,
+                    distance=0.70,
                     return_metadata=["distance"]  
         )
 
-        questions = client.collections.get("navibot10")  # This should be the collection where you ingested the data
-
+        questions = client.collections.get("navibot15")  # This should be the collection where you ingested the data
 
         client.close()
         print("response: ", response)
@@ -221,7 +186,6 @@ class RAGPipeline:
             f"{obj.properties['title'].split(' _ ')[-1]} - {obj.properties['answer']} \n"
             for i, obj in enumerate(response.objects)
         ])
-
 
         print("THIS IS THE CONTEXT: ", context)
         if not re.search(r'[a-zA-Z]', context):
@@ -236,11 +200,13 @@ You are a helpful assistant designed to answer questions only for students based
 - I expect you to answer on based off the information I give you.
 - Don't apologize.
 - Always provide all relevant details from the infomration provided in a clear and specific way. Provide a single detailed response.
-- Do not say "According to the context", "Based on the provided documents", just simply provide an answer.
+- Do not say "According to the context", "Based on the provided documents", " is not explicitly stated in the given information," just simply provide an answer.
 - NEVER say phrases like "the provided documents", "according to the context", or "based on the source". Just answer plainly. 
 If the answer is not known, respond ONLY with "{apologyMsg}" Do NOT elaborate or mention the documents at all.
 - When asked “Who is [person]?”, respond with their full name **and** any titles, roles, or affiliations mentioned in the documents. Do not omit available details.
-- Collate all of the related information and give it to me.
+- Collate all of the related information and give it to me. 
+- Do not present similar abbreviations. Make sure it is an EXACT match.
+- If asked "who" give me the name of the person with USEFUL information, otherwise respond with {apologyMsg}. If the information does not mention the person, respond with {apologyMsg}
 ---
 
 {context}
@@ -258,7 +224,3 @@ ANSWER:
         print("LLM RESPONSE: ", response )
         
         return response
-    
-
-# code regarding old JSONifier is deleted; New ones follow. See Main.py, and go ahead and checkout API endpoint within "smol" container/dolfer
-

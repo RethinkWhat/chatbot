@@ -16,4 +16,4 @@ RUN pip install --upgrade pip && pip install --no-cache-dir rasa==3.6.21 -r requ
 RUN rasa train || (echo "Model training failed" && exit 1)
 
 # Run Rasa shell
-CMD ["rasa", "run", "nlu" "--enable-api", "--debug", "--cors", "*"]
+CMD ["rasa", "run", "--enable-api", "--debug", "--cors", "*"]

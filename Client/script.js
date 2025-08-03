@@ -139,7 +139,7 @@ class SLUChatbot {
         this.abortController = new AbortController();
         const signal = this.abortController.signal;
 
-        const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+        const response = await fetch("http://124.105.98.204:5005/webhooks/rest/webhook", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -203,7 +203,7 @@ class SLUChatbot {
             case 'menu':
             this.addUserMessage("Show Menu");
             try {
-                const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+                const response = await fetch("http://124.105.98.204:5005/webhooks/rest/webhook", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"

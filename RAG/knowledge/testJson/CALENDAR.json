@@ -1,6 +1,0 @@
-{
-  "page_1": {
-    "raw_output": "Summarize the document content in JSON format that Python can read.",
-    "error": "JSON decode failed: Expecting value: line 1 column 1 (char 0)"
-  }
-}
