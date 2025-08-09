@@ -23,15 +23,15 @@
             <div class="login-card">
                 <h2>Admin Login</h2>
                 <form id="loginForm">
-                    <div class="form-group">
-                        <label for="username">Username:</label>
-                        <input type="text" id="username" name="username" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Password:</label>
-                        <input type="password" id="password" name="password" required />
-                    </div>
-                    <button type="submit" class="login-btn">Login</button>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required />
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required />
+                </div>
+                <button type="submit" class="login-btn">Login</button>
                 </form>
                 <!-- <div class="status-message" id="statusMessage"></div> -->
             </div>
@@ -53,7 +53,10 @@
                     <span>🚪</span> Logout
                 </button>
                 <button id="scrapeBtn" class="toolbar-btn scrape">
-                    <span>🧹</span> Scrape
+                    <span>🧹</span> Scraper and JSONifier
+                </button>
+                <button id = "adminCredsBtn" class="toolbar-btn creds">
+                    <span>🛠</span> Admin Credentials
                 </button>
             </div>
 
@@ -77,7 +80,7 @@
                     <div class="form-group">
                         <label for="menuEmoji">Emoji:</label>
                         <select id="menuEmoji" required>
-                            <!-- Options populated dynamically -->
+                        <!-- Options populated dynamically -->
                         </select>
                     </div>
                     <div class="form-group">
@@ -121,6 +124,160 @@
             </div>
         </div>
     </div>
+        <!-- Scraper Panel popup/modal -->
+        <div class="window" id="scrapeWindow">
+            <div class="window-content">
+                <div class="window-header">
+                    <h3>Knowledge Scraper</h3>
+                    <button class="close-btn" id="closeScrapeWindow">&times;</button>
+                </div>
+            <div class="toolbar-popup">
+                <button id="webScrapeBtn" class="toolbar-btn">
+                    <span>+</span> Web Scraper
+                </button>
+                <button id="fileUploadBtn" class="toolbar-btn">
+                    <span>💾</span> File Upload
+                </button>
+                <button id="donutCtrlBtn" class="toolbar-btn">
+                    <span>🔄</span> Donut AI JSONifier
+                </button>
+                <button id="userDataBtn" class="toolbar-btn">
+                    <span>📂</span> View User Data
+                </button>
+            </div>
+            <div id="webScrapeWindow" class="popup" style="display: flex;">
+                <div class="section">
+                    <h2>🌐 Run Web Scraper</h2>
+                        <form id="scrapeForm">
+                        <label for="depth">Crawl Depth:</label>
+                        <input type="number" id="depth" name="depth" value="2" min="1" max="5">
+                        <button id="run" type="submit" class="toolbar-btn">Run Scraper</button>
+                    </form>
+                    <pre id="scrapeOutput" class="output-box"></pre>
+                </div>
+                <div class="section">
+                    <h2>📝 Edit URLs to Scrape</h2>
+                    <textarea id="urlsEditor" rows="8" cols="80" placeholder="Enter one URL per line..."></textarea><br>
+                    <button id="loadUrlsBtn" class="toolbar-btn" type="button">🔄 Load URLs</button>
+                    <button id="saveUrlsBtn" class="toolbar-btn" type="button">💾 Save URLs</button>
+                    <pre id="urlsStatus" class="output-box"></pre>
+                </div>
+            </div>  
+            <div id="uploadWindow" class="popup" style="display: none;">
+                <div class="section">
+                    <h2>📁 Upload Files (.pdf, .png, .jpg, .txt)</h2>
+                    <form id="uploadForm">
+                        <input type="file" id="uploadInput" name="files" multiple accept=".pdf,.png,.jpg,.jpeg,.txt">
+                        <button type="submit" class="toolbar-btn">Upload</button>
+                    </form>
+                    <pre id="uploadOutput" class="output-box"></pre>
+                </div>
+            </div>
+            <div id = "donutWindow" class="popup" style="display: none;">
+                <input type="text" id="searchInput" placeholder="Search .txt files..." />
+                <button id="loadFileListBtn" class="toolbar-btn">Search</button>
+                <div id="fileListContainer">
+                    <ul id="fileList"></ul>
+                </div>
+                      
+
+                <pre id="filePreview">Select a file to JSONify</pre>
+                <textarea id="fileEditor" rows="12" style="width: 100%; display: none;"></textarea>
+                <pre id="editStatus" class="output-box"></pre>
+
+                <button class="toolbar-btn" onclick="jsonifyFile(selectedFile)">JSONify This File</button>
+
+                    
+                <h2>AI JSONifier</h2>
+                <button id="jsonConvertBtn" class="toolbar-btn">🔄 JSONify whole knowledge base</button>
+                <button id="weaviateBtn" class="toolbar-btn"> Weaviate to knowledge base</button>
+                <pre id="JSONifyOutput" class="output-box"></pre>
+            </div>
+            <div id="scrapeStatus" class="status-message"></div>
+
+            <div class="popup" id="fileEditorWindow" style="display: none;">
+                <div class="window-content">
+                    <div class="window-header">
+                        <h3>Edit Text File</h3>
+                        <button class="close-btn" onclick="closeEditorModal()">&times;</button>
+                    </div>
+                    <div class="window-body">
+                        <p id="editorFilename"></p>
+                        <textarea id="fileEditorContent" rows="15" style="width: 100%;"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn secondary" onclick="closeEditorModal()">Cancel</button>
+                        <button class="btn primary" onclick="saveEditedFile()">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+                
+            <div id="userDataWindow" class="popup" style="display: none;">
+                <div class="section">
+                    <div class="window-header">
+                        <h2>📂 Browse User Data</h2>
+                    </div>
+
+                    <label for="dataType">Select Type:</label>
+                    <select id="dataType">
+                        <option value="txt">Text Files (.txt)</option>
+                        <option value="json">JSON Files (.json)</option>
+                    </select>
+                    <button id="loadDataFilesBtn" class="toolbar-btn">📄 Load Files</button>
+
+                    <div style="margin: 10px 0;">
+                        <input type="text" id="userFileSearch" placeholder="🔍 Search files by name..." />
+                    </div>
+
+                    <ul id="userFileList"></ul>
+
+                    <div id="paginationControls" style="margin-top: 10px; display: flex; gap: 10px;">
+                        <button id="prevPageBtn" class="toolbar-btn">⬅️ Prev</button>
+                        <span id="pageIndicator">Page 1</span>
+                        <button id="nextPageBtn" class="toolbar-btn">➡️ Next</button>
+                    </div>
+
+                    <h3>📝 File Content</h3>
+                    <p id="userFilename">the panel below shows the content of the selected file:</p>
+                    <textarea id="userFileEditor" rows="12" style="width: 100%; display: none;"></textarea>
+                    <div style="margin-top: 10px;">
+                        <button id="saveUserFileBtn" style="display: none;">💾 Save</button>
+                    </div>
+                    <pre id="userEditStatus" class="output-box"></pre>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- admin creds window -->
+        <div class="window" id="adminCredsWindow">
+            <div class="window-content">
+                <div class="window-header">
+                    <h2>🛠 Admin Credentials</h2>
+                    <button class="close-btn" id="closeAdminCredsWindow">&times;</button>
+                </div>
+                <div class="popup" id="adminCredsPopup">
+                    <div class="window-content">
+                        <form id="adminCredsForm">
+                            <label for="newUsername">New Username:</label><br>
+                            <input type="text" id="newUsername" name="newUsername" placeholder="Enter new username"><br><br>
+                        
+                            <label for="newPassword">New Password:</label><br>
+                            <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password"><br><br>
+                        
+                            <label for="confirmPassword">Confirm Password:</label><br>
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password"><br><br>
+                        
+                            <button type="submit" class="toolbar-btn">✅ Save Changes</button>
+                        </form>
+                        <pre id="credsStatus" class="output-box"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+            
+        
+  
 
     <script src="admin.js"></script>
 </body>

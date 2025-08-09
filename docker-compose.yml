@@ -9,6 +9,8 @@ services:
       - ./RAG:/app
       - ./RAG/knowledge:/app/knowledge
       - ./Client:/app/Client
+    environment:
+      OLLAMA_URL: http://ollama:11434
     networks:
       - chatbot_network
 
@@ -50,17 +52,18 @@ services:
     volumes:
       - ./client:/usr/share/nginx/html
 
-  ollama:
-    image: ollama/ollama
-    container_name: ollama
-    ports:
-      - "11434:11434"  # Ollama API port
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    command: serve
-    networks:
-      - chatbot_network
+  # ollama:
+  #   image: ollama/ollama
+  #   container_name: ollama
+  #   ports:
+  #     - "11434:11434"  # Ollama API port
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+  #   command: serve
+  #   networks:
+  #     - chatbot_network
+
   db:
     image: mysql:8.0
     restart: always
@@ -99,11 +102,34 @@ services:
       CLUSTER_HOSTNAME: 'node1'
     networks:
       - chatbot_network
+
+  smol:
+    build:
+      context: ./smol
+      dockerfile: Dockerfile.smol
+    container_name: smollm3
+    ports:
+      - "8500:8500"
+    volumes:
+      - ./smol:/app
+      - ./RAG/knowledge/raw:/app/knowledge/raw
+      - ./RAG/knowledge/testJson:/app/knowledge/testJson
+      - ~/.cache/huggingface:/root/.cache/huggingface #persists the checkpoint, saves time
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
+
+
+
 volumes:
-  ollama_data:
+  #ollama_data:
   db_data:
   rasa_models:
   weaviate_data:
 
 networks:
   chatbot_network:
+    external: true

@@ -1,0 +1,14 @@
+datasets==2.18.0
+transformers==4.41.2
+accelerate==0.27.2
+fastapi
+uvicorn
+torch==2.1.0
+numpy<2.0
+pdf2image
+Pillow
+protobuf==3.20.3
+pytesseract
+python-multipart
+sentencepiece
+PyMuPDF

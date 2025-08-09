@@ -162,6 +162,13 @@ body {
     margin-bottom: 30px;
     flex-wrap: wrap;
 }
+.toolbar-popup {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+}
 
 .toolbar-btn {
     display: flex;
@@ -198,6 +205,12 @@ body {
 
 .toolbar-btn.danger {
     background: var(--red);
+    color: var(--white);
+    border-color: var(--red);
+}
+
+.toolbar-btn.creds {
+    background: var(--light-blue);
     color: var(--white);
     border-color: var(--red);
 }
@@ -431,6 +444,12 @@ body {
     color: var(--white);
 }
 
+.popup{
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .admin-header {
@@ -548,6 +567,10 @@ body {
   animation: blinkFade .2s infinite;
 }
 
+.slowBlinking {
+  animation: blinkFade 1s infinite;
+}
+
 /* for rendering menu list */
 .menu-item.new {
   border-left: 4px solid green;
@@ -592,4 +615,68 @@ body {
   background: #fff;
   color: #d00;
   border: 1px solid red;
+}
+
+form#uploadForm{
+    justify-items: center;
+}
+/* json window */
+pre {
+    white-space: pre-wrap;
+}
+
+#fileList li {
+    padding: 8px;
+    margin-bottom: 4px;
+    background: var(--gray-100);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  
+  #fileList li:hover {
+    background: var(--gray-200);
+  }
+  
+  #fileList li.selected {
+    background: var(--blue);
+    color: white;
+  }
+  
+  #fileListContainer {
+    transition: opacity 0.3s ease;
+  }
+  
+  .selected-file {
+  background-color: #1e40af !important;
+  color: white !important;
+}
+
+  #userFileList li {
+    cursor: pointer;
+    padding: 6px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+  }
+
+@keyframes blinkHighlight {
+  0% { background-color: #dff0d8; }
+  50% { background-color: #c8e5bc; }
+  100% { background-color: #dff0d8; }
+}
+
+.status-message.blink {
+  animation: blinkHighlight 1s ease-in-out;
+  border-left: 4px solid green;
+  padding-left: 8px;
+  margin-top: 5px;
+}
+
+.output-box.flash {
+  animation: flash-success 1s ease;
+}
+
+@keyframes flash-success {
+  0% { background-color: #d4edda; }
+  100% { background-color: transparent; }
 }

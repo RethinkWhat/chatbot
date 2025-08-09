@@ -9,7 +9,7 @@ import fitz  # PyMuPDF for per-page control
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
 class PDFScraper:
-    def __init__(self, input_dir="knowledge/raw", output_dir="knowledge/txt", pages_per_chunk=5):
+    def __init__(self, input_dir="knowledge/raw", output_dir="knowledge/raw", pages_per_chunk=5):
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.pages_per_chunk = pages_per_chunk
@@ -20,20 +20,28 @@ class PDFScraper:
             doc = fitz.open(pdf_path)
             chunks = []
             current_chunk = []
+
             for i, page in enumerate(doc):
                 text = page.get_text("text").strip()
+                ocr_text = ""
 
-                if len(text) >= 50:
-                    logging.info(f"[Page {i+1}] Text extracted via PDF")
-                else:
+                # If there's little to no text, fallback to OCR
+                if len(text) < 50:
                     logging.warning(f"[Page {i+1}] Not enough text, applying OCR")
                     images = convert_from_path(pdf_path, dpi=300, first_page=i+1, last_page=i+1)
-                    text = ""
                     for img in images:
-                        text += pytesseract.image_to_string(img, lang="eng+fil")
-                    text = Cleaner.runOCRCleaner(text.strip())
+                        ocr_text += pytesseract.image_to_string(img, lang="eng+fil")
+                    ocr_text = Cleaner.runOCRCleaner(ocr_text.strip())
+                else:
+                    logging.info(f"[Page {i+1}] Text extracted via PDF")
 
-                current_chunk.append(text)
+                # Merge text + OCR if needed
+                if text and ocr_text:
+                    merged_text = f"{text}\n\n[OCR Supplement]\n{ocr_text}"
+                else:
+                    merged_text = text or ocr_text
+
+                current_chunk.append(merged_text)
 
                 # Every `pages_per_chunk` pages, store a chunk
                 if (i + 1) % self.pages_per_chunk == 0 or (i + 1) == len(doc):
@@ -45,6 +53,7 @@ class PDFScraper:
         except Exception as e:
             logging.error(f"[Error] Failed to extract {pdf_path}: {e}")
             return []
+
     def extract_page_text(self, pdf_path):
         try:
             doc = fitz.open(pdf_path)
@@ -93,9 +102,18 @@ class PDFScraper:
                 logging.error(f"[Failed] No extractable text from: {filename}")
                 continue
 
-            for idx, chunk_text in enumerate(chunks, 1):
-                chunk_filename = f"{base_name}-{idx}.txt"
+            for chunk_index, chunk_text in enumerate(chunks):
+                start_page = chunk_index * self.pages_per_chunk + 1
+                end_page = min((chunk_index + 1) * self.pages_per_chunk, len(chunks) * self.pages_per_chunk)
+
+                if start_page == end_page:
+                    suffix = f"-Page{start_page}"
+                else:
+                    suffix = f"-Page{start_page}-{end_page}"
+
+                chunk_filename = f"{base_name}{suffix}.txt"
                 output_path = os.path.join(self.output_dir, chunk_filename)
+
 
                 with open(output_path, "w", encoding="utf-8") as out:
                     out.write(chunk_text)

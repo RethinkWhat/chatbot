@@ -1,15 +1,18 @@
     #RAG SERVER
-from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile #for db access
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile, Query, Depends #for db access
+from fastapi.responses import JSONResponse, PlainTextResponse
 import os # used to get user choice of LLM saved in device environment variable
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware # middleware, allowing connection between client and server
 import pymysql # for db access
 from pathlib import Path
-from typing import Dict, List
+from pydantic import BaseModel
+from typing import Dict, List, Optional
+import asyncio
+import subprocess
 # local Imports
 from rag_pipeline import RAGPipeline  
-from build_vector_index import BuildVectorIndex
+#from build_vector_index import BuildVectorIndex
 import bcrypt, subprocess, shutil,json
 # Scraper functions
 from scrapers.web_scraper import run_scraper
@@ -33,7 +36,10 @@ stop_lock = Lock()
 # Build Knowledge. Can comment out this section if knowledge already built
 #build_vector_index = BuildVectorIndex()
 #build_vector_index.run()
-
+# declaring class for admin creds changing
+class UpdateAdminModel(BaseModel):
+    newUsername: Optional[str] = None
+    newPassword: Optional[str] = None
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -64,41 +70,13 @@ llm_backend = os.getenv("LLM_BACKEND", "ollama")
 rag_pipeline = RAGPipeline(llm_backend="ollama")
 os.makedirs("knowledge/cleaned", exist_ok=True)
 
-#scraper: clean the data by paraphrasing?
-@app.post("/upload")
-async def upload_files(files: list[UploadFile] = File(...)):
-    upload_folder = "knowledge/raw"
-    os.makedirs(upload_folder, exist_ok=True)
-    os.makedirs("knowledge/cleaned", exist_ok=True)
-
-    saved = []
-
-    for file in files:
-        ext = file.filename.split(".")[-1].lower()
-        if ext in ["pdf", "png", "jpg", "jpeg", "txt"]:
-            save_path = os.path.join(upload_folder, file.filename)
-            with open(save_path, "wb") as f:
-                shutil.copyfileobj(file.file, f)
-            saved.append(file.filename)
-
-            # # Optional: If it's a .txt, immediately clean it
-            # if ext == "txt":
-            #     with open(save_path, "r", encoding="utf-8") as f:
-            #         raw = f.read()
-
-            #     cleaned = rag_pipeline.paraphrase_with_ollama(raw, file.filename)
-            #     clean_path = os.path.join("knowledge/cleaned", file.filename)
-            #     with open(clean_path, "w", encoding="utf-8") as cf:
-            #         cf.write(cleaned)
-        else:
-            continue
-
-    return {"uploaded": saved}
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
+#===================================
+# CONTENT BELOW IS API ENDPT FOR ACCESSING BACKEND, DEDICATED FOR ADMIN CRUDS
 # The menu route
 @app.get("/menu")
 async def get_menu():
@@ -143,6 +121,39 @@ async def predict_endpoint(request: Request):
     print("SENDING THIS REPLY: ", reply)
     return {"text": reply}
 
+# admin changes new creds
+class AdminUpdateRequest(BaseModel):
+    newUsername: str
+    newPassword: str
+
+@app.post("/api/admin/update-credentials")
+def update_admin_credentials(req: AdminUpdateRequest):
+    if not req.newUsername or not req.newPassword:
+        raise HTTPException(status_code=400, detail="Missing fields")
+
+    hashed_pw = bcrypt.hashpw(req.newPassword.encode(), bcrypt.gensalt()).decode()
+
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            sql = """
+                UPDATE accounts
+                SET username = %s, password = %s
+                WHERE id = 1
+            """
+            cursor.execute(sql, (req.newUsername, hashed_pw))
+            conn.commit()
+
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Admin account not found")
+
+        return {"message": "✅ Admin credentials updated."}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update: {e}")
+
+    finally:
+        conn.close()
 
 #when user clicks on stop button, stop RAG respose
 @app.post("/stop")
@@ -151,7 +162,6 @@ async def stop_generation():
         stop_signal["stop"] = True
     return {"status": "stop requested"}
 
-# admin login
 @app.post("/login")
 async def login(request: Request):
     body = await request.json()
@@ -166,10 +176,19 @@ async def login(request: Request):
         cursor.close()
         conn.close()
 
-        if user and bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
+        # Handle non-existing user
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # Check password
+        if bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
             return {"status": "success", "message": "Login successful"}
         else:
             raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    except HTTPException:
+        raise  # Let FastAPI handle raised HTTPExceptions directly
+
     except Exception as e:
         print("Login error:", e)
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -248,26 +267,55 @@ async def serve_admin():
 async def serve_scraper():
     return FileResponse("Client/scraper.html")
 
-@app.post("/scrape")
-async def run_scraper_endpoint(data: dict = Body(...)):
-    depth = data.get("depth", 2)
-
-    try:
-        # Adjust path based on your project layout
-        result = subprocess.run(
-            ["python3", "RASA/scrapers/web_scraper.py", "--depth", str(depth)],
-            capture_output=True,
-            text=True,
-            timeout=300  # Optional timeout in seconds
-        )
-        return {
-            "output": result.stdout,
-            "error": result.stderr
-        }
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"message": str(e)})
 # URLS.txt
 URLS_FILE = os.path.join(os.path.dirname(__file__), "urls.txt")
+
+#admin popup:scraper popup
+#==========================
+URLS_PATH = "urls.txt"
+SCRAPER_SCRIPT = "web_scraper.py"
+
+@app.get("/scrape/urls")
+def get_urls():
+    if not os.path.exists(URLS_PATH):
+        return {"urls": []}
+    with open(URLS_PATH, "r", encoding="utf-8") as f:
+        urls = [line.strip() for line in f if line.strip()]
+    return {"urls": urls}
+
+@app.post("/scrape/urls")
+async def save_urls(request: Request):
+    data = await request.json()
+    urls = data.get("urls", "")
+    with open(URLS_PATH, "w", encoding="utf-8") as f:
+        f.write(urls.strip() + "\n")
+    return {"status": "✅ URLs saved to urls.txt"}
+
+@app.post("/scrape/run")
+async def run_web_scraper(request: Request):
+    data = await request.json()
+    depth = int(data.get("depth", 2))
+
+    async def stream_logs():
+        yield f"data: [START] Scraping at depth={depth}\n\n"
+
+        process = await asyncio.create_subprocess_exec(
+            "python", "scrapers/web_scraper.py", "--depth", str(depth),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
+
+        while True:
+            line = await process.stdout.readline()
+            if not line:
+                break
+            yield f"data: {line.decode().strip()}\n\n"
+
+        await process.wait()
+        yield "data: [DONE] Scraping complete.\n\n"
+
+    return StreamingResponse(stream_logs(), media_type="text/event-stream")
+#========================================
 
 @app.get("/urls")
 def get_urls() -> Dict[str, List[str]]:
@@ -306,41 +354,25 @@ async def get_json_file(filename: str):
         return {"content": json.load(f)}
 
 
-@app.post("/knowledge/json/{filename}")
-async def save_json_file(filename: str, data: dict = Body(...)):
-    path = os.path.join("knowledge", "json", filename)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data["content"], f, indent=2, ensure_ascii=False)
-    return {"status": "saved"}
-
 @app.get("/knowledge/txt")
 def list_txt_files():
-    files = [f for f in os.listdir("knowledge/txt") if f.endswith(".txt")]
+    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt") and f.endswith(".json")]
     return {"files": files}
 
 @app.get("/knowledge/txt/{filename}")
 def get_txt_content(filename: str):
-    path = os.path.join("knowledge/txt", filename)
+    path = os.path.join("knowledge/raw", filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="File not found")
     with open(path, "r", encoding="utf-8") as f:
         return {"content": f.read()}
 
-@app.post("/trigger/jsonify/{filename}")
-def jsonify_txt_file(filename: str):
-    rag = RAGPipeline()
-    path = os.path.join("knowledge/txt", filename)
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
-    with open(path, "r", encoding="utf-8") as f:
-        text = f.read()
-    result = rag.jsonifyTxt(text)
-    return {"filename": filename, "json": result}
+
 
 #upload files
 @app.post("/upload")
 async def upload_files(files: list[UploadFile] = File(...)):
-    upload_folder = "knowledge"
+    upload_folder = "knowledge/raw"
     saved = []
 
     for file in files:
@@ -358,7 +390,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
 
 @app.post("/trigger/scrape")
 async def trigger_web_scraper():
-    run_scraper(urls_path="urls.txt", output_dir="knowledge/txt", depth=2)
+    run_scraper(urls_path="urls.txt", output_dir="knowledge/raw", depth=2)
     return {"status": "web scrape done"}
 
 @app.post("/trigger/pdf")
@@ -369,50 +401,176 @@ async def trigger_pdf_scanner():
 
 @app.post("/trigger/image")
 async def trigger_image_scanner():
-    scan_images(folder="knowledge/txt")
+    scan_images(input_folder="knowledge/raw")
     return {"status": "image scan done"}
 
-@app.post("/trigger/clean")
-async def trigger_cleaning():
-    os.makedirs("knowledge/cleaned", exist_ok=True)
-    rag = RAGPipeline()
-    count = 0
-    for filename in os.listdir("knowledge/txt"):
-        if filename.endswith(".txt"):
-            with open(f"knowledge/txt/{filename}", "r", encoding="utf-8") as f:
-                raw = f.read()
-            cleaned = rag.paraphrase_with_ollama(raw, filename)
-            with open(f"knowledge/cleaned/{filename}", "w", encoding="utf-8") as f:
-                f.write(cleaned)
-            count += 1
-    return {"status": "cleaning complete", "files": count}
+# are we still building index? Or are we weaviating?
 
-@app.post("/trigger/jsonify")
-async def trigger_jsonify():
-    if not rag_pipeline:
-        return JSONResponse(status_code=500, content={"message": "RAG pipeline not initialized"})
+# @app.post("/trigger/index")
+# async def trigger_vector_index():
+#     builder = BuildVectorIndex()
+#     num_chunks = builder.build_index()  # Capture return value
+#     return {"status": "vector index built", "chunks": num_chunks}
 
-    source_dir = "knowledge/txt"
-    output_dir = "knowledge/json"
-    os.makedirs(output_dir, exist_ok=True)
+#
+RAW_TXT_DIR = Path("/app/knowledge/raw")
+@app.get("/list-txt-files")
+def list_txt_files():
+    files = [f.name for f in Path("knowledge/raw").glob("*.txt")]
+    return JSONResponse(content={"files": files})
 
-    converted = []
-    for fname in os.listdir(source_dir):
-        if fname.endswith(".txt"):
-            with open(os.path.join(source_dir, fname), "r", encoding="utf-8") as f:
-                content = f.read()
-            jsonified = rag_pipeline.jsonifyTxt(content)
-            if jsonified:
-                json_path = os.path.join(output_dir, Path(fname).stem + ".json")
-                with open(json_path, "w", encoding="utf-8") as out:
-                    json.dump(jsonified, out, indent=2)
-                converted.append(fname)
+@app.delete("/delete-txt")
+def delete_txt(file: str):
+    file_path = RAW_TXT_DIR / file
+    if file_path.exists():
+        file_path.unlink()
+        return JSONResponse(content={"message": f"{file} deleted."})
+    return JSONResponse(content={"message": f"{file} not found."}, status_code=404)
 
-    return {"status": "converted", "files": converted}
+@app.get("/preview-txt")
+def preview_txt(file: str):
+    filepath = RAW_TXT_DIR / file
 
-@app.post("/trigger/index")
-async def trigger_vector_index():
-    builder = BuildVectorIndex()
-    num_chunks = builder.build_index()  # Capture return value
-    return {"status": "vector index built", "chunks": num_chunks}
+    if not filepath.exists():
+        return JSONResponse({"error": "File not found"}, status_code=404)
 
+    try:
+        if filepath.suffix == ".json":
+            content = json.loads(filepath.read_text(encoding="utf-8"))
+            return JSONResponse(content)
+        else:
+            content = filepath.read_text(encoding="utf-8")
+            return PlainTextResponse(content)
+    except Exception as e:
+        return JSONResponse({"error": f"Failed to read file: {str(e)}"}, status_code=500)
+
+
+#weaviate data in testJson
+@app.post("/weaviate/upload")
+def upload_to_weaviate():
+    data = []
+    json_dir = "knowledge/testJson"
+
+    for filename in os.listdir(json_dir):
+        if filename.endswith(".json"):
+            filepath = os.path.join(json_dir, filename)
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    json_data = json.load(f)
+
+                    if isinstance(json_data, dict):
+                        title = json_data.get("title", filename)
+                        for key, value in json_data.items():
+                            if key == "title":
+                                continue
+
+                            if not value:
+                                continue
+
+                            chunk = {
+                                "title": f"{title} - {key}".strip(),
+                                "answer": json.dumps(value, indent=2),
+                                "category": filename
+                            }
+                            data.append(chunk)
+                            print(data)
+                    else:
+                        print(f"Skipping {filename}: not a valid JSON object.")
+            except json.JSONDecodeError as e:
+                print(f"Failed to decode {filename}: {e}")
+
+    # OPTIONAL: Insert into Weaviate here if needed
+    # weaviate_client.batch().add_data_objects(data, class_name="YourClass")
+
+    return {
+        "status": "✅ Uploaded to Weaviate",
+        "files_processed": len(data),
+        "sample": data[:3]  # preview a few items
+    }
+
+#admin changes creds
+@app.post("/api/admin/update")
+async def update_admin_creds(data: UpdateAdminModel, request: Request):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if not data.newUsername and not data.newPassword:
+        return {"error": "No update data provided."}
+
+    try:
+        if data.newUsername:
+            cursor.execute("UPDATE accounts SET username = ? WHERE id = 1", (data.newUsername,))
+        
+        if data.newPassword:
+            hashed_pw = bcrypt.hash(data.newPassword)
+            cursor.execute("UPDATE accounts SET password = ? WHERE id = 1", (hashed_pw,))
+        
+        conn.commit()
+        return {"message": "Credentials updated."}
+    
+    except Exception as e:
+        print(f"[Error] Updating admin credentials: {e}")
+        return {"error": "Database error"}
+    
+    finally:
+        conn.close()
+        
+# ==== admin: File manager page
+# Base paths
+BASE_PATHS = {
+    "txt": Path("knowledge/raw"),
+    "json": Path("knowledge/testJson")
+}
+
+# Model for saving files
+class SaveFileRequest(BaseModel):
+    type: str
+    name: str
+    content: str
+    
+    
+@app.get("/api/files")
+def list_files(type: str):
+    if type not in BASE_PATHS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    path = BASE_PATHS[type]
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Directory not found")
+    files = [f.name for f in path.iterdir() if f.is_file() and f.suffix.lower() == f".{type}"]
+    return {"files": files}
+
+@app.get("/api/file")
+def get_file(type: str, name: str):
+    if type not in BASE_PATHS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    file_path = BASE_PATHS[type] / name
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        return {"name": name, "content": file_path.read_text(encoding="utf-8")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/file/save")
+def save_file(data: SaveFileRequest):
+    if data.type not in BASE_PATHS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    file_path = BASE_PATHS[data.type] / data.name
+    try:
+        file_path.write_text(data.content, encoding="utf-8")
+        return {"status": "success", "message": f"{data.name} saved successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/file")
+def delete_file(type: str, name: str):
+    if type not in BASE_PATHS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    file_path = BASE_PATHS[type] / name
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        file_path.unlink()
+        return {"status": "success", "message": f"{name} deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

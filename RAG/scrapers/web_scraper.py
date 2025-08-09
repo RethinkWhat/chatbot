@@ -70,10 +70,13 @@ def get_internal_links(html, base_url):
             links.add(full_url)
 
     return links
-
+    
 def crawl(url, depth=2):
+    if depth < 0:  # ✅ Prevent invalid recursion
+        return []
+
     with visited_lock:
-        if url in visited_urls or depth == 0:
+        if url in visited_urls:
             return []
         visited_urls.add(url)
 
@@ -82,15 +85,14 @@ def crawl(url, depth=2):
     html = fetch_html(url)
     if not html:
         return []
-    
-    # Download assets like PDFs and images, and save them to the output folder
-    download_assets(html, url, output_folder="knowledge")
+
+    download_assets(html, url, output_folder="knowledge/raw")
 
     page_data = parse_html(html, url)
     sub_links = get_internal_links(html, url)
 
     sub_pages = []
-    with ThreadPoolExecutor(max_workers=15) as executor:  # Adjust the number of workers as needed
+    with ThreadPoolExecutor(max_workers=15) as executor:
         futures = [executor.submit(crawl, sub_url, depth - 1) for sub_url in sub_links]
         for future in futures:
             sub_pages.extend(future.result())
@@ -98,7 +100,7 @@ def crawl(url, depth=2):
     return [page_data] + sub_pages
 
 #download any seen pdfs and images
-def download_assets(html, base_url, output_folder="knowledge"):
+def download_assets(html, base_url, output_folder="knowledge/raw"):
     os.makedirs(output_folder, exist_ok=True)
     soup = BeautifulSoup(html, "lxml")
     
@@ -117,9 +119,9 @@ def download_assets(html, base_url, output_folder="knowledge"):
                 logging.warning(f"Failed to download {file_url}: {e}")
 
 # Save parsed data to txt
-def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge"):
+def save_to_txt(parsed_data_list, domain_name, output_dir="knowledge/raw"):
     
-    output_dir = os.path.join("knowledge")
+    output_dir = os.path.join("knowledge/raw")
     os.makedirs(output_dir, exist_ok=True)
 
     filepath = os.path.join(output_dir, f"{domain_name}.txt")
