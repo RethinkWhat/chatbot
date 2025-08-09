@@ -10,17 +10,10 @@ Second, the RAG architecture was adopted. This section will focus on the generat
 
 Question -> RASA -> Determine Intent -> If unable to meet threshold, fallback to RAG -> Make Chunks and Embed Query (Convert to its Numerical Representation/ Features) -> FAISS (Vector Search to determine the relevant chunks) -> Include Chunks in query -> Pass to LLM -> Get Answer
 
-1. To start the rag server issue the following command:
-    - /opt/anaconda3/envs/rag_venv/bin/uvicorn main:app --reload 
-2. To start the rasa actions server (The pipeline to allow the fallback mechanism to RAG) issue the following command
-    - /opt/anaconda3/envs/rasa_venv/bin/rasa run actions
-3. To start the chatbot issue the following command:
-    - /opt/anaconda3/envs/rasa_venv/bin/rasa shell
+To run the project a docker compose file has been created. Issuing the "up" command will be sufficient if the aim is to run the project on a CPU. We advise against it. Instead, opt to run Ollama on the GPU under the network "chatbot_network" so that it can be detected by the other services. After running the ollama model, two services will need to be installed within the containers, which can be done by issuing the following commands:
+   1. ollama pull llama3:8b
+   2. ollama pull nomic-embed-text
 
-
-1. Locally will need to download poppler and tesseract:
-    - brew install poppler (or Windows equivlent)
-    - brew install tesseract
 
 ## Flow
 
@@ -50,3 +43,6 @@ LLM Response
 - [@rethinkwhat](https://github.com/RethinkWhat/)
 - [@PerhapsYou] (https://github.com/PerhapsYou)
 
+
+# Remaining Task
+   The admin side has several issues primarily centered around the scrapers and the conversion to JSON. These issues will be addressed sometime soon when we have access to the necessary hardware to fix them.
