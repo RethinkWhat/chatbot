@@ -652,12 +652,16 @@ pre {
   color: white !important;
 }
 
-  #userFileList li {
-    cursor: pointer;
-    padding: 6px;
-    margin-bottom: 5px;
-    border-radius: 5px;
-  }
+#userFileList{
+    max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: #f9f9f9;
+}
+
+
 
 @keyframes blinkHighlight {
   0% { background-color: #dff0d8; }
@@ -679,4 +683,62 @@ pre {
 @keyframes flash-success {
   0% { background-color: #d4edda; }
   100% { background-color: transparent; }
+}
+
+#donutWindow .window-content {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+#userDataWindow .window-content {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+#userFileList {
+  overflow-x: hidden;
+  word-break: break-word;
+}
+#userFileList li {
+  padding: 8px;
+    margin-bottom: 4px;
+    background: var(--gray-100);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* pagination ctrls */
+.paginationControls {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: start;
+  scroll-behavior: smooth;
+}
+
+.paginationControls button {
+  flex-shrink: 0; /* prevent buttons from shrinking */
+  min-width: 2.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.paginationControls button:hover {
+  background: #e0e0e0;
+}
+
+.big-search-box {
+  font-size: 16px;
+  padding: 8px 10px;
+  width: 100%;
+  box-sizing: border-box;
 }

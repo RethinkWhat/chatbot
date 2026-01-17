@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from pathlib import Path
 from app.hf_llm import get_json_from_text, jsonify_stream, preprocess_text
 import json, re , traceback
+import app.rms_patch
+
 
 app = FastAPI()
 
@@ -23,7 +25,7 @@ class Prompt(BaseModel):
 # Single file JSONifdication
 @app.post("/txt2json")
 async def txt2json(file: str = Query(...)):
-    RAW_TXT_DIR = Path("/app/knowledge/raw")
+    RAW_TXT_DIR = Path("/app/knowledge/txt")
     txt_path = RAW_TXT_DIR / file
     JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
     json_path = JSON_OUTPUT_DIR / (txt_path.stem + ".json")
@@ -66,7 +68,7 @@ def stream_jsonify():
 
 @app.post("/jsonify-one", response_class=JSONResponse)
 def jsonify_one(file: str = Query(...)):
-    RAW_TXT_DIR = Path("/app/knowledge/raw")
+    RAW_TXT_DIR = Path("/app/knowledge/txt")
     JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
     file_path = RAW_TXT_DIR / file
     if not file_path.exists():

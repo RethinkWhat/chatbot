@@ -1,4 +1,5 @@
     #RAG SERVER
+from xmlrpc import client
 from fastapi import FastAPI, Request, HTTPException, Body, File, UploadFile, Query, Depends #for db access
 from fastapi.responses import JSONResponse, PlainTextResponse
 import os # used to get user choice of LLM saved in device environment variable
@@ -356,7 +357,7 @@ async def get_json_file(filename: str):
 
 @app.get("/knowledge/txt")
 def list_txt_files():
-    files = [f for f in os.listdir("knowledge/raw") if f.endswith(".txt") and f.endswith(".json")]
+    files = [f for f in os.listdir("knowledge/txt") if f.endswith(".txt") and f.endswith(".json")]
     return {"files": files}
 
 @app.get("/knowledge/txt/{filename}")
@@ -390,7 +391,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
 
 @app.post("/trigger/scrape")
 async def trigger_web_scraper():
-    run_scraper(urls_path="urls.txt", output_dir="knowledge/raw", depth=2)
+    run_scraper(urls_path="urls.txt", output_dir="knowledge/txt", depth=2)
     return {"status": "web scrape done"}
 
 @app.post("/trigger/pdf")
@@ -413,10 +414,10 @@ async def trigger_image_scanner():
 #     return {"status": "vector index built", "chunks": num_chunks}
 
 #
-RAW_TXT_DIR = Path("/app/knowledge/raw")
+RAW_TXT_DIR = Path("/app/knowledge/txt")
 @app.get("/list-txt-files")
 def list_txt_files():
-    files = [f.name for f in Path("knowledge/raw").glob("*.txt")]
+    files = [f.name for f in Path("knowledge/txt").glob("*.txt")]
     return JSONResponse(content={"files": files})
 
 @app.delete("/delete-txt")
@@ -448,6 +449,14 @@ def preview_txt(file: str):
 #weaviate data in testJson
 @app.post("/weaviate/upload")
 def upload_to_weaviate():
+    client = weaviate.connect_to_custom(
+            http_host="weaviate",         # your Docker service name or localhost
+            http_port=8080,
+            http_secure=False,
+            grpc_host="weaviate",         # same as http_host if gRPC isn't separately routed
+            grpc_port=50051,
+            grpc_secure=False
+        )
     data = []
     json_dir = "knowledge/testJson"
 
@@ -478,6 +487,35 @@ def upload_to_weaviate():
                         print(f"Skipping {filename}: not a valid JSON object.")
             except json.JSONDecodeError as e:
                 print(f"Failed to decode {filename}: {e}")
+# Insert chunks in batches
+    navibot = client.collections.get("navibot10")
+    with navibot.batch.fixed_size(batch_size=200) as batch:
+        for item in data:
+            batch.add_object({
+                "title": item["title"][:300],
+                "answer": item["answer"],
+                "category": item["category"]
+            })
+            if batch.number_errors > 10:
+                print("Batch import stopped due to excessive errors.")
+                break
+
+            failed_objects = navibot.batch.failed_objects
+            if failed_objects:
+                print(f"Number of failed imports: {len(failed_objects)}")
+                print(f"First failed object: {failed_objects[0]}")
+
+            # Fetch and print all objects
+            questions = client.collections.get("navibot10")  # You can increase the limit as needed
+            # Print nicely
+            results = questions.query.fetch_objects(limit=100)
+
+            # for obj in results.objects:
+            #     print("UUID:", obj.uuid)
+            #     print("Properties:", obj.properties)
+            #     print("-" * 40)
+
+    client.close()  # Free up resources    
 
     # OPTIONAL: Insert into Weaviate here if needed
     # weaviate_client.batch().add_data_objects(data, class_name="YourClass")
@@ -518,7 +556,7 @@ async def update_admin_creds(data: UpdateAdminModel, request: Request):
 # ==== admin: File manager page
 # Base paths
 BASE_PATHS = {
-    "txt": Path("knowledge/raw"),
+    "txt": Path("knowledge/txt"),
     "json": Path("knowledge/testJson")
 }
 

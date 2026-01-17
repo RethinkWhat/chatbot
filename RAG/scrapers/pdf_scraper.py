@@ -9,7 +9,7 @@ import fitz  # PyMuPDF for per-page control
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
 class PDFScraper:
-    def __init__(self, input_dir="knowledge/raw", output_dir="knowledge/raw", pages_per_chunk=5):
+    def __init__(self, input_dir="knowledge/raw", output_dir="knowledge/txt", pages_per_chunk=5):
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.pages_per_chunk = pages_per_chunk

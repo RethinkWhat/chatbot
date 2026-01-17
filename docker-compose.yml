@@ -112,14 +112,19 @@ services:
       - "8500:8500"
     volumes:
       - ./smol:/app
+      - ./RAG/knowledge/txt:/app/knowledge/txt
       - ./RAG/knowledge/raw:/app/knowledge/raw
       - ./RAG/knowledge/testJson:/app/knowledge/testJson
-      - ~/.cache/huggingface:/root/.cache/huggingface #persists the checkpoint, saves time
+      - .hf_cache:/app/hf_cache
+
+      # - ~/.cache/huggingface:/root/.cache/huggingface #persists the checkpoint, saves time
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
     runtime: nvidia
 
 
@@ -132,4 +137,4 @@ volumes:
 
 networks:
   chatbot_network:
-    external: true
+     external: true

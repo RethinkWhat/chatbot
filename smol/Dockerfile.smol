@@ -1,31 +1,38 @@
-# Use PyTorch image with CUDA 12.1 + cuDNN 8 for GPU support
-FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
+# Use official PyTorch image with CUDA 12.1 and cuDNN 8
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
 
+# Set environment variables
 ENV TRANSFORMERS_VERBOSITY=info
 ENV HF_HUB_DISABLE_PROGRESS_BARS=1
+ENV HF_HOME=/app/hf_cache
+
 
 # Set working directory
 WORKDIR /app
 
-# Install Git and basic utilities
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# Install Git, basic utilities, and uvicorn (if not in requirements.txt)
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* \
+    && pip install uvicorn
 
-# Python dependencies
+# Copy and install Python dependencies from requirements.txt
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# (Optional) Preload the SmolLM3-3B model into cache
-# This speeds up first run in environments without volume cache
-RUN python -c "\
-from transformers import AutoTokenizer, AutoModelForCausalLM; \
-AutoTokenizer.from_pretrained('HuggingFaceTB/SmolLM3-3B'); \
-AutoModelForCausalLM.from_pretrained('HuggingFaceTB/SmolLM3-3B')"
+# Verify PyTorch version (should be >= 2.1.0)
+RUN python -c "import torch; print(f'Torch version: {torch.__version__}')"
 
-# App code
+# Verify Transformers version
+RUN python -c "import transformers; print(f'Transformers version: {transformers.__version__}')"
+
+# # Install PyTorch-compatible RMSNorm
+# RUN pip install torch-rmsnorm
+
+# Copy app code first
 COPY ./app ./app
 
-# Set environment variable for CUDA device visibility (if needed)
+# Set environment variable for CUDA device visibility (optional)
 ENV CUDA_VISIBLE_DEVICES=0
 
-# Expose port and run app
+# Expose port and run the app using uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8500"]
+

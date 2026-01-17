@@ -3,15 +3,25 @@ from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from datetime import datetime
+import torch.nn as nn
+if not hasattr(nn, "RMSNorm"):
+    from transformers.models.llama.modeling_llama import LlamaRMSNorm
+    nn.RMSNorm = LlamaRMSNorm
 
-RAW_TXT_DIR = Path("/app/knowledge/raw")
+RAW_TXT_DIR = Path("/app/knowledge/txt")
 JSON_OUTPUT_DIR = Path("/app/knowledge/testJson")
 JSON_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load SMOL
 MODEL_NAME = "HuggingFaceTB/SmolLM3-3B"
+# Detect device
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Load model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to("cuda")
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(device)
+
+print(f"Model loaded on {device}")
 
 
 def extract_first_json_block(text: str) -> str:
@@ -28,46 +38,63 @@ def extract_first_json_block(text: str) -> str:
                 return text[start:i+1]
     raise ValueError("Unbalanced JSON.")
 
-#preprocess raw txt
+# Clean output from LLM before parsing
+def clean_llm_output(output: str) -> str:
+    output = re.sub(r"<think>.*?</think>", "", output, flags=re.DOTALL)
+    output = output.strip()
+
+    # Remove markdown block wrappers
+    if output.startswith("```") and "{" in output:
+        output = output[output.find("{"):]  # cut off everything before first {
+    output = re.sub(r"```.*", "", output, flags=re.DOTALL).strip()
+    return output
+
+# Preprocess raw txt
 
 def clean_text(text: str) -> str:
-    """Removes excess whitespace and normalizes newlines."""
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"\n{3,}", "\n\n", text)  # Reduce 3+ line breaks to 2
-    text = re.sub(r"[ \t]+", " ", text)     # Replace multiple spaces/tabs with single space
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r"[ \t]+", " ", text)
     return text.strip()
 
 def filter_relevant_lines(text: str) -> str:
-    """Filters out short or empty lines unless they are questions."""
     lines = text.split("\n")
     filtered = []
     for line in lines:
         line = line.strip()
         if not line:
             continue
-        if len(line) > 50 or line.endswith("?"):  # Keep long lines or questions
+        if len(line) > 50 or line.endswith("?"):
             filtered.append(line)
     return "\n\n".join(filtered)
 
 def preprocess_text(text: str) -> str:
-    """Clean and filter text before feeding into the LLM."""
     return filter_relevant_lines(clean_text(text))
 
-#JSONification
+# JSONification
 
 def get_json_from_text(text: str) -> dict:
     prompt = (
-        "You are a JSON generator. Convert the following raw text into structured JSON file.\n\n"
-        "ONLY return valid JSON.\n\nInput text:\n" + text[:2000]
+        "Convert the following raw text into a structured JSON file. "
+        "The JSON MUST start with a top-level field called \"title\", representing either the title of the document or the author's name if more appropriate. "
+        "Only output a valid JSON object.\n\n"
+        "Text:\n" + text
     )
 
-    messages = [{"role": "user", "content": prompt}]
+    use_extended_thinking = False
+    messages = []
+    if not use_extended_thinking:
+        messages.append({"role": "system", "content": "/no_think"})
+    else:
+        messages.append({"role": "system", "content": "/think"})
+    messages.append({"role": "user", "content": prompt})
+
     formatted_prompt = tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
 
-    inputs = tokenizer([formatted_prompt], return_tensors="pt").to("cuda")
-    max_tokens = min(2048, 4000 - inputs["input_ids"].shape[-1])
+    inputs = tokenizer([formatted_prompt], return_tensors="pt").to(device)
+    max_tokens = min(1024, 6000 - inputs["input_ids"].shape[-1])
 
     try:
         outputs = model.generate(
@@ -80,14 +107,14 @@ def get_json_from_text(text: str) -> dict:
 
         generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
         response = tokenizer.decode(generated_ids, skip_special_tokens=True)
-        response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
+        cleaned_response = clean_llm_output(response)
 
         try:
-            json_str = extract_first_json_block(response)
+            json_str = extract_first_json_block(cleaned_response)
             return json.loads(json_str)
         except Exception as e:
             print(f"[PARSE ERROR] Could not extract valid JSON from LLM response.")
-            print(f"[RAW OUTPUT]\n{response}")
+            print(f"[RAW OUTPUT]\n{cleaned_response}")
             raise ValueError("Failed to parse JSON from model output.") from e
 
     except Exception as e:
